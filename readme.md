@@ -125,36 +125,10 @@ chattr -i .user.ini 2>/dev/null || true
 rm -rf .htaccess 404.html index.html .user.ini
 ```
 
-如果仓库是私有仓库，先在服务器生成 SSH key：
-
-```bash
-ssh-keygen -t ed25519 -f /root/.ssh/v2board_deploy_ed25519 -C "v2board deploy" -N ""
-cat /root/.ssh/v2board_deploy_ed25519.pub
-```
-
-把公钥添加到 GitHub：
-
-```text
-Repository -> Settings -> Deploy keys -> Add deploy key
-```
-
-服务器配置这个 key：
-
-```bash
-cat >> /root/.ssh/config <<'EOF'
-Host github.com
-    HostName github.com
-    User git
-    IdentityFile /root/.ssh/v2board_deploy_ed25519
-    IdentitiesOnly yes
-EOF
-chmod 600 /root/.ssh/config
-```
-
 拉取自己的仓库：
 
 ```bash
-git clone git@github.com:OxO-51888/V2b-.git ./
+git clone https://github.com/OxO-51888/panel.git ./
 ```
 
 ## 6. 安装 V2Board
@@ -308,10 +282,10 @@ php artisan horizon:terminate
 
 ### GitHub 拉取失败
 
-检查服务器 SSH key 是否已经添加到 GitHub Deploy keys：
+公开仓库一般直接 HTTPS 拉取即可。如果失败，先检查服务器能不能访问 GitHub：
 
 ```bash
-ssh -T git@github.com
+git ls-remote https://github.com/OxO-51888/panel.git
 ```
 
 ### 队列没运行
@@ -322,4 +296,4 @@ ssh -T git@github.com
 
 - V2Board 官方 aaPanel 教程：`https://v2board.com/deploy/aapanel`
 - aaPanel 官方下载页：`https://www.aapanel.com/new/download.html`
-- 自用仓库：`https://github.com/OxO-51888/V2b-`
+- 自用仓库：`https://github.com/OxO-51888/panel`
