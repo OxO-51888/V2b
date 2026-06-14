@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>XiaoV2B Windows Client</title>
+  <link rel="stylesheet" href="./assets/css/windows.css">
+</head>
+<body>
+  <main class="win-shell">
+    <section id="loginScreen" class="login-screen">
+      <div class="login-copy">
+        <p class="eyebrow">Windows Client</p>
+        <h1>使用网站账号登录</h1>
+        <p>登录后会从面板读取你的订阅、节点、套餐和订单。客户端只匹配 Vmess、Vless、Trojan、Hysteria2。</p>
+      </div>
+      <form id="loginForm" class="login-card">
+        <label>
+          邮箱
+          <input name="email" type="email" autocomplete="email" required>
+        </label>
+        <label>
+          密码
+          <input name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="primary" type="submit">登录</button>
+        <p id="loginMessage" class="message" hidden></p>
+      </form>
+    </section>
+
+    <section id="appScreen" class="app-screen" hidden>
+      <aside class="rail">
+        <div class="brand">
+          <span class="brand-mark">X</span>
+          <div>
+            <strong>XiaoV2B</strong>
+            <small>Windows</small>
+          </div>
+        </div>
+        <nav class="nav">
+          <button class="nav-item is-active" data-tab="home" type="button">连接</button>
+          <button class="nav-item" data-tab="clients" type="button">客户端</button>
+          <button class="nav-item" data-tab="servers" type="button">节点</button>
+          <button class="nav-item" data-tab="plans" type="button">套餐</button>
+          <button class="nav-item" data-tab="orders" type="button">订单</button>
+        </nav>
+        <button id="logoutBtn" class="ghost" type="button">退出</button>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">网站账号</p>
+            <h2 id="accountEmail">--</h2>
+          </div>
+          <button id="refreshBtn" class="ghost" type="button">刷新</button>
+        </header>
+
+        <div id="toast" class="toast" hidden></div>
+
+        <section id="home" class="tab is-active">
+          <article class="connect-card">
+            <div class="connect-status">
+              <span id="statusDot" class="status-dot"></span>
+              <div>
+                <p id="statusLabel" class="eyebrow">订阅状态</p>
+                <h1 id="statusTitle">准备就绪</h1>
+                <p id="statusText">读取面板后显示可用协议和订阅状态。</p>
+              </div>
+            </div>
+            <div class="connect-actions">
+              <button id="importPartyBtn" class="primary large" type="button">导入 Clash Party</button>
+              <button id="copySubBtn" class="ghost large" type="button">复制订阅</button>
+            </div>
+          </article>
+
+          <div id="setupSteps" class="setup-steps"></div>
+
+          <div class="metrics">
+            <article class="metric">
+              <span>剩余流量</span>
+              <strong id="trafficRemain">--</strong>
+              <small id="trafficUsed">已用 --</small>
+            </article>
+            <article class="metric">
+              <span>到期时间</span>
+              <strong id="expireAt">--</strong>
+              <small id="resetDay">重置 --</small>
+            </article>
+            <article class="metric">
+              <span>余额</span>
+              <strong id="balance">--</strong>
+              <small id="commission">佣金 --</small>
+            </article>
+            <article class="metric">
+              <span>在线设备</span>
+              <strong id="aliveIp">--</strong>
+              <small id="deviceLimit">设备 --</small>
+            </article>
+          </div>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h3>订阅链接</h3>
+              <button id="resetTokenBtn" class="ghost" type="button">重置</button>
+            </div>
+            <input id="subscribeUrl" class="readonly" readonly>
+          </article>
+        </section>
+
+        <section id="clients" class="tab">
+          <div id="windowsClients" class="card-grid"></div>
+        </section>
+
+        <section id="servers" class="tab">
+          <div id="serverList" class="list"></div>
+        </section>
+
+        <section id="plans" class="tab">
+          <div id="planList" class="card-grid"></div>
+        </section>
+
+        <section id="orders" class="tab">
+          <div id="orderList" class="list"></div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="checkoutDialog">
+    <form method="dialog" class="dialog-card">
+      <div class="panel-head">
+        <h3>订单支付</h3>
+        <button class="ghost" value="close" type="submit">关闭</button>
+      </div>
+      <div id="checkoutBody"></div>
+    </form>
+  </dialog>
+
+  <script type="module" src="./assets/js/windows-app.js"></script>
+</body>
+</html>

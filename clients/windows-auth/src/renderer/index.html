@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>XiaoV2B</title>
+  <link rel="stylesheet" href="./assets/css/app.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="titlebar">
+      <div class="app-title">
+        <div id="toast" class="title-notice" hidden><span></span></div>
+      </div>
+      <div class="drag-region"></div>
+      <div class="window-actions">
+        <button id="minBtn" title="最小化"><img src="./assets/icons/pink-rounded/minimize.svg" alt=""></button>
+        <button id="maxBtn" title="最大化"><img src="./assets/icons/pink-rounded/maximize.svg" alt=""></button>
+        <button id="closeBtn" class="close" title="关闭"><img src="./assets/icons/pink-rounded/close.svg" alt=""></button>
+      </div>
+    </header>
+
+    <main id="startupView" class="startup-screen" hidden>
+      <video class="startup-video-bg" autoplay muted playsinline preload="metadata" aria-hidden="true">
+        <source src="./assets/videos/startup-bg.mp4" type="video/mp4">
+      </video>
+    </main>
+
+    <main id="loginView" class="login-screen" hidden>
+      <video class="login-video-bg" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
+        <source src="./assets/videos/login-bg.mp4" type="video/mp4">
+      </video>
+      <section class="login-brand">
+        <div class="brand-orbit">
+          <span>X</span>
+        </div>
+        <h1>连接属于你的专属网络</h1>
+        <p>使用网站账号登录，客户端会自动读取订阅、节点和账户状态。</p>
+      </section>
+      <form id="loginForm" class="login-panel">
+        <h2>登录客户端</h2>
+        <label>
+          <span>邮箱</span>
+          <input name="email" type="email" autocomplete="email" required>
+        </label>
+        <label>
+          <span>密码</span>
+          <input name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="primary full" type="submit">登录</button>
+      </form>
+    </main>
+
+    <main id="appView" class="client" hidden>
+      <aside class="rail">
+        <div class="rail-brand">
+          <span>X</span>
+          <div>
+            <strong>XiaoV2B</strong>
+            <small>专属客户端</small>
+          </div>
+        </div>
+        <nav class="rail-nav">
+          <button class="rail-tab active" data-page="locations">
+            <span class="rail-icon"><img src="./assets/icons/pink-rounded/start-agent.svg" alt=""></span>
+            <span>启动代理</span>
+          </button>
+          <button class="rail-tab" data-page="plans">
+            <span class="rail-icon"><img src="./assets/icons/pink-rounded/plan-purchase.svg" alt=""></span>
+            <span>购买套餐</span>
+          </button>
+          <button class="rail-tab" data-page="orders">
+            <span class="rail-icon"><img src="./assets/icons/pink-rounded/order-detail.svg" alt=""></span>
+            <span>订单详情</span>
+          </button>
+          <button class="rail-tab" data-page="settings">
+            <span class="rail-icon"><img src="./assets/icons/pink-rounded/settings.svg" alt=""></span>
+            <span>个人中心</span>
+          </button>
+        </nav>
+        <button id="logoutBtn" class="rail-tab rail-bottom">
+          <span class="rail-icon"><img src="./assets/icons/pink-rounded/logout.svg" alt=""></span>
+          <span>退出登录</span>
+        </button>
+      </aside>
+
+      <section class="locations-pane">
+        <section id="locationsPage" class="content-page active">
+          <h2>代理模式</h2>
+          <article id="modeCard" class="setting-row mode-setting main-mode-card">
+            <div>
+              <p>规则按节点配置分流，全局全部走代理，自动选择延迟低的节点</p>
+            </div>
+            <div class="mode-segment" role="group" aria-label="代理模式">
+              <button type="button" data-mode="rule">规则</button>
+              <button type="button" data-mode="global">全局</button>
+              <button type="button" data-mode="auto">自动</button>
+            </div>
+          </article>
+
+          <div class="section-title">
+            <div class="section-title-main">
+              <h2>节点列表</h2>
+              <button id="latencyTestBtn" class="latency-test-button" type="button" title="测速">
+                <img src="./assets/icons/pink-rounded/latency-test.svg" alt="">
+              </button>
+            </div>
+            <span id="nodeCount">0</span>
+          </div>
+          <div id="nodeList" class="location-list"></div>
+        </section>
+
+        <section id="plansPage" class="content-page">
+          <h2>套餐</h2>
+          <div id="planList" class="card-list"></div>
+        </section>
+
+        <section id="ordersPage" class="content-page">
+          <h2>订单</h2>
+          <div id="orderList" class="card-list"></div>
+        </section>
+
+        <section id="settingsPage" class="content-page">
+          <h2>设置</h2>
+          <section id="accountOverview" class="recommended-grid settings-overview"></section>
+          <section id="settingsControls" class="settings-controls"></section>
+        </section>
+      </section>
+
+      <aside class="status-pane">
+        <section class="status-card">
+          <div class="shield">
+            <div class="heart-effect" aria-hidden="true">
+              <svg class="heart-ring" viewBox="0 0 270 270" focusable="false">
+                <path d="M135 218 C74 168 38 130 38 83 C38 51 60 31 91 31 C112 31 128 43 135 63 C142 43 158 31 179 31 C210 31 232 51 232 83 C232 130 196 168 135 218 Z"></path>
+              </svg>
+              <svg class="heart-ring two" viewBox="0 0 270 270" focusable="false">
+                <path d="M135 218 C74 168 38 130 38 83 C38 51 60 31 91 31 C112 31 128 43 135 63 C142 43 158 31 179 31 C210 31 232 51 232 83 C232 130 196 168 135 218 Z"></path>
+              </svg>
+              <svg class="heart-fill" viewBox="0 0 270 270" focusable="false">
+                <defs>
+                  <clipPath id="connectHeartClip">
+                    <path d="M135 218 C74 168 38 130 38 83 C38 51 60 31 91 31 C112 31 128 43 135 63 C142 43 158 31 179 31 C210 31 232 51 232 83 C232 130 196 168 135 218 Z"></path>
+                  </clipPath>
+                </defs>
+                <g clip-path="url(#connectHeartClip)">
+                  <rect class="heart-fill-body" x="0" y="0" width="270" height="270"></rect>
+                  <path class="heart-fill-soft" d="M0 106 C48 70 89 138 135 103 C181 68 221 132 270 96 L270 270 L0 270 Z"></path>
+                  <path class="heart-fill-wave" d="M5 106 C49 71 91 136 135 103 C180 69 222 131 265 96"></path>
+                </g>
+              </svg>
+              <svg class="heart-disconnect" viewBox="0 0 270 270" focusable="false">
+                <defs>
+                  <linearGradient id="disconnectStripGradient" x1="38" y1="218" x2="232" y2="31" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#ff3158"></stop>
+                    <stop offset="18%" stop-color="#ff5f9f"></stop>
+                    <stop offset="34%" stop-color="#c084fc"></stop>
+                    <stop offset="50%" stop-color="#8fd8ff"></stop>
+                    <stop offset="66%" stop-color="#7ef0c1"></stop>
+                    <stop offset="82%" stop-color="#ffe96c"></stop>
+                    <stop offset="100%" stop-color="#ff9a76"></stop>
+                  </linearGradient>
+                </defs>
+                <path class="heart-disconnect-measure" d="M135 218 C74 168 38 130 38 83 C38 51 60 31 91 31 C112 31 128 43 135 63 C142 43 158 31 179 31 C210 31 232 51 232 83 C232 130 196 168 135 218 Z"></path>
+                <path class="heart-disconnect-shadow" d="M135 218 C74 168 38 130 38 83 C38 51 60 31 91 31 C112 31 128 43 135 63 C142 43 158 31 179 31 C210 31 232 51 232 83 C232 130 196 168 135 218 Z"></path>
+                <path class="heart-disconnect-outline" d="M135 218 C74 168 38 130 38 83 C38 51 60 31 91 31 C112 31 128 43 135 63 C142 43 158 31 179 31 C210 31 232 51 232 83 C232 130 196 168 135 218 Z"></path>
+                <path class="heart-disconnect-strip-glow" d="M135 218 C74 168 38 130 38 83 C38 51 60 31 91 31 C112 31 128 43 135 63 C142 43 158 31 179 31 C210 31 232 51 232 83 C232 130 196 168 135 218 Z"></path>
+                <path class="heart-disconnect-strip" d="M135 218 C74 168 38 130 38 83 C38 51 60 31 91 31 C112 31 128 43 135 63 C142 43 158 31 179 31 C210 31 232 51 232 83 C232 130 196 168 135 218 Z"></path>
+              </svg>
+              <svg class="heart-shape" viewBox="0 0 270 270" focusable="false">
+                <path d="M135 218 C74 168 38 130 38 83 C38 51 60 31 91 31 C112 31 128 43 135 63 C142 43 158 31 179 31 C210 31 232 51 232 83 C232 130 196 168 135 218 Z"></path>
+              </svg>
+            </div>
+          </div>
+          <h1 id="statusTitle">连接后<br>开始使用</h1>
+          <div class="status-grid">
+            <div>
+              <strong id="connectionTime">--</strong>
+              <span>连接时长</span>
+            </div>
+            <div>
+              <strong id="ipAddress">--</strong>
+              <span>本地代理</span>
+            </div>
+            <div>
+              <strong id="uploadText">--</strong>
+              <span>上传速率</span>
+            </div>
+            <div>
+              <strong id="downloadText">--</strong>
+              <span>下载速率</span>
+            </div>
+            <div>
+              <strong id="protocols">--</strong>
+              <span>当前协议</span>
+            </div>
+            <div>
+              <strong id="autoConnectText">关闭</strong>
+              <span>代理模式</span>
+            </div>
+            <div>
+              <strong id="localLocationText">--</strong>
+              <span>您的位置</span>
+            </div>
+            <div>
+              <strong id="localIpText">--</strong>
+              <span>本地IP地址</span>
+            </div>
+          </div>
+
+          <div class="selected-card">
+            <div class="location-mark" id="selectedMark">HY</div>
+            <div>
+              <strong id="selectedNode">智能选择节点</strong>
+              <span id="selectedMeta">自动选择</span>
+            </div>
+          </div>
+
+          <div class="connect-actions">
+            <button id="connectBtn" class="primary">一键连接</button>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <div id="logoutConfirm" class="logout-confirm" hidden>
+    <section class="logout-confirm-card" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle">
+      <div class="logout-confirm-brand">
+        <div>
+          <strong id="logoutConfirmTitle">退出登录</strong>
+        </div>
+      </div>
+      <p>确定退出当前账号吗？</p>
+      <div class="logout-confirm-actions">
+        <button id="confirmLogoutBtn" class="primary" type="button">确定退出</button>
+        <button id="cancelLogoutBtn" class="outline" type="button">取消</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="./assets/js/app.js"></script>
+</body>
+</html>

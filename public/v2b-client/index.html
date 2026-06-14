@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>XiaoV2B Client</title>
+  <link rel="stylesheet" href="./assets/css/core.css">
+</head>
+<body>
+  <div class="app-shell" data-app>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">X</span>
+        <div>
+          <strong>XiaoV2B Client</strong>
+          <small id="apiOrigin">/api/v1</small>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="客户端导航">
+        <button class="nav-item is-active" data-view="dashboard" type="button">首页</button>
+        <button class="nav-item" data-view="clients" type="button">客户端</button>
+        <button class="nav-item" data-view="plans" type="button">套餐</button>
+        <button class="nav-item" data-view="orders" type="button">订单</button>
+        <button class="nav-item" data-view="servers" type="button">节点</button>
+        <button class="nav-item" data-view="settings" type="button">设置</button>
+      </nav>
+
+      <div class="session">
+        <span id="sessionEmail">未登录</span>
+        <button id="logoutBtn" class="ghost" type="button" hidden>退出</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section id="authView" class="auth-view">
+        <div class="auth-intro">
+          <p class="eyebrow">XiaoV2B Client</p>
+          <h1>使用网站账号登录后管理订阅、套餐、订单和节点。</h1>
+          <p>此客户端直接对接当前站点的 V2Board API，不创建独立客户端账号。</p>
+        </div>
+
+        <form id="loginForm" class="form-card">
+          <label>
+            邮箱
+            <input name="email" type="email" autocomplete="email" required>
+          </label>
+          <label>
+            密码
+            <input name="password" type="password" autocomplete="current-password" required>
+          </label>
+          <button class="primary" type="submit">使用网站账号登录</button>
+          <button id="showRegisterBtn" class="ghost" type="button">注册网站账号</button>
+        </form>
+
+        <form id="registerForm" class="form-card" hidden>
+          <label>
+            邮箱
+            <input name="email" type="email" autocomplete="email" required>
+          </label>
+          <label>
+            密码
+            <input name="password" type="password" autocomplete="new-password" minlength="8" required>
+          </label>
+          <label>
+            邀请码
+            <input name="invite_code" autocomplete="off" placeholder="不需要可留空">
+          </label>
+          <label>
+            邮箱验证码
+            <input name="email_code" inputmode="numeric" placeholder="未开启邮箱验证可留空">
+          </label>
+          <button class="primary" type="submit">注册并登录</button>
+          <button id="showLoginBtn" class="ghost" type="button">返回登录</button>
+        </form>
+      </section>
+
+      <section id="clientView" hidden>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Client Console</p>
+            <h2 id="viewTitle">首页</h2>
+          </div>
+          <button id="refreshBtn" class="ghost" type="button">刷新</button>
+        </header>
+
+        <div id="alert" class="alert" hidden></div>
+
+        <section id="dashboard" class="view is-active">
+          <article class="status-card">
+            <div>
+              <p id="statusLabel" class="eyebrow">订阅状态</p>
+              <h3 id="statusTitle">等待登录</h3>
+              <p id="statusSummary">登录后会显示订阅、流量和到期信息。</p>
+            </div>
+            <div class="status-actions">
+              <button id="copySubBtn" class="primary" type="button">复制订阅</button>
+              <button class="ghost" data-view-target="clients" type="button">导入客户端</button>
+            </div>
+          </article>
+
+          <div class="metrics">
+            <article class="metric">
+              <span>剩余流量</span>
+              <strong id="trafficRemain">--</strong>
+              <small id="trafficUsed">已用 --</small>
+            </article>
+            <article class="metric">
+              <span>到期时间</span>
+              <strong id="expireAt">--</strong>
+              <small id="resetDay">重置日 --</small>
+            </article>
+            <article class="metric">
+              <span>余额</span>
+              <strong id="balance">--</strong>
+              <small id="commission">佣金 --</small>
+            </article>
+            <article class="metric">
+              <span>在线设备</span>
+              <strong id="aliveIp">--</strong>
+              <small id="deviceLimit">设备限制 --</small>
+            </article>
+          </div>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h3>订阅链接</h3>
+              <button id="resetTokenShortcutBtn" class="ghost" type="button">重置</button>
+            </div>
+            <input id="subscribeUrl" class="readonly-input" readonly>
+          </article>
+        </section>
+
+        <section id="clients" class="view">
+          <div class="toolbar">
+            <button class="seg is-active" data-platform-filter="all" type="button">全部</button>
+            <button class="seg" data-platform-filter="windows" type="button">Windows</button>
+            <button class="seg" data-platform-filter="macos" type="button">macOS</button>
+            <button class="seg" data-platform-filter="android" type="button">Android</button>
+            <button class="seg" data-platform-filter="ios" type="button">iOS</button>
+          </div>
+          <div id="clientCatalog" class="card-grid"></div>
+        </section>
+
+        <section id="plans" class="view">
+          <div id="planList" class="card-grid"></div>
+        </section>
+
+        <section id="orders" class="view">
+          <div class="toolbar">
+            <button class="seg is-active" data-order-filter="" type="button">全部</button>
+            <button class="seg" data-order-filter="0" type="button">待支付</button>
+            <button class="seg" data-order-filter="3" type="button">已完成</button>
+          </div>
+          <div id="orderList" class="list"></div>
+        </section>
+
+        <section id="servers" class="view">
+          <div id="serverList" class="list"></div>
+        </section>
+
+        <section id="settings" class="view">
+          <div class="settings-grid">
+            <article class="panel">
+              <h3>账户偏好</h3>
+              <label class="switch-row">
+                到期提醒
+                <input id="remindExpire" type="checkbox">
+              </label>
+              <label class="switch-row">
+                流量提醒
+                <input id="remindTraffic" type="checkbox">
+              </label>
+              <label class="switch-row">
+                自动续费
+                <input id="autoRenewal" type="checkbox">
+              </label>
+              <button id="savePrefsBtn" class="primary" type="button">保存偏好</button>
+            </article>
+
+            <article class="panel">
+              <h3>订阅安全</h3>
+              <button id="resetTokenBtn" class="danger" type="button">重置订阅链接</button>
+              <p class="muted">重置后旧订阅链接会失效，请重新导入客户端。</p>
+            </article>
+
+            <article class="panel">
+              <h3>礼品卡</h3>
+              <form id="giftcardForm" class="inline-form">
+                <input name="giftcard" placeholder="输入礼品卡代码" required>
+                <button class="primary" type="submit">兑换</button>
+              </form>
+            </article>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="checkoutDialog">
+    <form method="dialog" class="dialog-card">
+      <div class="panel-head">
+        <h3>订单支付</h3>
+        <button class="ghost" value="close" type="submit">关闭</button>
+      </div>
+      <div id="checkoutBody"></div>
+    </form>
+  </dialog>
+
+  <script type="module" src="./assets/js/app.js"></script>
+</body>
+</html>

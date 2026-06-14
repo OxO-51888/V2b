@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>客户端授权管理</title>
+  <style nonce="__CSP_NONCE__">
+    :root {
+      --pink: #ff4f9a;
+      --pink-soft: #fff0f7;
+      --pink-border: #ffd0e5;
+      --ink: #241820;
+      --muted: #8b7582;
+      --line: #f2d8e6;
+      --card: rgba(255, 255, 255, 0.92);
+      --bg: #fff7fb;
+      --good: #16a46a;
+      --bad: #e6425e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 12% 8%, #ffe5f2 0, transparent 32%),
+        radial-gradient(circle at 88% 12%, #fff3c8 0, transparent 26%),
+        linear-gradient(135deg, #fff9fc, #fff2f8 52%, #fff8ef);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      height: 90px;
+      padding: 0 28px;
+      background: rgba(255, 255, 255, 0.82);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(18px);
+    }
+    header h1 {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      white-space: nowrap;
+    }
+    h1 { margin: 0; font-size: 34px; line-height: 1; }
+    .sub { margin-top: 4px; color: var(--muted); font-size: 13px; }
+    main {
+      width: min(1280px, calc(100vw - 36px));
+      margin: 22px auto 48px;
+      display: grid;
+      gap: 18px;
+    }
+    .login {
+      max-width: 520px;
+      margin: 70px auto;
+      padding: 26px;
+      border: 1px solid var(--pink-border);
+      border-radius: 18px;
+      background: var(--card);
+      box-shadow: 0 24px 80px rgba(255, 79, 154, 0.14);
+    }
+    .hidden { display: none !important; }
+    .bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    input, select, button, textarea {
+      height: 42px;
+      border: 1px solid var(--pink-border);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      outline: none;
+    }
+    input, select, textarea { padding: 0 12px; }
+    textarea { min-height: 76px; padding: 10px 12px; resize: vertical; }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--pink);
+      box-shadow: 0 0 0 4px rgba(255, 79, 154, 0.12);
+    }
+    button {
+      padding: 0 18px;
+      cursor: pointer;
+      border-color: transparent;
+      background: var(--pink);
+      color: #fff;
+      font-weight: 700;
+      user-select: none;
+      box-shadow: 0 8px 18px rgba(255, 79, 154, 0.16);
+      transition:
+        transform 120ms ease,
+        box-shadow 120ms ease,
+        background-color 120ms ease,
+        border-color 120ms ease,
+        color 120ms ease;
+    }
+    button:not(:disabled):hover {
+      background: #ff3f92;
+      box-shadow: 0 10px 24px rgba(255, 79, 154, 0.22);
+    }
+    button:not(:disabled):active {
+      transform: translateY(1px) scale(0.98);
+      box-shadow: 0 4px 10px rgba(255, 79, 154, 0.16);
+    }
+    button.secondary {
+      background: #fff;
+      color: var(--pink);
+      border-color: var(--pink-border);
+      box-shadow: 0 6px 16px rgba(255, 79, 154, 0.08);
+    }
+    button.secondary:not(:disabled):hover {
+      background: var(--pink-soft);
+      border-color: var(--pink);
+    }
+    button.danger {
+      background: #fff;
+      color: var(--bad);
+      border-color: #ffc2ce;
+      box-shadow: 0 6px 16px rgba(230, 66, 94, 0.08);
+    }
+    button.danger:not(:disabled):hover {
+      background: #fff0f2;
+      border-color: var(--bad);
+    }
+    button:disabled { opacity: .55; cursor: default; box-shadow: none; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(260px, 308px));
+      gap: 14px;
+      justify-content: center;
+    }
+    .stat, section {
+      border: 1px solid var(--pink-border);
+      border-radius: 18px;
+      background: var(--card);
+      box-shadow: 0 18px 52px rgba(255, 79, 154, 0.10);
+    }
+    .stat {
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      min-height: 104px;
+      padding: 18px;
+      text-align: center;
+    }
+    .stat strong { display: block; font-size: 28px; margin-top: 8px; }
+    .stat span, label { color: var(--muted); font-size: 13px; }
+    section { overflow: hidden; }
+    section.panel-section { overflow: visible; }
+    .section-head {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 240, 247, 0.72);
+    }
+    .section-head h2 { margin: 0; font-size: 18px; }
+    .content { padding: 16px 18px; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+    .field { display: grid; gap: 6px; }
+    .span-2 { grid-column: span 2; }
+    .span-3 { grid-column: span 3; }
+    .span-6 { grid-column: span 6; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #f5e2ec;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 700; background: rgba(255,255,255,.54); }
+    tr:last-child td { border-bottom: none; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: var(--pink-soft);
+      color: var(--pink);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .pill.good { background: #e9fff5; color: var(--good); }
+    .pill.bad { background: #fff0f2; color: var(--bad); }
+    .mono {
+      font-family: Consolas, "SFMono-Regular", monospace;
+      word-break: break-all;
+    }
+    .message {
+      min-height: 22px;
+      color: var(--pink);
+      font-weight: 700;
+    }
+    .new-code {
+      display: none;
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 14px;
+      background: #fff7df;
+      border: 1px solid #ffe6a4;
+      font-weight: 800;
+      color: #4a3210;
+    }
+    .site-list { display: grid; gap: 12px; }
+    .site-card {
+      display: grid;
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid #f5d4e4;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.72);
+    }
+    .site-body {
+      display: grid;
+      grid-template-columns: max-content 160px;
+      gap: 40px;
+      align-items: end;
+      padding-left: 50px;
+    }
+    .site-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 17px;
+      flex-wrap: wrap;
+      padding-left: 50px;
+    }
+    .site-index {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: var(--pink-soft);
+      color: var(--pink);
+    }
+    .site-meta {
+      display: inline-flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .site-meta .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 28px;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      border: 0;
+      color: #6f5b68;
+      font-weight: 600;
+    }
+    .chip-label {
+      color: #4e3a48;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .site-form {
+      display: grid;
+      grid-template-columns: 150px 270px 150px 112px 88px;
+      gap: 32px;
+      align-items: end;
+      justify-content: start;
+    }
+    .site-form input, .site-form select { width: 100%; min-width: 0; }
+    .site-form label,
+    .site-form input,
+    .site-form select,
+    .site-save button {
+      text-align: center;
+    }
+    .site-form select {
+      text-align-last: center;
+    }
+    .site-save { display: grid; gap: 6px; min-width: 88px; align-self: end; }
+    .site-save label { visibility: hidden; }
+    .site-status { min-width: 112px; align-self: end; }
+    .site-status input[type="hidden"] { display: none; }
+    .status-picker {
+      position: relative;
+      width: 100%;
+      height: 42px;
+    }
+    .status-toggle {
+      width: 100%;
+      height: 42px;
+      padding: 0 34px;
+      border: 1px solid var(--pink-border);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--ink);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 6px 16px rgba(255, 79, 154, 0.08);
+    }
+    .status-toggle:not(:disabled):hover {
+      background: var(--pink-soft);
+      border-color: var(--pink);
+      color: var(--pink);
+    }
+    .status-toggle::after {
+      content: "";
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid var(--muted);
+      transform: translateY(-35%);
+    }
+    .status-menu {
+      display: none;
+      position: absolute;
+      z-index: 8;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      overflow: hidden;
+      border: 1px solid var(--pink-border);
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 10px 24px rgba(255, 79, 154, 0.12);
+    }
+    .status-picker.open .status-menu { display: grid; }
+    .status-picker.open-up .status-menu {
+      top: auto;
+      bottom: calc(100% + 4px);
+      box-shadow: 0 -10px 24px rgba(255, 79, 154, 0.12);
+    }
+    .status-option {
+      height: 36px;
+      width: 100%;
+      border: 0;
+      border-radius: 0;
+      background: #fff;
+      color: var(--ink);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      box-shadow: none;
+    }
+    .status-option:not(:disabled):hover,
+    .status-option.active,
+    .status-option.active:not(:disabled):hover {
+      background: var(--pink-soft);
+      color: var(--pink);
+    }
+    .status-option:not(:disabled):active {
+      transform: none;
+      box-shadow: none;
+      background: #ffe1ee;
+      color: var(--pink);
+    }
+    .site-hint {
+      align-self: end;
+      min-height: 42px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: rgba(255, 246, 251, 0.72);
+      border: 1px solid #ffe0ed;
+      width: 160px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.45;
+      text-align: center;
+    }
+    .site-hint.good { color: var(--good); }
+    .site-hint.bad { color: var(--bad); }
+    .site-hint:empty { visibility: hidden; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .empty { color: var(--muted); padding: 18px 0; }
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .site-title { padding-left: 0; }
+      .site-body { grid-template-columns: 1fr; padding-left: 0; }
+      .site-form { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .span-2, .span-3, .span-6 { grid-column: span 2; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>客户端授权管理</h1>
+    </div>
+    <div class="bar">
+      <button class="secondary" id="refreshBtn">刷新</button>
+      <button class="danger" id="logoutBtn">退出</button>
+    </div>
+  </header>
+
+  <main id="appBox">
+    <div class="grid">
+      <div class="stat"><span>网站数量</span><strong id="panelCount">0</strong></div>
+      <div class="stat"><span>启用网站</span><strong id="activePanelCount">0</strong></div>
+      <div class="stat"><span>在线设备</span><strong id="deviceCount">0</strong></div>
+    </div>
+
+    <section class="panel-section">
+      <div class="section-head"><h2>网站管理</h2></div>
+      <div class="content" id="panelsTable"></div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>设备记录</h2></div>
+      <div class="content">
+        <div class="bar" style="margin-bottom:12px">
+          <input id="deviceNote" placeholder="封禁或解除封禁备注" style="min-width:260px">
+        </div>
+        <div id="devicesTable"></div>
+      </div>
+    </section>
+  </main>
+
+  <script nonce="__CSP_NONCE__">
+    const state = { token: sessionStorage.getItem('xv2bAdminToken') || '', panels: [], devices: [] };
+    const $ = (id) => document.getElementById(id);
+    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const fmt = (value) => value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '-';
+    const statusText = (status) => status === 'active' ? '启用' : '停用';
+    const statusPill = (status) => {
+      const s = String(status || '');
+      const cls = s === 'active' || s === 'approved' || s === '已配置' ? 'good' : (s === 'blocked' || s === 'disabled' || s === '未配置' ? 'bad' : '');
+      const names = {
+        active: '启用',
+        disabled: '停用',
+        approved: '允许',
+        blocked: '封禁',
+        pending: '待处理'
+      };
+      return `<span class="pill ${cls}">${esc(names[s] || s || '-')}</span>`;
+    };
+    function toIsoFromLocal(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      return Number.isFinite(date.getTime()) ? date.toISOString() : '';
+    }
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${state.token}`,
+          ...(options.headers || {})
+        }
+      });
+      const text = await response.text();
+      let data = {};
+      try { data = text ? JSON.parse(text) : {}; } catch { data = { message: text }; }
+      if (!response.ok || data.ok === false) throw new Error(data.message || `请求失败：${response.status}`);
+      return data.data;
+    }
+    function table(headers, rows) {
+      if (!rows.length) return '<div class="empty">暂无数据</div>';
+      return `<table><thead><tr>${headers.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+    }
+    function renderStats() {
+      $('panelCount').textContent = state.panels.length;
+      $('activePanelCount').textContent = state.panels.filter((panel) => panel.status === 'active').length;
+      $('deviceCount').textContent = state.devices.filter((device) => device.online).length;
+    }
+    function renderPanels() {
+      if (!state.panels.length) {
+        $('panelsTable').innerHTML = '<div class="empty">暂无网站配置</div>';
+        return;
+      }
+      $('panelsTable').innerHTML = `<div class="site-list">${state.panels.map((panel, index) => `
+        <div class="site-card" data-panel-card="${esc(panel.id)}">
+          <div>
+            <div class="site-title">
+              <span class="site-index">${index + 1}</span>
+              <span data-panel-title="${esc(panel.id)}">${esc(panel.name)}</span>
+              <span data-panel-status="${esc(panel.id)}">${statusPill(panel.status)}</span>
+              <span class="site-meta">
+                <span class="chip mono"><span class="chip-label">网站ID:</span>${esc(panel.id)}</span>
+                <span class="chip mono"><span class="chip-label">后台域名:</span>${esc(panel.backendDomain || '-')}</span>
+                <span class="chip"><span class="chip-label">数据库:</span>${panel.hasDatabase ? statusPill('已配置') : statusPill('未配置')}</span>
+              </span>
+            </div>
+          </div>
+          <div class="site-body">
+            <div class="site-form">
+              <div class="field"><label>网站名字</label><input data-panel-id="${esc(panel.id)}" data-panel-field="name" value="${esc(panel.name)}"></div>
+              <div class="field"><label>反代 IP / 端口 / 域名</label><input data-panel-id="${esc(panel.id)}" data-panel-field="gatewayTarget" value="${esc(panel.gatewayTarget || '')}"></div>
+              <div class="field"><label>客户端名</label><input data-panel-id="${esc(panel.id)}" data-panel-field="clientName" value="${esc(panel.clientName || '')}"></div>
+              <div class="field site-status"><label>状态</label>
+                <div class="status-picker" data-panel-id="${esc(panel.id)}" data-status-picker>
+                  <button type="button" class="status-toggle" data-status-toggle><span data-status-current>${statusText(panel.status)}</span></button>
+                  <div class="status-menu">
+                    <button type="button" class="status-option ${panel.status === 'active' ? 'active' : ''}" data-status-value="active">启用</button>
+                    <button type="button" class="status-option ${panel.status === 'disabled' ? 'active' : ''}" data-status-value="disabled">停用</button>
+                  </div>
+                </div>
+                <input type="hidden" data-panel-id="${esc(panel.id)}" data-panel-field="status" value="${esc(panel.status)}">
+              </div>
+              <div class="site-save">
+                <label>保存</label>
+                <button data-action="save-panel" data-panel-id="${esc(panel.id)}">保存</button>
+              </div>
+            </div>
+            <div class="site-hint" data-panel-feedback="${esc(panel.id)}"></div>
+          </div>
+        </div>`).join('')}</div>`;
+    }
+    function renderDevices() {
+      $('devicesTable').innerHTML = table(['状态', '设备', '用户', 'IP', '客户端', '网站', '系统', '最后出现', '操作'], state.devices.map((device) => `
+        <tr>
+          <td>${statusPill(device.status)}</td>
+          <td><div class="mono">${esc(device.deviceId)}</div><div class="sub">${esc(device.deviceName || '-')}</div></td>
+          <td>${esc(device.userEmail || '-')}</td>
+          <td><div class="mono">${esc(device.localIp || '-')}</div><div class="sub">${esc(device.localLocation || '')}${device.requestIp ? ` 来源 ${esc(device.requestIp)}` : ''}</div></td>
+          <td>${esc(device.clientName || '-')}<div class="sub">${esc(device.runtimeName || '-')}</div></td>
+          <td class="mono">${esc(device.panelId || '-')}</td>
+          <td>${esc(device.os || '-')}<div class="sub">版本 ${esc(device.version || '-')}</div></td>
+          <td>${fmt(device.lastSeenAt)}</td>
+          <td><div class="actions">
+            ${device.status === 'blocked'
+              ? `<button data-action="approve-device" data-device-id="${esc(device.deviceId)}">解除封禁</button>`
+              : `<button class="danger" data-action="block-device" data-device-id="${esc(device.deviceId)}">封禁</button>`}
+          </div></td>
+        </tr>`));
+    }
+    async function loadAll() {
+      const panels = await api('/api/admin/panels');
+      const devices = await api('/api/admin/devices');
+      state.panels = panels.panels || [];
+      state.devices = devices || [];
+      renderStats();
+      renderPanels();
+      renderDevices();
+    }
+    async function bootDashboard() {
+      if (!state.token) {
+        location.replace('__ADMIN_PATH__');
+        return;
+      }
+      try {
+        await loadAll();
+      } catch (error) {
+        sessionStorage.removeItem('xv2bAdminToken');
+        alert(error.message || '登录已过期，请重新登录');
+        location.replace('__ADMIN_PATH__');
+      }
+    }
+    async function approveDevice(deviceId) {
+      await api('/api/admin/devices/approve', {
+        method: 'POST',
+        body: JSON.stringify({
+          deviceId,
+          note: $('deviceNote').value
+        })
+      });
+      await loadAll();
+    }
+    async function blockDevice(deviceId) {
+      if (!confirm('确定封禁这个设备吗？')) return;
+      await api('/api/admin/devices/block', {
+        method: 'POST',
+        body: JSON.stringify({ deviceId, reason: $('deviceNote').value })
+      });
+      await loadAll();
+    }
+    function panelField(panelId, field) {
+      return document.querySelector(`[data-panel-id="${panelId}"][data-panel-field="${field}"]`);
+    }
+    function setPanelFeedback(panelId, text, type = '') {
+      const feedback = document.querySelector(`[data-panel-feedback="${panelId}"]`);
+      if (!feedback) return;
+      feedback.textContent = text;
+      feedback.className = `site-hint ${type}`.trim();
+      if (feedback._timer) clearTimeout(feedback._timer);
+      if (type === 'good') {
+        feedback._timer = setTimeout(() => {
+          feedback.textContent = '';
+          feedback.className = 'site-hint';
+        }, 2400);
+      }
+    }
+    function closeStatusPickers(except = null) {
+      document.querySelectorAll('[data-status-picker].open').forEach((picker) => {
+        if (picker !== except) picker.classList.remove('open', 'open-up');
+      });
+    }
+    function openStatusPicker(picker) {
+      closeStatusPickers(picker);
+      const rect = picker.getBoundingClientRect();
+      const menuHeight = 76;
+      const shouldOpenUp = window.innerHeight - rect.bottom < menuHeight + 18 && rect.top > menuHeight + 18;
+      picker.classList.toggle('open-up', shouldOpenUp);
+      picker.classList.add('open');
+    }
+    function setPanelStatus(panelId, value) {
+      const field = panelField(panelId, 'status');
+      const picker = document.querySelector(`[data-status-picker][data-panel-id="${panelId}"]`);
+      if (!field || !picker) return;
+      field.value = value;
+      picker.querySelector('[data-status-current]').textContent = statusText(value);
+      picker.querySelectorAll('[data-status-value]').forEach((option) => {
+        option.classList.toggle('active', option.dataset.statusValue === value);
+      });
+      setPanelFeedback(panelId, value === 'active' ? '已选择启用，保存后生效' : '已选择停用，保存后生效', '');
+    }
+    async function savePanel(panelId) {
+      const button = document.querySelector(`button[data-action="save-panel"][data-panel-id="${panelId}"]`);
+      const oldText = button?.textContent || '保存';
+      try {
+        if (button) {
+          button.disabled = true;
+          button.textContent = '保存中';
+        }
+        setPanelFeedback(panelId, '', '');
+        const saved = await api('/api/admin/panels/update', {
+          method: 'POST',
+          body: JSON.stringify({
+            panelId,
+            name: panelField(panelId, 'name')?.value || '',
+            status: panelField(panelId, 'status')?.value || '',
+            gatewayTarget: panelField(panelId, 'gatewayTarget')?.value || '',
+            clientName: panelField(panelId, 'clientName')?.value || ''
+          })
+        });
+        const index = state.panels.findIndex((panel) => panel.id === panelId);
+        if (index >= 0) state.panels[index] = { ...state.panels[index], ...saved };
+        const title = document.querySelector(`[data-panel-title="${panelId}"]`);
+        if (title) title.textContent = saved.name || panelField(panelId, 'name')?.value || '';
+        const status = document.querySelector(`[data-panel-status="${panelId}"]`);
+        if (status) status.innerHTML = statusPill(saved.status);
+        setPanelFeedback(panelId, saved.status === 'active' ? '已保存 · 已启用' : '已保存 · 已停用', 'good');
+        renderStats();
+      } catch (error) {
+        setPanelFeedback(panelId, error.message || '保存失败', 'bad');
+        throw error;
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = oldText;
+        }
+      }
+    }
+    document.addEventListener('click', (event) => {
+      const statusOption = event.target.closest('[data-status-value]');
+      if (statusOption) {
+        const picker = statusOption.closest('[data-status-picker]');
+        if (picker) {
+          setPanelStatus(picker.dataset.panelId, statusOption.dataset.statusValue);
+          picker.classList.remove('open', 'open-up');
+        }
+        return;
+      }
+      const statusToggle = event.target.closest('[data-status-toggle]');
+      if (statusToggle) {
+        const picker = statusToggle.closest('[data-status-picker]');
+        if (picker) {
+          if (picker.classList.contains('open')) {
+            picker.classList.remove('open', 'open-up');
+          } else {
+            openStatusPicker(picker);
+          }
+        }
+        return;
+      }
+      closeStatusPickers();
+      const button = event.target.closest('button[data-action]');
+      if (!button) return;
+      const action = button.dataset.action;
+      if (action === 'save-panel') savePanel(button.dataset.panelId).catch((error) => alert(error.message));
+      if (action === 'approve-device') approveDevice(button.dataset.deviceId).catch((error) => alert(error.message));
+      if (action === 'block-device') blockDevice(button.dataset.deviceId).catch((error) => alert(error.message));
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeStatusPickers();
+    });
+    $('refreshBtn').addEventListener('click', () => loadAll().catch((error) => alert(error.message)));
+    $('logoutBtn').addEventListener('click', () => {
+      sessionStorage.removeItem('xv2bAdminToken');
+      state.token = '';
+      location.replace('__ADMIN_PATH__');
+    });
+    bootDashboard();
+  </script>
+</body>
+</html>
