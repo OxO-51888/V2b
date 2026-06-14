@@ -1,69 +1,104 @@
-# V2b 面板宝塔搭建教程
+# V2b 面板 aaPanel 搭建教程
 
 这是自用 V2Board / xiao 分支整合版仓库，基于 `wyx2685/v2board`，并保留本地主题、客户端与认证服务相关定制。
 
-本教程按宝塔面板手动搭建来写。以后重新搭建时，直接拉取自己的 GitHub 仓库，不需要再从官方仓库迁移。
+本教程面向 aaPanel，也就是海外版宝塔。以后重新搭建时，直接拉取自己的 GitHub 仓库，不需要再从官方仓库迁移。
+
+## 0. 版本选择说明
+
+官方 V2Board 文档较早，示例环境常写 PHP 7.4。现在 aaPanel 在新系统上安装 PHP 7.4 时可能出现编译失败、扩展安装失败、CLI 版本不一致等问题。
+
+这份仓库的 `composer.json` 支持：
+
+```text
+php ^7.3.0 || ^8.0
+```
+
+并且 `init.sh` 在检测到 PHP 8 时会自动补充：
+
+```bash
+php composer.phar require joanhey/adapterman
+```
+
+所以新服务器建议：
+
+- 首选：PHP 8.1
+- 次选：PHP 8.0
+- 不建议新装：PHP 7.4，除非你的系统和 aaPanel 确认能稳定安装
+
+关键点：
+
+- 网站 PHP 版本要选 PHP 8.1
+- SSH 里执行 `php -v` 也要是 PHP 8.1
+- `redis`、`fileinfo`、`pcntl` 必须可用
+- `proc_open`、`putenv`、`pcntl_alarm`、`pcntl_signal` 不能被禁用
 
 ## 1. 准备服务器
 
 建议配置：
 
 - 系统：Debian 12、Ubuntu 22.04、CentOS 9、OpenCloudOS 9
-- 内存：最低 512 MB，建议 1 GB+
-- Web：Nginx
-- PHP：推荐 PHP 7.4
-- 数据库：MySQL 5.7 / MariaDB
-- Redis：必须安装
+- 内存：最低 1 GB，建议 2 GB+
+- 硬盘：20 GB+
+- 域名：提前解析到服务器 IP
 
-先解析域名到服务器 IP，并在服务器安全组放行：
+安全组放行：
 
 - `80`
 - `443`
-- `8888`，宝塔面板端口，按你的面板设置为准
+- `8888`，aaPanel 默认面板端口，实际以你的面板端口为准
 
-## 2. 安装宝塔面板
+## 2. 安装 aaPanel
 
 SSH 登录服务器，使用 `root` 执行。
 
 ### CentOS / OpenCloudOS / Alibaba Cloud Linux
 
 ```bash
-yum install -y wget && wget -O install.sh http://download.bt.cn/install/install_6.0.sh && sh install.sh
+yum install -y wget && wget -O install.sh http://www.aapanel.com/script/install_6.0_en.sh && bash install.sh
 ```
 
 ### Ubuntu / Debian
 
 ```bash
-wget -O install.sh http://download.bt.cn/install/install-ubuntu_6.0.sh && bash install.sh
+wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && bash install.sh
 ```
 
-安装完成后，终端会显示宝塔登录地址、账号和密码。登录宝塔后先绑定账号并进入面板。
+安装完成后保存终端显示的：
 
-## 3. 安装运行环境
+- aaPanel 登录地址
+- username
+- password
 
-宝塔首页选择 LNMP 环境：
+登录 aaPanel 后先完成安全入口、账号绑定等基础设置。
+
+## 3. 安装 LNMP 环境
+
+aaPanel 首页选择 LNMP：
 
 - Nginx：1.24+ 或面板推荐版本
-- MySQL：5.7
-- PHP：7.4
+- MySQL：5.7 或 8.0
+- PHP：8.1
 - Redis：安装
 
-如果已经进入软件商店，也可以手动安装：
+也可以在 App Store 手动安装：
 
 ```text
-软件商店 -> Nginx
-软件商店 -> MySQL
-软件商店 -> PHP-7.4
-软件商店 -> Redis
-软件商店 -> Supervisor 管理器
+App Store -> Nginx
+App Store -> MySQL
+App Store -> PHP-8.1
+App Store -> Redis
+App Store -> Supervisor Manager
 ```
 
-## 4. 配置 PHP
+PHP 8.1 建议选择编译安装。如果 Fast install 后扩展列表异常，卸载后改用 Compile install。
+
+## 4. 配置 PHP 8.1
 
 进入：
 
 ```text
-宝塔 -> 软件商店 -> PHP-7.4 -> 设置
+aaPanel -> App Store -> PHP-8.1 -> Setting
 ```
 
 安装扩展：
@@ -74,7 +109,13 @@ fileinfo
 opcache
 ```
 
-进入禁用函数，删除：
+检查禁用函数：
+
+```text
+aaPanel -> App Store -> PHP-8.1 -> Setting -> Disabled functions
+```
+
+删除以下函数：
 
 ```text
 putenv
@@ -83,31 +124,80 @@ pcntl_alarm
 pcntl_signal
 ```
 
-保存后重启 PHP。
+保存后重启 PHP 8.1。
 
-## 5. 添加网站和数据库
+## 5. 设置 PHP CLI 版本
+
+这是最容易出错的一步。
+
+aaPanel 里网站选择 PHP 8.1 后，SSH 里的 `php` 命令可能仍然是 PHP 7.4 或系统自带 PHP。这样执行 `sh init.sh` 时 Composer 会用错 PHP 版本。
+
+先检查：
+
+```bash
+php -v
+which php
+```
+
+如果不是 PHP 8.1，进入：
+
+```text
+aaPanel -> Website -> PHP CLI version
+```
+
+选择 PHP 8.1。
+
+也可以手动修正：
+
+```bash
+rm -f /usr/bin/php
+ln -s /www/server/php/81/bin/php /usr/bin/php
+php -v
+```
+
+确认输出是 PHP 8.1 后再继续。
+
+## 6. 检查 PHP 扩展
+
+SSH 执行：
+
+```bash
+php -m | grep redis
+php -m | grep fileinfo
+php -m | grep pcntl
+```
+
+如果没有输出，说明 CLI 环境没有加载对应扩展。需要回到 aaPanel 安装扩展，或检查 CLI 是否指向 PHP 8.1。
+
+## 7. 添加网站和数据库
 
 进入：
 
 ```text
-宝塔 -> 网站 -> 添加站点
+aaPanel -> Website -> Add site
 ```
 
 填写：
 
-- 域名：你的面板域名
-- 数据库：MySQL
-- PHP 版本：PHP-7.4
+- Domain：你的面板域名
+- Database：MySQL
+- PHP Version：PHP-81
 
-示例站点目录：
+示例目录：
 
 ```text
 /www/wwwroot/你的域名
 ```
 
-记下数据库名、数据库用户名、数据库密码，安装时会用到。
+记下数据库信息：
 
-## 6. 配置 GitHub 私有仓库权限
+- 数据库名
+- 数据库用户名
+- 数据库密码
+
+安装面板时会用到。
+
+## 8. 配置 GitHub 私有仓库权限
 
 你的自用仓库是私有仓库：
 
@@ -124,7 +214,7 @@ ssh-keygen -t ed25519 -C "v2board-server"
 cat ~/.ssh/id_ed25519.pub
 ```
 
-复制输出的公钥，添加到 GitHub：
+复制公钥，添加到 GitHub：
 
 ```text
 GitHub -> Settings -> SSH and GPG keys -> New SSH key
@@ -136,24 +226,24 @@ GitHub -> Settings -> SSH and GPG keys -> New SSH key
 ssh -T git@github.com
 ```
 
-能看到 GitHub 认证成功提示即可。
+看到 GitHub 认证成功提示后继续。
 
-## 7. 清空站点默认文件
+## 9. 清空站点默认文件
 
-SSH 进入站点目录：
+进入站点目录：
 
 ```bash
 cd /www/wwwroot/你的域名
 ```
 
-删除宝塔默认文件：
+删除 aaPanel 默认文件：
 
 ```bash
 chattr -i .user.ini 2>/dev/null
 rm -rf .htaccess 404.html index.html .user.ini
 ```
 
-## 8. 拉取面板代码
+## 10. 拉取面板代码
 
 在站点目录执行：
 
@@ -161,35 +251,39 @@ rm -rf .htaccess 404.html index.html .user.ini
 git clone git@github.com:OxO-51888/V2b-.git ./
 ```
 
-如果你不用 SSH，也可以用 HTTPS：
-
-```bash
-git clone https://github.com/OxO-51888/V2b-.git ./
-```
-
-确认分支：
+确认代码：
 
 ```bash
 git branch
+git remote -v
 ```
 
-应显示在 `master` 分支。
+应在 `master` 分支，`origin` 指向你的自用仓库。
 
-## 9. 执行安装
+## 11. 执行安装
 
-在站点目录执行：
+安装前再次确认：
+
+```bash
+php -v
+php -m | grep redis
+php -m | grep fileinfo
+php -m | grep pcntl
+```
+
+确认无误后执行：
 
 ```bash
 sh init.sh
 ```
 
-安装脚本会自动：
+`init.sh` 会自动：
 
 - 下载 Composer
 - 安装 PHP 依赖
 - PHP 8 环境补充 `joanhey/adapterman`
 - 执行 `php artisan v2board:install`
-- 宝塔环境下设置目录用户为 `www`
+- aaPanel 环境下设置目录用户为 `www`
 
 根据提示填写：
 
@@ -201,24 +295,26 @@ sh init.sh
 - 管理员密码
 - 网站 URL
 
-安装完成后确认 `.env` 已生成。
+安装完成后确认：
 
-## 10. 配置 Redis
+```bash
+ls -la .env
+```
 
-编辑 `.env`，建议改成：
+## 12. 配置 Redis
+
+编辑 `.env`：
+
+```bash
+vim .env
+```
+
+确认：
 
 ```env
 CACHE_DRIVER=redis
 QUEUE_CONNECTION=redis
 SESSION_DRIVER=redis
-```
-
-也可以用命令修改：
-
-```bash
-sed -i 's/^CACHE_DRIVER=.*/CACHE_DRIVER=redis/' .env
-sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=redis/' .env
-sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=redis/' .env
 ```
 
 刷新缓存：
@@ -228,15 +324,15 @@ php artisan config:clear
 php artisan config:cache
 ```
 
-## 11. 设置网站运行目录
+## 13. 设置网站运行目录
 
 进入：
 
 ```text
-宝塔 -> 网站 -> 你的站点 -> 设置 -> 网站目录
+aaPanel -> Website -> 你的站点 -> Setting -> Site directory
 ```
 
-运行目录选择：
+Running directory 选择：
 
 ```text
 /public
@@ -244,12 +340,12 @@ php artisan config:cache
 
 保存。
 
-## 12. 设置伪静态
+## 14. 设置 URL Rewrite
 
 进入：
 
 ```text
-宝塔 -> 网站 -> 你的站点 -> 设置 -> 伪静态
+aaPanel -> Website -> 你的站点 -> Setting -> URL rewrite
 ```
 
 填入：
@@ -270,32 +366,32 @@ location ~ .*\.(js|css)?$
 }
 ```
 
-保存后重载 Nginx。
+保存后 Reload Nginx。
 
-## 13. 配置 SSL
+## 15. 配置 SSL
 
 进入：
 
 ```text
-宝塔 -> 网站 -> 你的站点 -> SSL
+aaPanel -> Website -> 你的站点 -> SSL
 ```
 
-申请 Let's Encrypt 证书，开启强制 HTTPS。
+申请 Let's Encrypt 证书，并开启 Force HTTPS。
 
-## 14. 配置计划任务
+## 16. 配置 Cron
 
 进入：
 
 ```text
-宝塔 -> 计划任务 -> 添加任务
+aaPanel -> Cron -> Add Task
 ```
 
 填写：
 
-- 任务类型：Shell 脚本
-- 任务名称：`v2board`
-- 执行周期：每 1 分钟
-- 脚本内容：
+- Type of Task：Shell Script
+- Name of Task：v2board
+- Period：N Minutes / 1 Minute
+- Script content：
 
 ```bash
 php /www/wwwroot/你的域名/artisan schedule:run
@@ -303,45 +399,41 @@ php /www/wwwroot/你的域名/artisan schedule:run
 
 保存。
 
-## 15. 启动队列服务
+## 17. 启动队列服务
 
-V2Board 必须启动队列，否则订单、邮件、统计等功能会异常。
-
-### 推荐：Supervisor 管理器
+V2Board 必须启动队列。
 
 进入：
 
 ```text
-宝塔 -> 软件商店 -> Supervisor 管理器 -> 添加守护进程
+aaPanel -> App Store -> Supervisor Manager -> Add Daemon
 ```
 
 填写：
 
-- 名称：`V2Board`
-- 启动用户：`www`
-- 运行目录：`/www/wwwroot/你的域名`
-- 启动命令：
+- Name：V2Board
+- Run User：`www`
+- Run Dir：`/www/wwwroot/你的域名`
+- Start Command：
 
 ```bash
 php artisan horizon
 ```
 
-- 进程数量：`1`
+- Processes：`1`
 
 保存并启动。
 
-### 可选：PM2
-
-仓库带有 `pm2.yaml`：
+如果不用 Supervisor，也可以用仓库里的 PM2 配置：
 
 ```bash
 pm2 start pm2.yaml
 pm2 save
 ```
 
-## 16. 启动 Webman
+## 18. 启动 Webman
 
-xiao 分支带 Webman 入口。
+xiao 分支包含 Webman 入口。
 
 启动：
 
@@ -362,16 +454,15 @@ php webman.php restart
 php webman.php stop
 ```
 
-如果启动失败，检查 PHP CLI 扩展：
+如果 Webman 报错，优先检查 CLI PHP：
 
 ```bash
-php -m | grep redis
+php -v
 php -m | grep pcntl
+php -m | grep redis
 ```
 
-## 17. 设置目录权限
-
-执行：
+## 19. 设置权限
 
 ```bash
 chown -R www:www /www/wwwroot/你的域名
@@ -379,7 +470,7 @@ chmod -R 755 /www/wwwroot/你的域名
 chmod -R 755 /www/wwwroot/你的域名/storage /www/wwwroot/你的域名/bootstrap/cache
 ```
 
-## 18. 后台收尾
+## 20. 后台收尾
 
 打开面板域名，登录后台后检查：
 
@@ -388,13 +479,13 @@ chmod -R 755 /www/wwwroot/你的域名/storage /www/wwwroot/你的域名/bootstr
 - 邮件配置
 - 支付配置
 - 节点配置
-- 计划任务是否执行
-- 队列是否运行
+- Cron 是否每分钟执行
+- Supervisor 队列是否运行
 - Webman 是否运行
 
 如果主题异常，进入后台重新保存主题配置。
 
-## 19. 后续更新
+## 21. 后续更新
 
 进入站点目录：
 
@@ -412,27 +503,82 @@ php artisan horizon:terminate
 php webman.php restart
 ```
 
-## 20. 旧面板迁移到自用仓库
+## 22. PHP 7.4 报错排查
 
-如果旧面板已经是 Git 部署：
+如果你坚持使用 PHP 7.4，常见问题如下。
+
+### 1. PHP 7.4 安装失败
+
+新系统上 PHP 7.4 可能因为系统源、证书、编译依赖问题安装失败。
+
+可先执行：
 
 ```bash
-cd /www/wwwroot/你的域名
-git remote set-url origin git@github.com:OxO-51888/V2b-.git
-git checkout master
-git pull origin master
-sh update.sh
+apt install -y ca-certificates
+echo "ca_certificate=/etc/ssl/certs/ca-certificates.crt" >> /etc/wgetrc
 ```
 
-然后进入后台重新保存主题配置。
+然后重新安装 PHP 7.4。
 
-## 21. 常见问题
+如果仍失败，建议直接改用 PHP 8.1。
+
+### 2. Composer 用错 PHP 版本
+
+表现：
+
+```text
+Composer detected issues in your platform
+```
+
+检查：
+
+```bash
+php -v
+which php
+```
+
+修正 CLI 到 aaPanel PHP 8.1：
+
+```bash
+rm -f /usr/bin/php
+ln -s /www/server/php/81/bin/php /usr/bin/php
+php -v
+```
+
+### 3. fileinfo 安装失败
+
+小内存服务器编译 `fileinfo` 容易失败。
+
+建议：
+
+- 升级到 2 GB 内存
+- 或在 aaPanel 安装 Linux Tools 后添加 1 GB+ Swap
+- 再重新安装 `fileinfo`
+
+### 4. redis 扩展装了但 CLI 没识别
+
+通常是网站 PHP 和 CLI PHP 不一致。
+
+检查：
+
+```bash
+php -v
+php -m | grep redis
+```
+
+确认 `/usr/bin/php` 指向：
+
+```bash
+/www/server/php/81/bin/php
+```
+
+## 23. 常见问题
 
 ### 访问 500
 
 检查：
 
-- 网站运行目录是否为 `/public`
+- Running directory 是否为 `/public`
 - PHP 扩展 `redis`、`fileinfo` 是否安装
 - Redis 服务是否运行
 - 禁用函数是否删除
@@ -456,7 +602,7 @@ git remote -v
 
 - CDN 缓存
 - 浏览器缓存
-- 宝塔 Nginx 是否重载
+- aaPanel Nginx 是否 Reload
 - 是否执行 `php artisan config:clear`
 - 队列和 Webman 是否重启
 
