@@ -113,6 +113,8 @@ Redis
 Supervisor Manager
 ```
 
+`Supervisor Manager` 是 aaPanel App Store 里的独立插件。如果它显示未安装，先点 `Install` 安装，安装完成后再配置 Horizon 队列。不要跳过这一步。
+
 关键选择：
 
 ```text
@@ -616,6 +618,7 @@ V2Board 必须启动队列。
 aaPanel 官方方式：
 
 ```text
+App Store -> Supervisor Manager -> Install
 App Store -> Supervisor Manager -> Add Daemon
 ```
 
