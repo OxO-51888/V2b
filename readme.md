@@ -4,7 +4,7 @@
 
 本教程面向 aaPanel，也就是海外版宝塔。以后重新搭建时，直接拉取自己的 GitHub 仓库，不需要再从官方仓库迁移。
 
-本教程按 2026-06-15 实测整理：Ubuntu 24.04、aaPanel、Nginx 1.28、MySQL 5.7、PHP 8.1 Fast install、Redis、Cloudflare 域名代理。
+本教程按 2026-06-15 实测整理，采用纯净 aaPanel 路线：Ubuntu 24.04、aaPanel、Nginx 1.28、MySQL 5.7、PHP 8.1 Fast install、Redis、Cloudflare 域名代理。
 
 ## 0. 先看结论
 
@@ -18,6 +18,7 @@
 - Redis：必须安装
 - 队列：必须运行 Horizon
 - 定时任务：必须每分钟运行 `artisan schedule:run`
+- aaPanel：只装纯净版，不装 OpenClaw / Docker 组合版
 
 不要新装 PHP 7.4。官方老教程里常见 PHP 7.4，但现在新系统上容易遇到编译失败、扩展失败、Composer 版本冲突。
 
@@ -66,19 +67,13 @@ curl -I http://你的域名
 
 SSH 登录服务器，使用 `root` 执行。
 
-aaPanel 官方下载页可能同时提供纯 aaPanel 脚本和 aaPanel + OpenClaw 脚本。二选一即可。
-
-纯 aaPanel：
+使用纯 aaPanel 安装脚本：
 
 ```bash
 URL=https://www.aapanel.com/script/install_panel_en.sh && if [ -f /usr/bin/curl ]; then curl -ksSO "$URL"; else wget --no-check-certificate -O install_panel_en.sh "$URL"; fi; bash install_panel_en.sh
 ```
 
-aaPanel + OpenClaw：
-
-```bash
-URL=https://www.aapanel.com/script/aaClaw.sh && if [ -f /usr/bin/curl ]; then curl -ksSO "$URL"; else wget --no-check-certificate -O aaClaw.sh "$URL"; fi; bash aaClaw.sh 9e7f1eae
-```
+不要使用 `aaClaw.sh`。它会安装 aaPanel + OpenClaw，面板里会多出 `OpenClaw(Docker)`。V2Board 手动搭建不需要它。
 
 脚本提示：
 
