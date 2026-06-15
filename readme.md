@@ -164,7 +164,7 @@ ssh -T git@github-panel
 然后拉取自己的仓库：
 
 ```bash
-git clone git@github-panel:OxO-51888/panel.git ./
+git clone git@github-panel:OxO-51888/V2b.git ./
 ```
 
 ## 6. 安装 V2Board
@@ -332,4 +332,4 @@ ssh -T git@github-panel
 
 - V2Board 官方 aaPanel 教程：`https://v2board.com/deploy/aapanel`
 - aaPanel 官方下载页：`https://www.aapanel.com/new/download.html`
-- 自用仓库：`https://github.com/OxO-51888/panel`
+- 自用仓库：`https://github.com/OxO-51888/V2b`
