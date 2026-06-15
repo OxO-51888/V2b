@@ -125,10 +125,46 @@ chattr -i .user.ini 2>/dev/null || true
 rm -rf .htaccess 404.html index.html .user.ini
 ```
 
-拉取自己的仓库：
+私有仓库不能像公开仓库一样无授权拉取。新服务器先配置一次只读 Deploy Key：
 
 ```bash
-git clone https://github.com/OxO-51888/panel.git ./
+mkdir -p /root/.ssh
+chmod 700 /root/.ssh
+ssh-keygen -t ed25519 -f /root/.ssh/panel_deploy -C "panel deploy" -N ""
+cat /root/.ssh/panel_deploy.pub
+```
+
+把输出的公钥添加到 GitHub：
+
+```text
+panel 仓库 -> Settings -> Deploy keys -> Add deploy key
+```
+
+只需要读代码，不要勾选 `Allow write access`。
+
+服务器配置这个 key：
+
+```bash
+cat >> /root/.ssh/config <<'EOF'
+Host github-panel
+    HostName github.com
+    User git
+    IdentityFile /root/.ssh/panel_deploy
+    IdentitiesOnly yes
+EOF
+chmod 600 /root/.ssh/config
+```
+
+测试：
+
+```bash
+ssh -T git@github-panel
+```
+
+然后拉取自己的仓库：
+
+```bash
+git clone git@github-panel:OxO-51888/panel.git ./
 ```
 
 ## 6. 安装 V2Board
@@ -282,10 +318,10 @@ php artisan horizon:terminate
 
 ### GitHub 拉取失败
 
-公开仓库一般直接 HTTPS 拉取即可。如果失败，先检查服务器能不能访问 GitHub：
+检查 Deploy Key 是否添加到 GitHub，并测试 SSH 是否可用：
 
 ```bash
-git ls-remote https://github.com/OxO-51888/panel.git
+ssh -T git@github-panel
 ```
 
 ### 队列没运行
