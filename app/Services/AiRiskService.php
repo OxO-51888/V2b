@@ -14,26 +14,63 @@ class AiRiskService
 {
     private const OPENAI_BASE_URL = 'https://api.openai.com/v1';
     private const OPENAI_MODEL = 'gpt-5-nano';
+    private const RUNTIME_CACHE_KEY = 'SUBSCRIPTION_RULE_AI_RUNTIME_STATUS';
 
     public function analyzeLogs($logs, array $config)
     {
         $config = $this->openAiConfig($config);
-        return $this->callModel($config, [
-            [
-                'role' => 'system',
-                'content' => 'You are a subscription panel risk-analysis assistant. Analyze only the sanitized logs. Do not output full IPs, emails, tokens, or node data.'
-            ],
-            [
-                'role' => 'user',
-                'content' => "Please answer in Chinese. Analyze these subscription rule hit logs and output: 1) risk overview; 2) top 3 suspicious patterns; 3) rules worth enabling or adjusting; 4) points requiring manual confirmation. Do not invent facts.\n\n" . json_encode($this->buildLogPayload($logs), JSON_UNESCAPED_UNICODE)
-            ]
-        ], 30, 2000);
+        try {
+            $content = $this->callModel($config, [
+                [
+                    'role' => 'system',
+                    'content' => 'You are a subscription panel risk-analysis assistant. Analyze only the sanitized logs. Do not output full IPs, emails, tokens, or node data.'
+                ],
+                [
+                    'role' => 'user',
+                    'content' => "Please answer in Chinese. Analyze these subscription rule hit logs and output: 1) risk overview; 2) top 3 suspicious patterns; 3) rules worth enabling or adjusting; 4) points requiring manual confirmation. Do not invent facts.\n\n" . json_encode($this->buildLogPayload($logs), JSON_UNESCAPED_UNICODE)
+                ]
+            ], 30, 2000);
+            $this->markRuntimeStatus(true, 'analysis_success');
+            return $content;
+        } catch (\Throwable $exception) {
+            $this->markRuntimeStatus(false, 'analysis_failed: ' . $exception->getMessage());
+            throw $exception;
+        }
+    }
+
+    public function testConnection(array $config)
+    {
+        $config = $this->openAiConfig($config);
+        try {
+            $content = $this->callModel($config, [
+                [
+                    'role' => 'system',
+                    'content' => 'Return only compact JSON. Do not include secrets.'
+                ],
+                [
+                    'role' => 'user',
+                    'content' => 'Reply exactly with {"ok":true,"message":"AI test passed"}'
+                ]
+            ], 20, 64);
+            $this->markRuntimeStatus(true, 'test_success');
+
+            return [
+                'ok' => true,
+                'model' => $config['ai_risk_model'] ?? self::OPENAI_MODEL,
+                'message' => $this->trimText($content, 160),
+                'tested_at' => time()
+            ];
+        } catch (\Throwable $exception) {
+            $this->markRuntimeStatus(false, 'test_failed: ' . $exception->getMessage());
+            throw $exception;
+        }
     }
 
     public function reviewSubscriptionRequest(Request $request, User $user, SubscriptionRule $rule, $reason, $matchedValue = '')
     {
         $config = $this->openAiConfig((array)config('v2board', []));
         if (empty($config['ai_risk_enable']) || empty($config['ai_risk_api_key'])) {
+            $this->markRuntimeStatus(false, 'not_configured');
             $decision = $this->decision('allow', 0, 'AI is not enabled or API key is missing', false);
             return $this->enforceRuleFloor($decision, $request, $rule);
         }
@@ -67,9 +104,11 @@ class AiRiskService
                     'content' => json_encode($payload, JSON_UNESCAPED_UNICODE)
                 ]
             ], 12, 2048);
+            $this->markRuntimeStatus(true, 'review_success');
             $decision = $this->parseDecision($content, (int)($config['ai_risk_block_score'] ?? 80));
             $decision = $this->enforceRuleFloor($decision, $request, $rule);
         } catch (\Throwable $exception) {
+            $this->markRuntimeStatus(false, 'review_failed: ' . $exception->getMessage());
             $decision = $this->decision('allow', 0, 'AI failed: ' . $exception->getMessage(), false);
             $decision = $this->enforceRuleFloor($decision, $request, $rule);
             if (!empty($decision['block'])) {
@@ -460,5 +499,15 @@ class AiRiskService
             return mb_substr($text, 0, $length);
         }
         return substr($text, 0, $length);
+    }
+
+    private function markRuntimeStatus($running, $reason)
+    {
+        Cache::put(self::RUNTIME_CACHE_KEY, [
+            'running' => (bool)$running,
+            'reason' => (string)$reason,
+            'checked_at' => time(),
+            'source' => 'openai'
+        ], 86400);
     }
 }

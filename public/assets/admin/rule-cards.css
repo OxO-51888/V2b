@@ -222,6 +222,43 @@ html body .v2-ai-risk-result-box .v2-ai-risk-output {
   background: #fff !important;
 }
 
+html body .v2-ai-risk-title {
+  min-width: 0 !important;
+}
+
+html body .v2-ai-runtime-line {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-top: 8px !important;
+  color: #64748b !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+html body .v2-ai-runtime-line .v2-ai-risk-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 6px 11px !important;
+  white-space: nowrap !important;
+}
+
+html body .v2-ai-risk-pills {
+  flex: 0 0 auto !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 1200px) {
+  html body .v2-ai-risk-head {
+    display: block !important;
+  }
+
+  html body .v2-ai-risk-pills {
+    justify-content: flex-start !important;
+    margin-top: 10px !important;
+  }
+}
+
 html body .v2-ai-risk-field textarea.form-control {
   min-height: 92px !important;
   resize: vertical !important;

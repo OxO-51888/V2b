@@ -8,6 +8,7 @@ use App\Models\SubscriptionRule;
 use App\Models\SubscriptionRuleLog;
 use App\Services\AiRiskService;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Http\Request;
 use Throwable;
@@ -17,6 +18,7 @@ class SubscriptionRuleController extends Controller
     private const AI_PROVIDER = 'openai';
     private const AI_BASE_URL = 'https://api.openai.com/v1';
     private const AI_MODEL = 'gpt-5-nano';
+    private const AI_RUNTIME_CACHE_KEY = 'SUBSCRIPTION_RULE_AI_RUNTIME_STATUS';
     private const RULE_DEFAULTS = [
         'pull_frequency' => ['condition' => 30, 'name' => '5分钟同订阅超过%d次'],
         'ip_spread' => ['condition' => 8, 'name' => '10分钟同订阅超过%d个真实IP'],
@@ -73,6 +75,19 @@ class SubscriptionRuleController extends Controller
                 ->orderBy('id', 'DESC')
                 ->limit($limit)
                 ->get()
+        ]);
+    }
+
+    public function clearLogs(Request $request)
+    {
+        $count = SubscriptionRuleLog::count();
+        SubscriptionRuleLog::query()->delete();
+
+        return response([
+            'data' => [
+                'deleted' => $count,
+                'cleared_at' => time()
+            ]
         ]);
     }
 
@@ -224,6 +239,27 @@ class SubscriptionRuleController extends Controller
         ]);
     }
 
+    public function aiTest(Request $request)
+    {
+        $config = $this->openAiConfig((array)config('v2board', []));
+        if (empty($config['ai_risk_enable'])) {
+            abort(500, 'AI risk analysis is disabled');
+        }
+        if (empty($config['ai_risk_api_key'])) {
+            abort(500, 'Please save OpenAI API Key first');
+        }
+
+        try {
+            $result = (new AiRiskService())->testConnection($config);
+        } catch (Throwable $e) {
+            abort(500, 'AI test failed: ' . $e->getMessage());
+        }
+
+        return response([
+            'data' => $result
+        ]);
+    }
+
     public function save(SubscriptionRuleSave $request)
     {
         $params = $request->validated();
@@ -293,6 +329,7 @@ class SubscriptionRuleController extends Controller
     private function safeAiConfig($config = null)
     {
         $config = $this->openAiConfig($config ?: (array)config('v2board', []));
+        $runtimeStatus = $this->aiRuntimeStatus($config);
         return [
             'enable' => (int)($config['ai_risk_enable'] ?? 0),
             'provider' => $config['ai_risk_provider'] ?? self::AI_PROVIDER,
@@ -304,8 +341,101 @@ class SubscriptionRuleController extends Controller
             'trusted_proxy_ips' => implode("\n", $this->splitConfigList($config['trusted_proxy_ips'] ?? [])),
             'trusted_proxy_cidrs' => implode("\n", $this->splitConfigList($config['trusted_proxy_cidrs'] ?? [])),
             'trusted_proxy_source' => $config['trusted_proxy_source'] ?? '',
-            'trusted_proxy_synced_at' => (int)($config['trusted_proxy_synced_at'] ?? 0)
+            'trusted_proxy_synced_at' => (int)($config['trusted_proxy_synced_at'] ?? 0),
+            'runtime_status' => $runtimeStatus
         ];
+    }
+
+    private function aiRuntimeStatus(array $config)
+    {
+        if (empty($config['ai_risk_enable'])) {
+            return $this->makeAiRuntimeStatus(false, 'disabled');
+        }
+        if (empty($config['ai_risk_api_key'])) {
+            return $this->makeAiRuntimeStatus(false, 'missing_key');
+        }
+
+        $event = $this->latestAiRuntimeEvent();
+        if (!$event) {
+            return $this->makeAiRuntimeStatus(false, 'no_recent_run');
+        }
+
+        if ((int)$event['checked_at'] < time() - 86400) {
+            return $this->makeAiRuntimeStatus(false, 'no_recent_run', $event);
+        }
+
+        return $this->makeAiRuntimeStatus($event['status'] === 'running', $event['reason'], $event);
+    }
+
+    private function latestAiRuntimeEvent()
+    {
+        $events = [];
+        $cached = Cache::get(self::AI_RUNTIME_CACHE_KEY);
+        if (is_array($cached) && !empty($cached['checked_at'])) {
+            $events[] = [
+                'status' => !empty($cached['running']) ? 'running' : 'not_running',
+                'reason' => $cached['reason'] ?? '',
+                'checked_at' => (int)$cached['checked_at'],
+                'source' => $cached['source'] ?? 'runtime'
+            ];
+        }
+
+        try {
+            $latestLog = SubscriptionRuleLog::where('action', 'ai_review')
+                ->whereNotNull('ai_decision')
+                ->orderBy('id', 'DESC')
+                ->first(['created_at', 'ai_decision', 'ai_score', 'ai_reason']);
+            if ($latestLog) {
+                $reason = (string)$latestLog->ai_reason;
+                $events[] = [
+                    'status' => $this->isAiRuntimeFailureReason($reason) ? 'not_running' : 'running',
+                    'reason' => $this->isAiRuntimeFailureReason($reason) ? 'last_call_failed' : 'last_review_success',
+                    'checked_at' => (int)$latestLog->created_at,
+                    'source' => 'review_log'
+                ];
+            }
+        } catch (Throwable $e) {
+            $events[] = [
+                'status' => 'not_running',
+                'reason' => 'status_read_failed',
+                'checked_at' => time(),
+                'source' => 'runtime'
+            ];
+        }
+
+        if (!$events) {
+            return null;
+        }
+
+        usort($events, function ($a, $b) {
+            return (int)$b['checked_at'] <=> (int)$a['checked_at'];
+        });
+        return $events[0];
+    }
+
+    private function makeAiRuntimeStatus($running, $reason, ?array $event = null)
+    {
+        return [
+            'running' => (bool)$running,
+            'status' => $running ? 'running' : 'not_running',
+            'label' => $running ? '已运行' : '未运行',
+            'reason' => (string)$reason,
+            'last_checked_at' => $event ? (int)$event['checked_at'] : 0,
+            'source' => $event['source'] ?? ''
+        ];
+    }
+
+    private function isAiRuntimeFailureReason($reason)
+    {
+        $reason = strtolower((string)$reason);
+        return $reason === ''
+            || strpos($reason, 'ai is not enabled') !== false
+            || strpos($reason, 'api key is missing') !== false
+            || strpos($reason, 'ai failed') !== false
+            || strpos($reason, 'invalid api key') !== false
+            || strpos($reason, 'incorrect api key') !== false
+            || strpos($reason, 'ai不可用') !== false
+            || strpos($reason, 'key') !== false && strpos($reason, 'missing') !== false;
     }
 
     private function openAiConfig(array $config)
