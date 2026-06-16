@@ -8,6 +8,7 @@ use App\Protocols\Singbox\Singbox;
 use App\Protocols\Singbox\SingboxOld;
 use App\Protocols\ClashMeta;
 use App\Services\ServerService;
+use App\Services\SubscriptionRuleService;
 use App\Services\UserService;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
@@ -16,42 +17,55 @@ class ClientController extends Controller
 {
     public function subscribe(Request $request)
     {
+        $ruleResponse = (new SubscriptionRuleService())->guardSubscribe($request, $request->user);
+        if ($ruleResponse) {
+            return $ruleResponse;
+        }
+
+        return $this->buildSubscribeResponse($request);
+    }
+
+    private function buildSubscribeResponse(Request $request)
+    {
         $flag = $request->input('flag')
             ?? ($_SERVER['HTTP_USER_AGENT'] ?? '');
         $flag = strtolower($flag);
         $user = $request->user;
+
         // account not expired and is not banned.
         $userService = new UserService();
-        if ($userService->isAvailable($user)) {
-            $serverService = new ServerService();
-            $servers = $serverService->getAvailableServers($user);
-            if($flag) {
-                if (!strpos($flag, 'sing')) {
-                    $this->setSubscribeInfoToServers($servers, $user);
-                    foreach (array_reverse(glob(app_path('Protocols') . '/*.php')) as $file) {
-                        $file = 'App\\Protocols\\' . basename($file, '.php');
-                        $class = new $file($user, $servers);
-                        if (strpos($flag, $class->flag) !== false) {
-                            return $class->handle();
-                        }
+        if (!$userService->isAvailable($user)) {
+            return response('', 403);
+        }
+
+        $serverService = new ServerService();
+        $servers = $serverService->getAvailableServers($user);
+        if($flag) {
+            if (!strpos($flag, 'sing')) {
+                $this->setSubscribeInfoToServers($servers, $user);
+                foreach (array_reverse(glob(app_path('Protocols') . '/*.php')) as $file) {
+                    $file = 'App\\Protocols\\' . basename($file, '.php');
+                    $class = new $file($user, $servers);
+                    if (strpos($flag, $class->flag) !== false) {
+                        return $class->handle();
                     }
-                }
-                if (strpos($flag, 'sing') !== false) {
-                    $version = null;
-                    if (preg_match('/sing-box\s+([0-9.]+)/i', $flag, $matches)) {
-                        $version = $matches[1];
-                    }
-                    if (!is_null($version) && $version >= '1.12.0') {
-                        $class = new Singbox($user, $servers);
-                    } else {
-                        $class = new SingboxOld($user, $servers);
-                    }
-                    return $class->handle();
                 }
             }
-            $class = new General($user, $servers);
-            return $class->handle();
+            if (strpos($flag, 'sing') !== false) {
+                $version = null;
+                if (preg_match('/sing-box\s+([0-9.]+)/i', $flag, $matches)) {
+                    $version = $matches[1];
+                }
+                if (!is_null($version) && $version >= '1.12.0') {
+                    $class = new Singbox($user, $servers);
+                } else {
+                    $class = new SingboxOld($user, $servers);
+                }
+                return $class->handle();
+            }
         }
+        $class = new General($user, $servers);
+        return $class->handle();
     }
 
     private function setSubscribeInfoToServers(&$servers, $user)

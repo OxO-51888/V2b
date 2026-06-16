@@ -7,6 +7,7 @@ use App\Jobs\StatUserJob;
 use App\Jobs\TrafficFetchJob;
 use App\Models\Order;
 use App\Models\Plan;
+use App\Models\SubscriptionRule;
 use App\Models\User;
 
 class UserService
@@ -164,15 +165,23 @@ class UserService
 
     public function getDeviceLimitedUsers()
     {
-        return User::whereRaw('u + d < transfer_enable')
+        $query = User::whereRaw('u + d < transfer_enable')
             ->where(function ($query) {
                 $query->where('expired_at', '>=', time())
                 ->orWhereNull('expired_at');
             })
             ->where('banned', 0)
-            ->where('device_limit','>', 0)
-            ->select('id')
-            ->get();
+            ->select('id');
+
+        $nodeOnlineRuleEnabled = SubscriptionRule::where('type', 'node_alive_ip_over_limit')
+            ->where('enabled', 1)
+            ->exists();
+
+        if (!$nodeOnlineRuleEnabled) {
+            $query->where('device_limit','>', 0);
+        }
+
+        return $query->get();
     }
 
     public function getUnAvailbaleUsers()

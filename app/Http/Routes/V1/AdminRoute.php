@@ -24,6 +24,17 @@ class AdminRoute
             $router->post('/plan/drop', 'V1\\Admin\\PlanController@drop');
             $router->post('/plan/update', 'V1\\Admin\\PlanController@update');
             $router->post('/plan/sort', 'V1\\Admin\\PlanController@sort');
+            // Subscription rule
+            $router->get ('/rule/fetch', 'V1\\Admin\\SubscriptionRuleController@fetch');
+            $router->get ('/rule/logs', 'V1\\Admin\\SubscriptionRuleController@logs');
+            $router->post('/rule/save', 'V1\\Admin\\SubscriptionRuleController@save');
+            $router->post('/rule/show', 'V1\\Admin\\SubscriptionRuleController@show');
+            $router->post('/rule/drop', 'V1\\Admin\\SubscriptionRuleController@drop');
+            $router->get ('/rule/ai/config', 'V1\\Admin\\SubscriptionRuleController@aiConfig');
+            $router->get ('/rule/ai/rejections', 'V1\\Admin\\SubscriptionRuleController@aiRejections');
+            $router->post('/rule/ai/config', 'V1\\Admin\\SubscriptionRuleController@saveAiConfig');
+            $router->post('/rule/ai/analyze', 'V1\\Admin\\SubscriptionRuleController@aiAnalyze');
+            $router->post('/rule/trusted-proxy/cloudflare/sync', 'V1\\Admin\\SubscriptionRuleController@syncCloudflareIps');
             // Server
             $router->get ('/server/group/fetch', 'V1\\Admin\\Server\\GroupController@fetch');
             $router->post('/server/group/save', 'V1\\Admin\\Server\\GroupController@save');

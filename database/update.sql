@@ -856,3 +856,139 @@ CREATE TABLE `v2_server_v2node` (
 
 ALTER TABLE `v2_server_route`
 CHANGE `action_value` `action_value` text NULL AFTER `action`;
+
+CREATE TABLE IF NOT EXISTS `v2_subscription_rule` (
+                                                     `id` int(11) NOT NULL AUTO_INCREMENT,
+                                                     `name` varchar(255) NOT NULL,
+                                                     `type` varchar(64) NOT NULL DEFAULT 'pull_frequency',
+                                                     `condition_value` int(11) DEFAULT NULL,
+                                                     `action` varchar(32) NOT NULL DEFAULT 'no_nodes',
+                                                     `enabled` tinyint(1) NOT NULL DEFAULT '0',
+                                                     `sort` int(11) NOT NULL DEFAULT '0',
+                                                     `remark` text DEFAULT NULL,
+                                                     `created_at` int(11) NOT NULL,
+                                                     `updated_at` int(11) NOT NULL,
+                                                     PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE `v2_subscription_rule`
+    MODIFY `type` varchar(64) NOT NULL DEFAULT 'pull_frequency';
+
+CREATE TABLE IF NOT EXISTS `v2_subscription_rule_log` (
+                                                          `id` int(11) NOT NULL AUTO_INCREMENT,
+                                                          `rule_id` int(11) DEFAULT NULL,
+                                                          `user_id` int(11) DEFAULT NULL,
+                                                          `token_hash` char(64) DEFAULT NULL,
+                                                          `rule_type` varchar(64) NOT NULL,
+                                                          `action` varchar(32) NOT NULL,
+                                                          `reason` varchar(64) DEFAULT NULL,
+                                                          `matched_value` varchar(255) DEFAULT NULL,
+                                                          `client_ip` varchar(45) DEFAULT NULL,
+                                                          `proxy_ip` varchar(45) DEFAULT NULL,
+                                                          `x_forwarded_for` varchar(255) DEFAULT NULL,
+                                                          `user_agent` varchar(512) DEFAULT NULL,
+                                                          `path` varchar(255) DEFAULT NULL,
+                                                          `method` varchar(16) DEFAULT NULL,
+                                                          `flag` varchar(64) DEFAULT NULL,
+                                                          `referer` varchar(512) DEFAULT NULL,
+                                                          `accept` varchar(255) DEFAULT NULL,
+                                                          `created_at` int(11) NOT NULL,
+                                                          `updated_at` int(11) NOT NULL,
+                                                          PRIMARY KEY (`id`),
+                                                          KEY `idx_user_id` (`user_id`),
+                                                          KEY `idx_rule_id` (`rule_id`),
+                                                          KEY `idx_client_ip` (`client_ip`),
+                                                          KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+SET @has_ai_decision := (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'v2_subscription_rule_log'
+      AND COLUMN_NAME = 'ai_decision'
+);
+SET @sql := IF(@has_ai_decision = 0,
+    'ALTER TABLE `v2_subscription_rule_log` ADD COLUMN `ai_decision` varchar(16) DEFAULT NULL AFTER `accept`, ADD COLUMN `ai_score` int(11) DEFAULT NULL AFTER `ai_decision`, ADD COLUMN `ai_reason` varchar(255) DEFAULT NULL AFTER `ai_score`',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+INSERT INTO `v2_subscription_rule` (`name`, `type`, `condition_value`, `action`, `enabled`, `sort`, `remark`, `created_at`, `updated_at`)
+SELECT `name`, `type`, `condition_value`, `action`, `enabled`, `sort`, `remark`, UNIX_TIMESTAMP(), UNIX_TIMESTAMP()
+FROM (
+    SELECT '5分钟同订阅超过10次' AS `name`, 'pull_frequency' AS `type`, 10 AS `condition_value`, 'no_nodes' AS `action`, 1 AS `enabled`, 10 AS `sort`, '同一用户订阅链接在5分钟内拉取次数超过阈值时拦截，处理脚本轮询和异常客户端刷新。' AS `remark`
+    UNION ALL SELECT '10分钟同订阅超过5个真实IP', 'ip_spread', 5, 'ai_review', 1, 20, '同一订阅链接在10分钟内出现多个真实IP时标记审核；确认真实IP可靠后可改为重置订阅。'
+    UNION ALL SELECT '10分钟同IP拉取超过5个用户', 'ip_multi_user', 5, 'ai_review', 1, 30, '同一个真实IP在10分钟内拉取多个用户订阅时拦截，适合处理批量拉取。'
+    UNION ALL SELECT '同账号节点在线IP超过10个', 'node_alive_ip_over_limit', 10, 'reset_subscribe', 1, 35, '节点上报同一账号同时在线真实IP超过阈值时重置订阅和节点凭证，用于处理单个节点被复制分享。'
+    UNION ALL SELECT '直连IP或本地Host访问订阅', 'direct_ip_host', NULL, 'ai_review', 1, 38, 'Host为服务器IP、localhost或空Host时标记审核，帮助发现绕过域名的订阅访问。'
+    UNION ALL SELECT 'HEAD/OPTIONS探测订阅接口', 'head_method_probe', NULL, 'ai_review', 1, 39, '使用HEAD或OPTIONS探测订阅接口时标记审核，识别探测器或异常监控。'
+    UNION ALL SELECT 'Censys/Shodan等扫描器UA', 'ua_scanner', NULL, 'no_nodes', 1, 40, '命中 CensysInspect、Shodan、zgrab、masscan、nmap、nuclei 等扫描器特征时拦截。'
+    UNION ALL SELECT 'curl/wget/PowerShell命令行抓取', 'ua_cli_fetch', NULL, 'no_nodes', 1, 50, '命中 curl、wget、httpie、aria2、PowerShell 等命令行工具时拦截。'
+    UNION ALL SELECT 'Python/Go/Node接口工具抓取', 'ua_api_fetch', NULL, 'no_nodes', 1, 60, '命中 python-requests、Go-http-client、axios、undici、reqwest、Postman 等接口工具时拦截。'
+    UNION ALL SELECT '空User-Agent请求订阅', 'empty_user_agent', NULL, 'no_nodes', 1, 70, '订阅请求没有 User-Agent 时拦截。'
+    UNION ALL SELECT '浏览器直接打开订阅链接', 'ua_browser', NULL, 'no_nodes', 1, 80, 'Chrome、Safari、Firefox、Edge 等浏览器直接打开订阅时拦截，减少泄露。'
+    UNION ALL SELECT '微信QQ/Telegram内置打开订阅', 'ua_social', NULL, 'no_nodes', 1, 90, '微信、QQ、Telegram、Discord 等内置浏览器打开订阅时拦截。'
+    UNION ALL SELECT '订阅转换器UA访问', 'ua_converter', NULL, 'ai_review', 1, 100, 'subconverter、Sub-Store、subweb 等转换器 UA 命中时标记审核，避免误伤正常用户自用转换。'
+    UNION ALL SELECT '厂商/电商App内置打开订阅', 'ua_vendor', NULL, 'no_nodes', 1, 105, '淘宝、京东、百度等厂商或电商 App 内置浏览器打开订阅时标记审核。'
+    UNION ALL SELECT '订阅转换器参数访问', 'converter_query', NULL, 'ai_review', 1, 110, '请求参数出现 target、url、config、upload、ruleset、groups 等转换器特征时标记审核。'
+    UNION ALL SELECT '浏览器上下文Header', 'header_browser_context', NULL, 'no_nodes', 1, 120, '出现 sec-fetch 或 referer 等浏览器上下文头时拦截，可识别伪装UA的网页打开。'
+    UNION ALL SELECT 'flag与User-Agent客户端不一致', 'flag_ua_mismatch', NULL, 'no_nodes', 1, 130, 'flag 参数声明的客户端与 User-Agent 识别结果不一致时标记审核。'
+    UNION ALL SELECT '不可信代理转发头', 'untrusted_proxy_header', NULL, 'ai_review', 1, 140, '请求带 X-Forwarded-For、X-Real-IP 等转发头，但来源IP不在可信代理列表时标记审核。'
+    UNION ALL SELECT '非代理客户端黑名单兜底', 'ua_blacklist', NULL, 'ai_review', 1, 150, '命中任意黑名单分类但没有更具体规则时标记审核，确认后再改强动作。'
+) AS presets
+WHERE NOT EXISTS (
+    SELECT 1 FROM `v2_subscription_rule` AS existing
+    WHERE existing.`type` = presets.`type`
+);
+
+UPDATE `v2_subscription_rule`
+SET `action` = 'ai_review'
+WHERE `action` IN ('record', 'notify_admin');
+
+UPDATE `v2_subscription_rule`
+SET `name` = CONCAT('5分钟同订阅超过', IFNULL(NULLIF(`condition_value`, 0), 10), '次'),
+    `condition_value` = IFNULL(NULLIF(`condition_value`, 0), 10)
+WHERE `type` = 'pull_frequency';
+
+UPDATE `v2_subscription_rule`
+SET `name` = CONCAT('10分钟同订阅超过', IFNULL(NULLIF(`condition_value`, 0), 5), '个真实IP'),
+    `condition_value` = IFNULL(NULLIF(`condition_value`, 0), 5)
+WHERE `type` = 'ip_spread';
+
+UPDATE `v2_subscription_rule`
+SET `name` = CONCAT('10分钟同IP拉取超过', IFNULL(NULLIF(`condition_value`, 0), 5), '个用户'),
+    `condition_value` = IFNULL(NULLIF(`condition_value`, 0), 5)
+WHERE `type` = 'ip_multi_user';
+
+UPDATE `v2_subscription_rule`
+SET `name` = CONCAT('同账号节点在线IP超过', IFNULL(NULLIF(`condition_value`, 0), 10), '个'),
+    `condition_value` = IFNULL(NULLIF(`condition_value`, 0), 10),
+    `action` = IF(`action` IN ('record', 'notify_admin', 'rate_limit', 'empty_subscription', 'block', 'no_nodes'), 'reset_subscribe', `action`)
+WHERE `type` = 'node_alive_ip_over_limit';
+
+UPDATE `v2_subscription_rule`
+SET `condition_value` = NULL,
+    `name` = CASE `type`
+        WHEN 'direct_ip_host' THEN '直连IP或本地Host访问订阅'
+        WHEN 'head_method_probe' THEN 'HEAD/OPTIONS探测订阅接口'
+        WHEN 'ua_scanner' THEN 'Censys/Shodan等扫描器UA'
+        WHEN 'ua_social' THEN '微信QQ/Telegram内置打开订阅'
+        WHEN 'ua_browser' THEN '浏览器直接打开订阅链接'
+        WHEN 'ua_cli_fetch' THEN 'curl/wget/PowerShell命令行抓取'
+        WHEN 'ua_api_fetch' THEN 'Python/Go/Node接口工具抓取'
+        WHEN 'ua_converter' THEN '订阅转换器UA访问'
+        WHEN 'ua_vendor' THEN '厂商/电商App内置打开订阅'
+        WHEN 'converter_query' THEN '订阅转换器参数访问'
+        WHEN 'header_browser_context' THEN '浏览器上下文Header'
+        WHEN 'flag_ua_mismatch' THEN 'flag与User-Agent客户端不一致'
+        WHEN 'untrusted_proxy_header' THEN '不可信代理转发头'
+        WHEN 'ua_blacklist' THEN '非代理客户端黑名单兜底'
+        WHEN 'empty_user_agent' THEN '空User-Agent请求订阅'
+        ELSE `name`
+    END
+WHERE `type` IN ('direct_ip_host', 'head_method_probe', 'ua_scanner', 'ua_social', 'ua_browser', 'ua_cli_fetch', 'ua_api_fetch', 'ua_converter', 'ua_vendor', 'converter_query', 'header_browser_context', 'flag_ua_mismatch', 'untrusted_proxy_header', 'ua_blacklist', 'empty_user_agent');
+
+DELETE FROM `v2_subscription_rule`
+WHERE `type` IN ('traffic_usage_percent', 'client_switch', 'query_param_overflow', 'user_agent_too_long', 'expired_user_pull', 'banned_user_pull', 'no_plan_pull', 'user_banned', 'plan_missing', 'plan_expired', 'traffic_exhausted', 'traffic_low', 'user_status', 'traffic_status', 'plan_status', 'node_delivery');

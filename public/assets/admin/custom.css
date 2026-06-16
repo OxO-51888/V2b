@@ -1,0 +1,856 @@
+html body .v2-rule-form-card .v2-rule-editor {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 0 !important;
+  background: #f8fafc !important;
+  border-radius: 20px !important;
+  overflow: hidden !important;
+}
+
+html body .v2-rule-page-stats {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  margin: 0 0 16px !important;
+}
+
+html body .v2-rule-page-stats > [class*="col-md-"] {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+html body .v2-rule-page-stats .block {
+  height: 100% !important;
+  margin: 0 !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 16px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04) !important;
+}
+
+html body .v2-rule-page-stats .block-content {
+  padding: 18px 16px !important;
+}
+
+html body .v2-rule-page-stats .font-size-h3 {
+  color: #0f172a !important;
+  font-size: 26px !important;
+  line-height: 1.15 !important;
+}
+
+html body .v2-rule-page-stats .text-muted {
+  margin-top: 5px !important;
+  color: #64748b !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+html body .v2-rule-page-list {
+  margin: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04) !important;
+}
+
+html body .v2-rule-page-list > .block-header {
+  padding: 16px 20px !important;
+  border-bottom: 1px solid #eef2f7 !important;
+  background: #fff !important;
+}
+
+html body .v2-rule-page-list .block-title {
+  color: #0f172a !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+}
+
+html body .v2-rule-page-list .v2-rule-card-list {
+  padding: 16px !important;
+  background: #f8fafc !important;
+}
+
+html body .v2-rule-page-list .v2-rule-card-list tbody {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  gap: 14px !important;
+}
+
+html body .v2-rule-page-list .v2-rule-card-list tr {
+  min-height: 178px !important;
+  padding: 16px !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 16px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.035) !important;
+}
+
+html body .v2-rule-page-list .v2-rule-card-list td:first-child {
+  color: #0f172a !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+}
+
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(2),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(3),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(4) {
+  background: #f8fafc !important;
+  color: #475569 !important;
+}
+
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(5) {
+  color: #64748b !important;
+}
+
+html body .v2-rule-page-list .v2-rule-card-list td:last-child {
+  gap: 10px !important;
+}
+
+html body .v2-rule-page-list .v2-rule-card-list td:last-child .btn {
+  border-radius: 9px !important;
+  font-weight: 700 !important;
+}
+
+@media (max-width: 768px) {
+  html body .v2-rule-page-stats {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .v2-rule-page-list .v2-rule-card-list {
+    padding: 12px !important;
+  }
+
+  html body .v2-rule-page-list .v2-rule-card-list tbody {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+html body .v2-rule-form-card .v2-rule-editor-head {
+  display: block !important;
+  width: 100% !important;
+  padding: 18px 22px 14px !important;
+  border-bottom: 1px solid #e5edf8 !important;
+  background: linear-gradient(135deg, #eff6ff, #fff) !important;
+}
+
+html body .v2-rule-form-card .v2-rule-editor-head h3 {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+  color: #0f172a !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important;
+  white-space: normal !important;
+}
+
+html body .v2-rule-form-card .v2-rule-editor-head p {
+  display: block !important;
+  width: 100% !important;
+  max-width: 420px !important;
+  margin: 6px 0 0 !important;
+  color: #64748b !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+  white-space: normal !important;
+}
+
+html body .v2-rule-form-card .v2-rule-editor-grid {
+  display: grid !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  padding: 18px 22px !important;
+  margin: 0 !important;
+}
+
+html body .v2-rule-form-card .v2-rule-editor-field {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html body .v2-rule-form-card .v2-rule-editor-field span {
+  display: block !important;
+  margin: 0 0 7px !important;
+  color: #475569 !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  text-align: left !important;
+}
+
+html body .v2-rule-form-card .v2-rule-editor-wide {
+  grid-column: 1 / -1 !important;
+}
+
+html body .v2-rule-form-card .v2-rule-editor-field .form-control {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 42px !important;
+  padding: 8px 11px !important;
+  border: 1px solid #dbe3ef !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  color: #111827 !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  box-shadow: none !important;
+}
+
+html body .v2-rule-form-card .v2-rule-editor-field textarea.form-control {
+  min-height: 92px !important;
+  resize: vertical !important;
+}
+
+html body .v2-rule-form-card .v2-rule-editor-actions {
+  display: flex !important;
+  width: 100% !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  padding: 14px 22px 18px !important;
+  border-top: 1px solid #e5edf8 !important;
+  background: #fff !important;
+}
+
+html body .v2-rule-form-card .v2-rule-editor-actions .btn {
+  width: auto !important;
+  min-width: 88px !important;
+  margin: 0 !important;
+  border-radius: 10px !important;
+  padding: 9px 16px !important;
+  font-weight: 700 !important;
+}
+
+@media (max-width: 768px) {
+  html body .v2-rule-form-card .v2-rule-editor-grid {
+    grid-template-columns: 1fr !important;
+    padding: 16px !important;
+  }
+
+  html body .v2-rule-form-card .v2-rule-editor-head,
+  html body .v2-rule-form-card .v2-rule-editor-actions {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
+html body .v2-rule-form-card.v2-rule-form-card,
+html body .v2-rule-form-card.v2-rule-form-card *,
+html body .v2-rule-form-block.v2-rule-form-block,
+html body .v2-rule-form-block.v2-rule-form-block * {
+  box-sizing: border-box !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card > *,
+html body .v2-rule-form-card.v2-rule-form-card .block,
+html body .v2-rule-form-card.v2-rule-form-card .block-header,
+html body .v2-rule-form-card.v2-rule-form-card .block-content,
+html body .v2-rule-form-block.v2-rule-form-block > *,
+html body .v2-rule-form-block.v2-rule-form-block .block-header,
+html body .v2-rule-form-block.v2-rule-form-block .block-content {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .block-header,
+html body .v2-rule-form-block.v2-rule-form-block .block-header {
+  padding: 18px 22px 12px !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .block-title,
+html body .v2-rule-form-card.v2-rule-form-card .block-header > *,
+html body .v2-rule-form-block.v2-rule-form-block .block-title,
+html body .v2-rule-form-block.v2-rule-form-block .block-header > * {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  line-height: 1.35 !important;
+  white-space: normal !important;
+  writing-mode: horizontal-tb !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .block-title small {
+  display: block !important;
+  width: 100% !important;
+  margin-top: 5px !important;
+  color: #64748b !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .block-content,
+html body .v2-rule-form-block.v2-rule-form-block .block-content {
+  padding: 0 22px 18px !important;
+  background: #f8fafc !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .row,
+html body .v2-rule-form-block.v2-rule-form-block .row {
+  display: grid !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px 14px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .row > [class*="col-md-"],
+html body .v2-rule-form-block.v2-rule-form-block .row > [class*="col-md-"] {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  grid-column: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .row > .col-md-12,
+html body .v2-rule-form-card.v2-rule-form-card .row > .text-right,
+html body .v2-rule-form-block.v2-rule-form-block .row > .col-md-12,
+html body .v2-rule-form-block.v2-rule-form-block .row > .text-right {
+  grid-column: 1 / -1 !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .row > [class*="col-md-"]:not(.text-right)::before {
+  display: block !important;
+  margin-bottom: 6px !important;
+  color: #475569 !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .row > [class*="col-md-"]:nth-child(1)::before {
+  content: "\89c4\5219\540d\79f0" !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .row > [class*="col-md-"]:nth-child(2)::before {
+  content: "\89c4\5219\7c7b\578b" !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .row > [class*="col-md-"]:nth-child(3)::before {
+  content: "\5904\7406\52a8\4f5c" !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .row > [class*="col-md-"]:nth-child(4)::before {
+  content: "\89e6\53d1\9608\503c" !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .row > [class*="col-md-"]:nth-child(5)::before {
+  content: "\6267\884c\6392\5e8f" !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .row > [class*="col-md-"]:nth-child(6)::before {
+  content: "\89c4\5219\72b6\6001" !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .row > [class*="col-md-"]:nth-child(7)::before {
+  content: "\5907\6ce8\8bf4\660e" !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .form-control,
+html body .v2-rule-form-block.v2-rule-form-block .form-control {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 42px !important;
+  border: 1px solid #dbe3ef !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card textarea.form-control,
+html body .v2-rule-form-block.v2-rule-form-block textarea.form-control {
+  min-height: 96px !important;
+  line-height: 1.55 !important;
+  resize: vertical !important;
+}
+
+html body .v2-rule-form-block.v2-rule-form-block .form-group {
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .v2-rule-form-block.v2-rule-form-block label {
+  display: block !important;
+  margin: 0 0 6px !important;
+  color: #475569 !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .row > .text-right,
+html body .v2-rule-form-block.v2-rule-form-block .block-content > .form-group:last-child {
+  position: static !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  width: 100% !important;
+  margin: 2px 0 0 !important;
+  padding: 14px 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid #e5e7eb !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .row > .text-right::before {
+  content: "" !important;
+  display: none !important;
+}
+
+html body .v2-rule-form-card.v2-rule-form-card .btn,
+html body .v2-rule-form-block.v2-rule-form-block .btn {
+  width: auto !important;
+  min-width: 86px !important;
+  border-radius: 10px !important;
+  padding: 9px 16px !important;
+  font-weight: 700 !important;
+}
+
+@media (max-width: 768px) {
+  html body .v2-rule-form-card.v2-rule-form-card .block-content,
+  html body .v2-rule-form-block.v2-rule-form-block .block-content {
+    padding: 0 16px 16px !important;
+  }
+
+  html body .v2-rule-form-card.v2-rule-form-card .row,
+  html body .v2-rule-form-block.v2-rule-form-block .row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+html body .v2-config-shell {
+  overflow: hidden !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 18px !important;
+  background: #f8fafc !important;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.04) !important;
+}
+
+html body .v2-config-shell > .ant-tabs {
+  background: transparent !important;
+}
+
+html body .v2-config-shell .ant-tabs-bar {
+  margin: 0 !important;
+  padding: 0 16px !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  background: #fff !important;
+}
+
+html body .v2-config-shell .ant-tabs-nav-container {
+  min-height: 58px !important;
+}
+
+html body .v2-config-shell .ant-tabs-tab {
+  margin: 0 8px 0 0 !important;
+  padding: 18px 10px 16px !important;
+  color: #475569 !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0 !important;
+}
+
+html body .v2-config-shell .ant-tabs-tab-active {
+  color: #2563eb !important;
+}
+
+html body .v2-config-shell .ant-tabs-ink-bar {
+  height: 3px !important;
+  border-radius: 999px 999px 0 0 !important;
+  background: #2563eb !important;
+}
+
+html body .v2-config-shell .ant-tabs-content {
+  padding: 16px !important;
+  background: #f8fafc !important;
+}
+
+html body .v2-config-shell .ant-tabs-tabpane > div:not(.v2-rule-panel) {
+  width: 100% !important;
+}
+
+html body .v2-config-shell .v2-config-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr) !important;
+  align-items: center !important;
+  gap: 18px !important;
+  margin: 0 0 12px !important;
+  padding: 16px 18px !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 16px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.035) !important;
+}
+
+html body .v2-config-shell .v2-config-row:last-child {
+  margin-bottom: 0 !important;
+}
+
+html body .v2-config-shell .v2-config-row > .col-lg-6 {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  flex: none !important;
+  padding: 0 !important;
+}
+
+html body .v2-config-shell .v2-config-row > .col-lg-6:first-child {
+  color: #64748b !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+}
+
+html body .v2-config-shell .v2-config-row > .col-lg-6:first-child > div:first-child,
+html body .v2-config-shell .v2-config-row > .col-lg-6:first-child > strong:first-child,
+html body .v2-config-shell .v2-config-row > .col-lg-6:first-child > b:first-child {
+  display: block !important;
+  margin: 0 0 5px !important;
+  color: #0f172a !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  line-height: 1.3 !important;
+}
+
+html body .v2-config-shell .v2-config-row > .col-lg-6:first-child p,
+html body .v2-config-shell .v2-config-row > .col-lg-6:first-child small,
+html body .v2-config-shell .v2-config-row > .col-lg-6:first-child span {
+  color: #64748b !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+}
+
+html body .v2-config-shell .v2-config-row > .col-lg-6.text-right {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  text-align: right !important;
+}
+
+html body .v2-config-shell .v2-config-row.v2board-config-children {
+  margin-left: 18px !important;
+  border-color: #bfdbfe !important;
+  border-left: 4px solid #60a5fa !important;
+  background: #f8fbff !important;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.04) !important;
+}
+
+html body .v2-config-shell .form-control,
+html body .v2-config-shell .ant-input,
+html body .v2-config-shell .ant-select-selection,
+html body .v2-config-shell .ant-input-number {
+  min-height: 40px !important;
+  border-color: #dbe3ef !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+}
+
+html body .v2-config-shell textarea.form-control,
+html body .v2-config-shell textarea.ant-input {
+  min-height: 86px !important;
+  line-height: 1.55 !important;
+  resize: vertical !important;
+}
+
+html body .v2-config-shell .ant-select,
+html body .v2-config-shell .ant-input-number,
+html body .v2-config-shell .form-control {
+  max-width: 100% !important;
+}
+
+html body .v2-config-shell .ant-select-selection__rendered {
+  line-height: 38px !important;
+}
+
+html body .v2-config-shell .ant-switch {
+  min-width: 46px !important;
+}
+
+html body .v2-config-shell .btn,
+html body .v2-config-shell .ant-btn {
+  min-height: 38px !important;
+  border-radius: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+}
+
+html body .v2-config-shell .btn-primary,
+html body .v2-config-shell .ant-btn-primary {
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18) !important;
+}
+
+html body .v2-config-shell .input-group {
+  justify-content: flex-end !important;
+  flex-wrap: nowrap !important;
+}
+
+html body .v2-config-shell .input-group .form-control {
+  min-width: 220px !important;
+}
+
+html body .v2-config-shell .alert {
+  margin: 0 0 14px !important;
+  border-radius: 14px !important;
+  border-color: #dbeafe !important;
+  background: #eff6ff !important;
+  color: #475569 !important;
+}
+
+html body .v2-config-shell .v2-rule-panel {
+  margin: -16px !important;
+}
+
+@media (max-width: 992px) {
+  html body .v2-config-shell .v2-config-row {
+    grid-template-columns: 1fr !important;
+    align-items: start !important;
+  }
+
+  html body .v2-config-shell .v2-config-row > .col-lg-6.text-right {
+    justify-content: flex-start !important;
+    text-align: left !important;
+  }
+
+  html body .v2-config-shell .v2-config-row.v2board-config-children {
+    margin-left: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  html body .v2-config-shell {
+    border-radius: 14px !important;
+  }
+
+  html body .v2-config-shell .ant-tabs-bar {
+    padding: 0 10px !important;
+  }
+
+  html body .v2-config-shell .ant-tabs-tab {
+    margin-right: 4px !important;
+    padding: 15px 8px 13px !important;
+    font-size: 13px !important;
+  }
+
+  html body .v2-config-shell .ant-tabs-content {
+    padding: 12px !important;
+  }
+
+  html body .v2-config-shell .v2-config-row {
+    padding: 14px !important;
+    border-radius: 14px !important;
+  }
+
+  html body .v2-config-shell .input-group {
+    display: flex !important;
+    width: 100% !important;
+  }
+
+  html body .v2-config-shell .input-group .form-control {
+    min-width: 0 !important;
+  }
+}
+
+/* Rule cards: compact square layout, 5 cards per desktop row. */
+html body .v2-rule-panel .v2-rule-card-list tbody,
+html body .v2-rule-page-list .v2-rule-card-list tbody {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list tr,
+html body .v2-rule-page-list .v2-rule-card-list tr {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-rows: auto 28px 28px 28px minmax(0, 1fr) auto !important;
+  aspect-ratio: 1 / 1.02 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  gap: 7px !important;
+  padding: 12px !important;
+  overflow: hidden !important;
+  border-radius: 14px !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td,
+html body .v2-rule-page-list .v2-rule-card-list td {
+  min-width: 0 !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:first-child,
+html body .v2-rule-page-list .v2-rule-card-list td:first-child {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  padding-right: 0 !important;
+  margin: 0 !important;
+  font-size: 13.5px !important;
+  line-height: 1.35 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(6),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(6) {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  position: static !important;
+  justify-self: end !important;
+  align-self: start !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(6) .badge,
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(6) .badge {
+  min-height: 26px !important;
+  max-width: 76px !important;
+  padding: 5px 7px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+  white-space: normal !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(2),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(2) {
+  grid-column: 1 / 3 !important;
+  grid-row: 2 !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(3),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(3) {
+  grid-column: 1 / 3 !important;
+  grid-row: 3 !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(4),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(4) {
+  grid-column: 1 / 3 !important;
+  grid-row: 4 !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(2),
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(3),
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(4),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(2),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(3),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(4) {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 28px !important;
+  padding: 5px 7px !important;
+  overflow: hidden !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(5),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(5) {
+  grid-column: 1 / 3 !important;
+  grid-row: 5 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 8px !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:last-child,
+html body .v2-rule-page-list .v2-rule-card-list td:last-child {
+  grid-column: 1 / 3 !important;
+  grid-row: 6 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  padding-top: 8px !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:last-child .btn,
+html body .v2-rule-page-list .v2-rule-card-list td:last-child .btn {
+  height: 28px !important;
+  padding: 0 7px !important;
+  border-radius: 8px !important;
+  font-size: 11.5px !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 1500px) {
+  html body .v2-rule-panel .v2-rule-card-list tbody,
+  html body .v2-rule-page-list .v2-rule-card-list tbody {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  html body .v2-rule-panel .v2-rule-card-list tbody,
+  html body .v2-rule-page-list .v2-rule-card-list tbody {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  html body .v2-rule-panel .v2-rule-card-list tbody,
+  html body .v2-rule-page-list .v2-rule-card-list tbody {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  html body .v2-rule-panel .v2-rule-card-list tbody,
+  html body .v2-rule-page-list .v2-rule-card-list tbody {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .v2-rule-panel .v2-rule-card-list tr,
+  html body .v2-rule-page-list .v2-rule-card-list tr {
+    aspect-ratio: auto !important;
+  }
+}

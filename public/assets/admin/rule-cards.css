@@ -1,0 +1,450 @@
+/* Subscription rule cards */
+html body .v2-rule-panel .v2-rule-card-list tbody,
+html body .v2-rule-page-list .v2-rule-card-list tbody {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  align-items: stretch !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list tr,
+html body .v2-rule-page-list .v2-rule-card-list tr {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-rows: auto 36px 36px 36px 56px auto !important;
+  align-content: start !important;
+  aspect-ratio: 1 / 1.08 !important;
+  min-height: 252px !important;
+  gap: 9px !important;
+  padding: 14px !important;
+  overflow: hidden !important;
+  contain: layout paint !important;
+  content-visibility: auto !important;
+  contain-intrinsic-size: 252px 300px !important;
+  border-radius: 14px !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td,
+html body .v2-rule-page-list .v2-rule-card-list td {
+  min-width: 0 !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:first-child,
+html body .v2-rule-page-list .v2-rule-card-list td:first-child {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  padding-right: 0 !important;
+  margin: 0 !important;
+  color: #0f172a !important;
+  font-size: 14.5px !important;
+  font-weight: 500 !important;
+  line-height: 1.35 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(6),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(6) {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  position: static !important;
+  justify-self: end !important;
+  align-self: start !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(6) .badge,
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(6) .badge {
+  min-height: 30px !important;
+  max-width: 92px !important;
+  padding: 6px 9px !important;
+  border-radius: 9px !important;
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  white-space: normal !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(2),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(2) {
+  grid-column: 1 / 3 !important;
+  grid-row: 2 !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(3),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(3) {
+  grid-column: 1 / 3 !important;
+  grid-row: 3 !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(4),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(4) {
+  grid-column: 1 / 3 !important;
+  grid-row: 4 !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(2),
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(3),
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(4),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(2),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(3),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(4) {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 36px !important;
+  padding: 7px 9px !important;
+  overflow: hidden !important;
+  border-radius: 9px !important;
+  color: #475569 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(2)::before,
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(3)::before,
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(4)::before,
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(2)::before,
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(3)::before,
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(4)::before {
+  font-size: 12.5px !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list td:nth-child(5),
+html body .v2-rule-page-list .v2-rule-card-list td:nth-child(5) {
+  grid-column: 1 / 3 !important;
+  grid-row: 5 !important;
+  min-height: 56px !important;
+  max-height: 56px !important;
+  margin: 0 !important;
+  padding: 8px 10px !important;
+  color: #475569 !important;
+  font-size: 13.5px !important;
+  line-height: 1.45 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+html body .v2-rule-status-readonly {
+  cursor: not-allowed !important;
+  background: #f8fafc !important;
+  color: #64748b !important;
+}
+
+html body .v2-rule-action-picker {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+html body .v2-rule-action-option {
+  appearance: none !important;
+  min-height: 40px !important;
+  padding: 0 10px !important;
+  border: 1px solid #dbe3ef !important;
+  border-radius: 10px !important;
+  background: #f8fafc !important;
+  color: #334155 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  transition: background-color .08s ease, border-color .08s ease, color .08s ease !important;
+}
+
+html body .v2-rule-action-option:hover {
+  border-color: #93c5fd !important;
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+}
+
+html body .v2-rule-action-option:active {
+  transform: translateY(1px) !important;
+}
+
+html body .v2-rule-action-option.is-active {
+  border-color: #2563eb !important;
+  background: #2563eb !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+html body .v2-rule-action-option:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, .16) !important;
+}
+
+html body .v2-ai-risk-result-box {
+  overflow: hidden !important;
+  border: 1px solid #dbe3ef !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .04) !important;
+}
+
+html body .v2-ai-risk-result-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  border-bottom: 1px solid #eef2f7 !important;
+  background: #fff !important;
+}
+
+html body .v2-ai-risk-result-head h5 {
+  margin: 0 !important;
+  color: #111827 !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+}
+
+html body .v2-ai-risk-result-head .btn {
+  min-width: 76px !important;
+  height: 36px !important;
+  padding: 0 16px !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+html body .v2-ai-risk-result-box .v2-ai-risk-output {
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 16px !important;
+  background: #fff !important;
+}
+
+html body .v2-ai-risk-field textarea.form-control {
+  min-height: 92px !important;
+  resize: vertical !important;
+  line-height: 1.45 !important;
+}
+
+html body .v2-trusted-proxy-cards {
+  margin: 16px 0 !important;
+}
+
+html body .v2-rule-card-list tr.v2-trusted-proxy-fixed-card {
+  border-color: #bfdbfe !important;
+  background: linear-gradient(180deg, #eff6ff 0%, #fff 46%) !important;
+}
+
+html body .v2-trusted-proxy-editor {
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 1060 !important;
+  width: min(620px, calc(100vw - 28px)) !important;
+  max-height: calc(100vh - 42px) !important;
+  overflow: hidden !important;
+  border: 1px solid #dbeafe !important;
+  border-radius: 18px !important;
+  background: #f8fafc !important;
+  box-shadow: 0 28px 90px rgba(15, 23, 42, .28) !important;
+}
+
+html body .v2-trusted-proxy-head {
+  padding: 16px 18px !important;
+  border-bottom: 1px solid #dbeafe !important;
+  background: linear-gradient(135deg, #eff6ff, #fff) !important;
+}
+
+html body .v2-trusted-proxy-head h3 {
+  margin: 0 !important;
+  color: #0f172a !important;
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+}
+
+html body .v2-trusted-proxy-head p {
+  margin: 5px 0 0 !important;
+  color: #64748b !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+html body .v2-trusted-proxy-body {
+  padding: 16px 18px !important;
+  background: #f8fafc !important;
+}
+
+html body .v2-trusted-proxy-body textarea.form-control {
+  min-height: 220px !important;
+  resize: vertical !important;
+  border-radius: 12px !important;
+  line-height: 1.5 !important;
+}
+
+html body .v2-trusted-proxy-actions {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  padding: 13px 18px !important;
+  border-top: 1px solid #e5e7eb !important;
+  background: #fff !important;
+}
+
+html body .v2-trusted-proxy-actions .btn {
+  height: 38px !important;
+  border-radius: 10px !important;
+  padding: 0 14px !important;
+  font-weight: 700 !important;
+}
+
+html body .v2-ai-rejection-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, 360px) !important;
+  justify-content: start !important;
+  align-items: stretch !important;
+  gap: 12px !important;
+}
+
+html body .v2-ai-rejection-item {
+  width: 360px !important;
+  max-width: 360px !important;
+  min-height: 118px !important;
+  max-height: 118px !important;
+  overflow: hidden !important;
+  border-radius: 14px !important;
+  box-sizing: border-box !important;
+}
+
+html body .v2-ai-rejection-main {
+  min-width: 0 !important;
+}
+
+html body .v2-ai-rejection-user,
+html body .v2-ai-rejection-meta {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body .v2-ai-rejection-reason {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 1500px) {
+  html body .v2-rule-panel .v2-rule-card-list tbody,
+  html body .v2-rule-page-list .v2-rule-card-list tbody {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  html body .v2-rule-panel .v2-rule-card-list tbody,
+  html body .v2-rule-page-list .v2-rule-card-list tbody {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  html body .v2-rule-panel .v2-rule-card-list tbody,
+  html body .v2-rule-page-list .v2-rule-card-list tbody {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  html body .v2-rule-panel .v2-rule-card-list tbody,
+  html body .v2-rule-page-list .v2-rule-card-list tbody {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .v2-rule-panel .v2-rule-card-list tr,
+  html body .v2-rule-page-list .v2-rule-card-list tr {
+    aspect-ratio: auto !important;
+  }
+
+  html body .v2-rule-action-picker {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .v2-ai-rejection-list {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body .v2-ai-rejection-item {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+html body .v2-rule-panel .v2-rule-card-list tr td.v2-rule-card-actions,
+html body .v2-rule-page-list .v2-rule-card-list tr td.v2-rule-card-actions {
+  grid-column: 1 / 3 !important;
+  grid-row: 6 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  justify-content: stretch !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  justify-self: stretch !important;
+  align-self: end !important;
+  margin: 0 !important;
+  padding-top: 10px !important;
+  border-top: 1px solid #eef2f7 !important;
+  text-align: initial !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list tr td.v2-rule-card-actions .v2-rule-card-btn,
+html body .v2-rule-page-list .v2-rule-card-list tr td.v2-rule-card-actions .v2-rule-card-btn {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 34px !important;
+  flex: none !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+  border-radius: 9px !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease, background-color .14s ease !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list tr td.v2-rule-card-actions .v2-rule-card-btn:first-child,
+html body .v2-rule-page-list .v2-rule-card-list tr td.v2-rule-card-actions .v2-rule-card-btn:first-child {
+  grid-column: 1 !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list tr td.v2-rule-card-actions .v2-rule-card-btn:nth-child(2),
+html body .v2-rule-page-list .v2-rule-card-list tr td.v2-rule-card-actions .v2-rule-card-btn:nth-child(2) {
+  grid-column: 2 !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list tr td.v2-rule-card-actions .v2-rule-card-btn:hover,
+html body .v2-rule-page-list .v2-rule-card-list tr td.v2-rule-card-actions .v2-rule-card-btn:hover {
+  transform: translateY(-1px) !important;
+  border-color: #bfdbfe !important;
+  box-shadow: 0 7px 14px rgba(37, 99, 235, .14) !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list tr td.v2-rule-card-actions .v2-rule-card-btn:active,
+html body .v2-rule-page-list .v2-rule-card-list tr td.v2-rule-card-actions .v2-rule-card-btn:active {
+  transform: translateY(1px) scale(.94) !important;
+  background: #dbeafe !important;
+  border-color: #60a5fa !important;
+  box-shadow: inset 0 2px 6px rgba(37, 99, 235, .22) !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list tr td.v2-rule-card-actions .btn-alt-danger,
+html body .v2-rule-page-list .v2-rule-card-list tr td.v2-rule-card-actions .btn-alt-danger {
+  display: none !important;
+}

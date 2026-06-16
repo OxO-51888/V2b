@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V1\Server;
 
 use App\Http\Controllers\Controller;
 use App\Services\ServerService;
+use App\Services\SubscriptionRuleService;
 use App\Services\UserService;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
@@ -190,6 +191,14 @@ class UniProxyController extends Controller
                 }
             }
             $ips_array['alive_ip'] = $count;
+            (new SubscriptionRuleService())->guardNodeAliveIp(
+                $request,
+                (int)$uid,
+                $ips_array,
+                $count,
+                $this->nodeType,
+                $this->nodeId
+            );
 
             $updates[$key] = $ips_array;
         }
