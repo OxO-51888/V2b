@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\V1\Server;
 
 use App\Http\Controllers\Controller;
+use App\Services\NodeExitIpService;
 use App\Services\ServerService;
 use App\Services\SubscriptionRuleService;
 use App\Services\UserService;
@@ -72,6 +73,7 @@ class UniProxyController extends Controller
     // 后端提交数据
     public function push(Request $request)
     {
+        (new NodeExitIpService())->observe($request, $this->nodeType, $this->nodeId, $this->nodeInfo->name ?? '', $this->nodeHost());
         $data = $request->json()->all();
         if (empty($data)) {
             $data = $_POST;
@@ -126,6 +128,7 @@ class UniProxyController extends Controller
     // 后端提交在线数据
     public function alive(Request $request)
     {
+        (new NodeExitIpService())->observe($request, $this->nodeType, $this->nodeId, $this->nodeInfo->name ?? '', $this->nodeHost());
         $data = $request->json()->all();
         if (empty($data)) {
             $data = $_POST;
@@ -211,6 +214,22 @@ class UniProxyController extends Controller
         return response([
             'data' => true
         ]);
+    }
+
+    private function nodeHost()
+    {
+        foreach ([
+            $this->nodeInfo->host ?? '',
+            $this->nodeInfo->server_name ?? '',
+            $this->nodeInfo->listen_ip ?? '',
+        ] as $host) {
+            $host = trim((string)$host);
+            if ($host !== '' && $host !== '0.0.0.0' && $host !== '::') {
+                return $host;
+            }
+        }
+
+        return '';
     }
 
     // 后端获取配置

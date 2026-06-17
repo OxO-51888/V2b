@@ -327,6 +327,11 @@ class SubscriptionRuleService
             return null;
         }
 
+        if ((new NodeExitIpService())->isNodeExitIp($ip)) {
+            $this->logNodeExitBypass($rule, $request, $user, $ip);
+            return null;
+        }
+
         $limit = (int)($rule->condition_value ?: 6);
         $key = 'SUB_RULE_IP_USERS_' . md5($ip);
         $users = Cache::get($key, []);
@@ -348,6 +353,23 @@ class SubscriptionRuleService
         }
 
         return null;
+    }
+
+    private function logNodeExitBypass(SubscriptionRule $rule, Request $request, User $user, $ip)
+    {
+        $key = 'SUB_RULE_NODE_EXIT_BYPASS_' . $rule->id . '_' . $user->id . '_' . md5((string)$ip);
+        if (!Cache::add($key, time(), 120)) {
+            return;
+        }
+
+        $log = $this->logHit($rule, $request, $user, 'node_exit_ip_bypass', $ip);
+        if ($log) {
+            $log->action = 'audit';
+            $log->ai_decision = 'allow';
+            $log->ai_score = 0;
+            $log->ai_reason = '节点出口IP放行，跳过同IP多用户规则';
+            $log->save();
+        }
     }
 
     private function guardRequestContext(Request $request, User $user)

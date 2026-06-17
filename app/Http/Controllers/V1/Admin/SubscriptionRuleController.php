@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\SubscriptionRuleSave;
 use App\Models\SubscriptionRule;
 use App\Models\SubscriptionRuleLog;
 use App\Services\AiRiskService;
+use App\Services\NodeExitIpService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
@@ -330,6 +331,7 @@ class SubscriptionRuleController extends Controller
     {
         $config = $this->openAiConfig($config ?: (array)config('v2board', []));
         $runtimeStatus = $this->aiRuntimeStatus($config);
+        $nodeExitIps = (new NodeExitIpService())->snapshot();
         return [
             'enable' => (int)($config['ai_risk_enable'] ?? 0),
             'provider' => $config['ai_risk_provider'] ?? self::AI_PROVIDER,
@@ -342,6 +344,7 @@ class SubscriptionRuleController extends Controller
             'trusted_proxy_cidrs' => implode("\n", $this->splitConfigList($config['trusted_proxy_cidrs'] ?? [])),
             'trusted_proxy_source' => $config['trusted_proxy_source'] ?? '',
             'trusted_proxy_synced_at' => (int)($config['trusted_proxy_synced_at'] ?? 0),
+            'node_exit_ips' => $nodeExitIps,
             'runtime_status' => $runtimeStatus
         ];
     }

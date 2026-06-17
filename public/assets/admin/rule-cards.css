@@ -274,6 +274,105 @@ html body .v2-rule-card-list tr.v2-trusted-proxy-fixed-card {
   background: linear-gradient(180deg, #eff6ff 0%, #fff 46%) !important;
 }
 
+html body .v2-rule-card-list tr.v2-node-exit-fixed-card {
+  border-color: #99f6e4 !important;
+  background: linear-gradient(180deg, #f0fdfa 0%, #fff 46%) !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list tr.v2-node-exit-fixed-card td:last-child,
+html body .v2-rule-page-list .v2-rule-card-list tr.v2-node-exit-fixed-card td:last-child,
+html body .v2-rule-card-list tr.v2-node-exit-fixed-card td:last-child {
+  justify-content: center !important;
+}
+
+html body .v2-node-exit-viewer {
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 1060 !important;
+  width: min(720px, calc(100vw - 28px)) !important;
+  max-height: calc(100vh - 42px) !important;
+  overflow: hidden !important;
+  border: 1px solid #99f6e4 !important;
+  border-radius: 18px !important;
+  background: #f8fafc !important;
+  box-shadow: 0 28px 90px rgba(15, 23, 42, .28) !important;
+}
+
+html body .v2-node-exit-viewer .v2-trusted-proxy-head {
+  border-bottom-color: #ccfbf1 !important;
+  background: linear-gradient(135deg, #f0fdfa, #fff) !important;
+}
+
+html body .v2-node-exit-body {
+  display: grid !important;
+  gap: 10px !important;
+  max-height: min(430px, calc(100vh - 210px)) !important;
+  overflow: auto !important;
+  padding: 16px 18px !important;
+  background: #f8fafc !important;
+}
+
+html body .v2-node-exit-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.4fr) minmax(120px, .8fr) minmax(160px, .9fr) !important;
+  gap: 10px !important;
+  align-items: center !important;
+  padding: 12px !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+}
+
+html body .v2-node-exit-row strong {
+  display: block !important;
+  color: #0f172a !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body .v2-node-exit-row label {
+  display: block !important;
+  margin: 0 0 3px !important;
+  color: #94a3b8 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+}
+
+html body .v2-node-exit-row span {
+  display: block !important;
+  min-width: 0 !important;
+  color: #475569 !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body .v2-node-exit-empty {
+  padding: 22px !important;
+  border: 1px dashed #cbd5e1 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  color: #64748b !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  text-align: center !important;
+}
+
+@media (max-width: 768px) {
+  html body .v2-node-exit-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 html body .v2-trusted-proxy-editor {
   position: fixed !important;
   left: 50% !important;
@@ -484,4 +583,23 @@ html body .v2-rule-page-list .v2-rule-card-list tr td.v2-rule-card-actions .v2-r
 html body .v2-rule-panel .v2-rule-card-list tr td.v2-rule-card-actions .btn-alt-danger,
 html body .v2-rule-page-list .v2-rule-card-list tr td.v2-rule-card-actions .btn-alt-danger {
   display: none !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list tr.v2-node-exit-fixed-card td.v2-node-exit-actions,
+html body .v2-rule-page-list .v2-rule-card-list tr.v2-node-exit-fixed-card td.v2-node-exit-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  justify-content: stretch !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+html body .v2-rule-panel .v2-rule-card-list tr.v2-node-exit-fixed-card td.v2-node-exit-actions .v2-rule-card-btn,
+html body .v2-rule-page-list .v2-rule-card-list tr.v2-node-exit-fixed-card td.v2-node-exit-actions .v2-rule-card-btn {
+  grid-column: 1 / 3 !important;
+  justify-self: center !important;
+  width: 132px !important;
+  min-width: 132px !important;
+  max-width: 132px !important;
+  margin: 0 auto !important;
 }
