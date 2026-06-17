@@ -219,6 +219,7 @@ class UniProxyController extends Controller
 
     private function nodeHost()
     {
+        $fallbackHost = '';
         foreach ([
             $this->nodeInfo->host ?? '',
             $this->nodeInfo->server_name ?? '',
@@ -226,11 +227,58 @@ class UniProxyController extends Controller
         ] as $host) {
             $host = trim((string)$host);
             if ($host !== '' && $host !== '0.0.0.0' && $host !== '::') {
-                return $host;
+                $fallbackHost = $host;
+                break;
+            }
+        }
+
+        if ($this->isPlaceholderNodeHost($fallbackHost)) {
+            $childHost = $this->childNodeHost();
+            if ($childHost !== '') {
+                return $childHost;
+            }
+        }
+
+        return $fallbackHost;
+    }
+
+    private function childNodeHost()
+    {
+        try {
+            $servers = $this->serverService->getAllServers();
+        } catch (\Throwable $e) {
+            return '';
+        }
+
+        foreach ($servers as $server) {
+            if ((string)($server['type'] ?? '') !== (string)$this->nodeType) {
+                continue;
+            }
+            if ((string)($server['parent_id'] ?? '') !== (string)$this->nodeId) {
+                continue;
+            }
+            if (array_key_exists('show', $server) && (int)$server['show'] !== 1) {
+                continue;
+            }
+
+            foreach ([
+                $server['host'] ?? '',
+                $server['server_name'] ?? '',
+                $server['listen_ip'] ?? '',
+            ] as $host) {
+                $host = trim((string)$host);
+                if ($host !== '' && !$this->isPlaceholderNodeHost($host)) {
+                    return $host;
+                }
             }
         }
 
         return '';
+    }
+
+    private function isPlaceholderNodeHost($host)
+    {
+        return in_array(trim((string)$host), ['', '0.0.0.0', '::', '1.1.1.1'], true);
     }
 
     private function observeNodeExitIp(Request $request)
