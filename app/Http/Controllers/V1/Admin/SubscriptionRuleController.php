@@ -20,6 +20,10 @@ class SubscriptionRuleController extends Controller
     private const AI_BASE_URL = 'https://api.openai.com/v1';
     private const AI_MODEL = 'gpt-5-nano';
     private const AI_RUNTIME_CACHE_KEY = 'SUBSCRIPTION_RULE_AI_RUNTIME_STATUS';
+    private const CLOUDFLARE_IPS_URL = 'https://www.cloudflare.com/ips-v4';
+    private const CLOUDFLARE_SYNC_INTERVAL = 86400;
+    private const CLOUDFLARE_SYNC_FAILURE_CACHE_KEY = 'SUBSCRIPTION_RULE_CLOUDFLARE_SYNC_FAILURE_AT';
+    private const CLOUDFLARE_SYNC_FAILURE_RETRY = 3600;
     private const RULE_DEFAULTS = [
         'pull_frequency' => ['condition' => 30, 'name' => '5分钟同订阅超过%d次'],
         'ip_spread' => ['condition' => 8, 'name' => '10分钟同订阅超过%d个真实IP'],
@@ -165,34 +169,11 @@ class SubscriptionRuleController extends Controller
 
     public function syncCloudflareIps(Request $request)
     {
-        $content = @file_get_contents('https://www.cloudflare.com/ips-v4', false, stream_context_create([
-            'http' => [
-                'timeout' => 8
-            ],
-            'ssl' => [
-                'verify_peer' => true,
-                'verify_peer_name' => true
-            ]
-        ]));
-
-        if ($content === false || trim($content) === '') {
+        try {
+            $config = $this->syncCloudflareIpsToConfig((array)config('v2board', []));
+        } catch (Throwable $e) {
             abort(500, 'Cloudflare IP sync failed');
         }
-
-        $cidrs = $this->normalizeTrustedProxyCidrs($content);
-        if (count($cidrs) < 1) {
-            abort(500, 'Cloudflare IP list is empty');
-        }
-
-        $config = (array)config('v2board', []);
-        $config['trusted_proxy_cidrs'] = $cidrs;
-        $config['trusted_proxy_source'] = 'cloudflare';
-        $config['trusted_proxy_synced_at'] = time();
-        if (!isset($config['trusted_proxy_ips'])) {
-            $config['trusted_proxy_ips'] = [];
-        }
-
-        $this->writeV2boardConfig($config);
 
         return response([
             'data' => $this->safeAiConfig($config)
@@ -330,6 +311,7 @@ class SubscriptionRuleController extends Controller
     private function safeAiConfig($config = null)
     {
         $config = $this->openAiConfig($config ?: (array)config('v2board', []));
+        $config = $this->autoSyncCloudflareIps($config);
         $runtimeStatus = $this->aiRuntimeStatus($config);
         $nodeExitIps = (new NodeExitIpService())->snapshot();
         return [
@@ -347,6 +329,60 @@ class SubscriptionRuleController extends Controller
             'node_exit_ips' => $nodeExitIps,
             'runtime_status' => $runtimeStatus
         ];
+    }
+
+    private function autoSyncCloudflareIps(array $config)
+    {
+        $syncedAt = (int)($config['trusted_proxy_synced_at'] ?? 0);
+        if ($syncedAt > time() - self::CLOUDFLARE_SYNC_INTERVAL) {
+            return $config;
+        }
+
+        $lastFailureAt = (int)Cache::get(self::CLOUDFLARE_SYNC_FAILURE_CACHE_KEY, 0);
+        if ($lastFailureAt > time() - self::CLOUDFLARE_SYNC_FAILURE_RETRY) {
+            return $config;
+        }
+
+        try {
+            return $this->syncCloudflareIpsToConfig($config);
+        } catch (Throwable $e) {
+            Cache::put(self::CLOUDFLARE_SYNC_FAILURE_CACHE_KEY, time(), self::CLOUDFLARE_SYNC_FAILURE_RETRY);
+            return $config;
+        }
+    }
+
+    private function syncCloudflareIpsToConfig(array $config)
+    {
+        $content = @file_get_contents(self::CLOUDFLARE_IPS_URL, false, stream_context_create([
+            'http' => [
+                'timeout' => 8
+            ],
+            'ssl' => [
+                'verify_peer' => true,
+                'verify_peer_name' => true
+            ]
+        ]));
+
+        if ($content === false || trim($content) === '') {
+            throw new \RuntimeException('Cloudflare IP sync failed');
+        }
+
+        $cidrs = $this->normalizeTrustedProxyCidrs($content);
+        if (count($cidrs) < 1) {
+            throw new \RuntimeException('Cloudflare IP list is empty');
+        }
+
+        $config['trusted_proxy_cidrs'] = $cidrs;
+        $config['trusted_proxy_source'] = 'cloudflare';
+        $config['trusted_proxy_synced_at'] = time();
+        if (!isset($config['trusted_proxy_ips'])) {
+            $config['trusted_proxy_ips'] = [];
+        }
+
+        $this->writeV2boardConfig($config);
+        Cache::forget(self::CLOUDFLARE_SYNC_FAILURE_CACHE_KEY);
+
+        return $config;
     }
 
     private function aiRuntimeStatus(array $config)

@@ -11,7 +11,18 @@
 - Redis：必须安装
 - Supervisor：必须安装，用来守护队列
 
-不要用 PHP 7.4 新装。官方老教程写的是 PHP 7.4 / MySQL 5.6，但现在 PHP 7.4 版本太低，部分组件和依赖已经不支持或不稳定支持。本仓库使用 PHP 8.1。
+不要用 PHP 7.4 新装。官方老教程写的是 PHP 7.4 / MySQL 5.6，但现在 PHP 7.4 版本太低，部分组件和依赖已经不支持或不稳定支持。
+
+推荐新装使用 PHP 8.1。PHP 8.1 对 V2Board / Laravel 这类项目更稳，扩展兼容性也更成熟。
+
+注意：以后部署和更新必须先确认 PHP CLI 版本。如果在 PHP 8.5 环境执行 `composer update` 或当前分支的 `update.sh`，Composer 可能会按 PHP 8.5 重新解析依赖，生成要求 PHP `>= 8.4.1` 的 `vendor`。之后再切回 PHP 8.1 会直接 500，错误类似：
+
+```text
+Composer detected issues in your platform:
+Your Composer dependencies require a PHP version ">= 8.4.1".
+```
+
+因此如果目标是 PHP 8.1，部署、安装、更新都要在 PHP 8.1 环境执行。不要在 PHP 8.5 环境跑 Composer 更新。
 
 ## 1. 安装纯净 aaPanel
 
@@ -62,6 +73,8 @@ App Store -> PHP-8.1 -> Setting
 ```text
 redis
 fileinfo
+opcache
+zip
 ```
 
 进入：
@@ -85,7 +98,7 @@ SSH 检查：
 
 ```bash
 php -v
-php -m | grep -E 'redis|fileinfo|pcntl'
+php -m | grep -E 'redis|fileinfo|pcntl|zip|Zend OPcache'
 ```
 
 如果 SSH 里的 `php -v` 不是 PHP 8.1，在 aaPanel 里设置：
@@ -93,6 +106,15 @@ php -m | grep -E 'redis|fileinfo|pcntl'
 ```text
 Website -> PHP CLI version -> PHP-8.1
 ```
+
+仓库已内置 `public/.user.ini`，用于关闭 PHP 网页错误输出：
+
+```ini
+display_errors = Off
+display_startup_errors = Off
+```
+
+这一步必须保留。PHP 警告如果输出到网页，后台接口会变成“警告 HTML + JSON”，前端会卡在加载齿轮。以后重新搭建只要从本仓库拉取代码，就会自动带上这个文件。
 
 ## 4. 添加站点和数据库
 

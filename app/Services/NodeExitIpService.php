@@ -81,7 +81,7 @@ class NodeExitIpService
 
     public function snapshot()
     {
-        $records = array_values($this->records());
+        $records = array_values($this->withConfiguredNodeIps($this->records()));
         usort($records, function ($a, $b) {
             return (int)($b['last_seen_at'] ?? 0) <=> (int)($a['last_seen_at'] ?? 0);
         });
@@ -89,16 +89,28 @@ class NodeExitIpService
         $ips = [];
         $nodes = [];
         $lastSeenAt = 0;
+        $reportedIps = [];
+        $reportedNodes = [];
         foreach ($records as $record) {
             if (!empty($record['ip'])) {
                 $ips[$record['ip']] = true;
+                if (!empty($record['reported'])) {
+                    $reportedIps[$record['ip']] = true;
+                }
             }
             if (!empty($record['nodes']) && is_array($record['nodes'])) {
                 foreach ($record['nodes'] as $nodeKey => $node) {
                     $nodes[$nodeKey] = true;
+                    if (!empty($node['reported']) || !empty($record['reported'])) {
+                        $reportedNodes[$nodeKey] = true;
+                    }
                 }
             } elseif (!empty($record['node_type']) || !empty($record['node_id'])) {
-                $nodes[implode(':', [(string)($record['node_type'] ?? ''), (string)($record['node_id'] ?? '')])] = true;
+                $nodeKey = implode(':', [(string)($record['node_type'] ?? ''), (string)($record['node_id'] ?? '')]);
+                $nodes[$nodeKey] = true;
+                if (!empty($record['reported'])) {
+                    $reportedNodes[$nodeKey] = true;
+                }
             }
             $lastSeenAt = max($lastSeenAt, (int)($record['last_seen_at'] ?? 0));
         }
@@ -107,9 +119,116 @@ class NodeExitIpService
             'refresh_seconds' => self::REFRESH_SECONDS,
             'ip_count' => count($ips),
             'node_count' => count($nodes),
+            'reported_ip_count' => count($reportedIps),
+            'reported_node_count' => count($reportedNodes),
+            'pending_ip_count' => max(0, count($ips) - count($reportedIps)),
+            'pending_node_count' => max(0, count($nodes) - count($reportedNodes)),
             'last_seen_at' => $lastSeenAt,
             'records' => $records
         ];
+    }
+
+    private function withConfiguredNodeIps(array $records)
+    {
+        $records = $this->markReportedRecords($records);
+
+        try {
+            $servers = (new ServerService())->getAllServers();
+        } catch (\Throwable $e) {
+            return $records;
+        }
+
+        foreach ($servers as $server) {
+            if (!$this->isShownServer($server)) {
+                continue;
+            }
+
+            $nodeType = (string)($server['type'] ?? '');
+            $nodeId = (string)($server['id'] ?? '');
+            if ($nodeType === '' || $nodeId === '') {
+                continue;
+            }
+
+            $nodeKey = implode(':', [$nodeType, $nodeId]);
+            $nodeHost = $this->serverHost($server);
+            $ip = $this->nodeHostIp($nodeHost);
+            if (!$ip) {
+                continue;
+            }
+
+            $key = 'ip:' . $ip;
+            $record = isset($records[$key]) && is_array($records[$key]) ? $records[$key] : [];
+            $nodes = isset($record['nodes']) && is_array($record['nodes']) ? $record['nodes'] : [];
+            if (!isset($nodes[$nodeKey])) {
+                $nodes[$nodeKey] = [
+                    'node_type' => $nodeType,
+                    'node_id' => $nodeId,
+                    'node_name' => (string)($server['name'] ?? $nodeId),
+                    'node_host' => $nodeHost,
+                    'reported' => false,
+                    'last_seen_at' => 0
+                ];
+            }
+
+            $reported = !empty($record['reported']);
+            $records[$key] = [
+                'ip' => $ip,
+                'node_type' => $reported ? (string)($record['node_type'] ?? $nodeType) : $nodeType,
+                'node_id' => $reported ? (string)($record['node_id'] ?? $nodeId) : $nodeId,
+                'node_name' => $this->nodeSummary($nodes),
+                'nodes' => $nodes,
+                'proxy_ip' => $reported ? (string)($record['proxy_ip'] ?? '') : '未上报',
+                'reported' => $reported,
+                'source' => $reported ? 'report' : 'dns',
+                'first_seen_at' => (int)($record['first_seen_at'] ?? 0),
+                'last_seen_at' => (int)($record['last_seen_at'] ?? 0)
+            ];
+        }
+
+        return $records;
+    }
+
+    private function markReportedRecords(array $records)
+    {
+        foreach ($records as $key => $record) {
+            if (!is_array($record)) {
+                continue;
+            }
+            $record['reported'] = true;
+            if (!empty($record['nodes']) && is_array($record['nodes'])) {
+                foreach ($record['nodes'] as $nodeKey => $node) {
+                    if (is_array($node)) {
+                        $node['reported'] = true;
+                        $record['nodes'][$nodeKey] = $node;
+                    }
+                }
+            }
+            $record['source'] = 'report';
+            $records[$key] = $record;
+        }
+
+        return $records;
+    }
+
+    private function isShownServer($server)
+    {
+        return !is_array($server) || !array_key_exists('show', $server) || (int)$server['show'] === 1;
+    }
+
+    private function serverHost(array $server)
+    {
+        foreach ([
+            $server['host'] ?? '',
+            $server['server_name'] ?? '',
+            $server['listen_ip'] ?? '',
+        ] as $host) {
+            $host = trim((string)$host);
+            if ($host !== '' && $host !== '0.0.0.0' && $host !== '::') {
+                return $host;
+            }
+        }
+
+        return '';
     }
 
     private function records($writeBack = true)

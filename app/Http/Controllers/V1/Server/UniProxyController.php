@@ -42,6 +42,7 @@ class UniProxyController extends Controller
     public function user(Request $request)
     {
         ini_set('memory_limit', -1);
+        $this->observeNodeExitIp($request);
         Cache::put(CacheKey::get('SERVER_' . strtoupper($this->nodeType) . '_LAST_CHECK_AT', $this->nodeInfo->id), time(), 3600);
         $users = $this->serverService->getAvailableUsers($this->nodeInfo->group_id)
             ->map(function ($user) {
@@ -73,7 +74,7 @@ class UniProxyController extends Controller
     // 后端提交数据
     public function push(Request $request)
     {
-        (new NodeExitIpService())->observe($request, $this->nodeType, $this->nodeId, $this->nodeInfo->name ?? '', $this->nodeHost());
+        $this->observeNodeExitIp($request);
         $data = $request->json()->all();
         if (empty($data)) {
             $data = $_POST;
@@ -128,7 +129,7 @@ class UniProxyController extends Controller
     // 后端提交在线数据
     public function alive(Request $request)
     {
-        (new NodeExitIpService())->observe($request, $this->nodeType, $this->nodeId, $this->nodeInfo->name ?? '', $this->nodeHost());
+        $this->observeNodeExitIp($request);
         $data = $request->json()->all();
         if (empty($data)) {
             $data = $_POST;
@@ -232,9 +233,21 @@ class UniProxyController extends Controller
         return '';
     }
 
+    private function observeNodeExitIp(Request $request)
+    {
+        (new NodeExitIpService())->observe(
+            $request,
+            $this->nodeType,
+            $this->nodeId,
+            $this->nodeInfo->name ?? '',
+            $this->nodeHost()
+        );
+    }
+
     // 后端获取配置
     public function config(Request $request)
     {
+        $this->observeNodeExitIp($request);
         switch ($this->nodeType) {
             case 'shadowsocks':
                 $response = [
