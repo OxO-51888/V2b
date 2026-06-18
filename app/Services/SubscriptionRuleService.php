@@ -44,6 +44,7 @@ class SubscriptionRuleService
         'stash',
         'surge',
         'surfboard',
+        'flowz',
         'nekobox',
         'nekoray',
         'hiddify',
@@ -525,15 +526,11 @@ class SubscriptionRuleService
         $action = $rule->action;
         $action = $this->normalizeAction($action);
 
-        switch ($action) {
-            case 'ai_review':
-                $decision = (new AiRiskService())->reviewSubscriptionRequest($request, $user, $rule, $reason, $matchedValue);
-                $this->updateAiDecisionLog($log, $decision);
-                if (!empty($decision['block'])) {
-                    return response('', 200, ['Content-Type' => 'text/plain']);
-                }
-                return null;
+        if ($action === 'ai_review' || $this->shouldAiReviewAmbiguousRequest($rule, $request)) {
+            return $this->applyAiReviewAction($log, $rule, $request, $user, $reason, $matchedValue);
+        }
 
+        switch ($action) {
             case 'reset_subscribe':
                 $this->resetUserSecret($user);
                 return response('Access Denied', 403, ['Content-Type' => 'text/plain']);
@@ -582,6 +579,45 @@ class SubscriptionRuleService
             return 'audit';
         }
         return $action;
+    }
+
+    private function shouldAiReviewAmbiguousRequest(SubscriptionRule $rule, Request $request)
+    {
+        $type = (string)$rule->type;
+        $flagClient = $this->detectClient((string)$request->input('flag', ''));
+
+        if ($type === 'pull_frequency' && $this->isKnownProxyClient($request)) {
+            return true;
+        }
+
+        if (in_array($type, ['header_browser_context', 'ua_browser', 'ua_social'], true) && $flagClient) {
+            return true;
+        }
+
+        if ($type === 'flag_ua_mismatch') {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function applyAiReviewAction($log, SubscriptionRule $rule, Request $request, User $user, $reason, $matchedValue = '')
+    {
+        if ($log) {
+            try {
+                $log->action = 'ai_review';
+                $log->save();
+            } catch (Throwable $exception) {
+                // Keep the request path alive even if the audit record cannot be adjusted.
+            }
+        }
+
+        $decision = (new AiRiskService())->reviewSubscriptionRequest($request, $user, $rule, $reason, $matchedValue);
+        $this->updateAiDecisionLog($log, $decision);
+        if (!empty($decision['block'])) {
+            return response('', 200, ['Content-Type' => 'text/plain']);
+        }
+        return null;
     }
 
     private function resetUserSecret(User $user)
@@ -858,6 +894,7 @@ class SubscriptionRuleService
             'surge' => ['surge'],
             'loon' => ['loon'],
             'stash' => ['stash'],
+            'flowz' => ['flowz'],
             'v2ray' => ['v2ray', 'v2rayn', 'v2rayng', 'qv2ray'],
             'surfboard' => ['surfboard'],
         ];
