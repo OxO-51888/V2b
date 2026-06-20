@@ -218,7 +218,7 @@ class SubscriptionRuleExplanationService
                 return [
                     'title' => '订阅在多个网络位置出现',
                     'summary' => '同一个订阅短时间内从多个不同网络位置访问，AI小助手会先帮你做安全保护。',
-                    'advice' => '请确认没有分享订阅链接。如果只是切换网络、软路由或移动网络变化，请稍后再试；持续异常时请提交工单。'
+                    'advice' => '请不要开着代理导入订阅哦。先关闭代理连接，再回到客户端重新添加订阅，这样系统才能认准是你本人在使用。'
                 ];
 
             case 'ip_multi_user':
@@ -232,7 +232,7 @@ class SubscriptionRuleExplanationService
                 return [
                     'title' => '同账号在线设备有点多',
                     'summary' => '同一个账号在节点上出现了过多在线 IP，可能是订阅或节点信息被分享出去了。',
-                    'advice' => '建议立即重置订阅，并只在自己的设备上使用。如果是家庭多设备，请提交工单说明情况。'
+                    'advice' => '建议立即重置订阅，并只在自己的设备上使用。如果是家庭多设备，请先关闭代理连接，再重新导入订阅，不要挂着节点添加订阅。'
                 ];
 
             case 'node_exit_ip_bypass':
