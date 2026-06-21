@@ -443,7 +443,7 @@ class ClashMeta
 
         if (isset($server['server_name'])) $array['sni'] = $server['server_name'];
 
-        if ((int)($server['version'] ?? 0) === 2) {
+        if ($server['version'] === 2) {
             $array['type'] = 'hysteria2';
             $array['password'] = $password;
             if (isset($server['obfs'])){
@@ -486,10 +486,6 @@ class ClashMeta
             $firstPort = $firstPart;
         }
         $array['port'] = (int)$firstPort;
-        if (count($parts) !== 1 || strpos($parts[0], '-') !== false) {
-            $array['ports'] = $server['port'];
-            $array['mport'] = $server['port'];
-        }
         if (isset($server['obfs'])){
             $array['obfs'] = $server['obfs'];
             $array['obfs-password'] = $server['obfs_password'];
