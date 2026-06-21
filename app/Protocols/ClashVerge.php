@@ -442,7 +442,7 @@ class ClashVerge
 
         if (isset($server['server_name'])) $array['sni'] = $server['server_name'];
 
-        if ($server['version'] === 2) {
+        if ((int)($server['version'] ?? 0) === 2) {
             $array['type'] = 'hysteria2';
             $array['password'] = $password;
             if (isset($server['obfs'])){
