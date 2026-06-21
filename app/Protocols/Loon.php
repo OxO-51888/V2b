@@ -36,7 +36,7 @@ class Loon
                 $uri .= self::buildVless($user['uuid'], $item);
             }elseif ($item['type'] === 'trojan' && (($item['network'] ?? null) !== 'grpc')) {
                 $uri .= self::buildTrojan($user['uuid'], $item);
-            }elseif ($item['type'] === 'hysteria' && $item['version'] === 2) { //loon只支持hysteria2
+            }elseif ($item['type'] === 'hysteria2' || ($item['type'] === 'hysteria' && (int)($item['version'] ?? 0) === 2)) { //loon只支持hysteria2
                 $uri .= self::buildHysteria($user['uuid'], $item);
             }elseif ($item['type'] === 'anytls') {
                 $uri .= self::buildAnytls($user['uuid'], $item);
@@ -240,17 +240,21 @@ class Loon
             $firstPort = $firstPart;
         }
 
+        $tlsSettings = $server['tls_settings'] ?? [];
+        $serverName = $server['server_name'] ?? ($tlsSettings['server_name'] ?? '');
+        $insecure = $server['insecure'] ?? ($tlsSettings['allow_insecure'] ?? 0);
+
         $config = [
             "{$server['name']}=hysteria2",
             "{$server['host']}",
             "{$firstPort}",
             "password={$password}",
             "download-bandwidth={$server['up_mbps']}",
-            $server['server_name'] ? "sni={$server['server_name']}" : "",
+            $serverName ? "sni={$serverName}" : "",
             'udp=true'
         ];
-        if (!empty($server['insecure'])) {
-            array_push($config, $server['insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+        if (!empty($insecure)) {
+            array_push($config, $insecure ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
         }
         if (isset($server['obfs'])){
             array_push($config, 'salamander-password=' . $server['obfs_password']);

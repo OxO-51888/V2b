@@ -46,7 +46,12 @@ class Surge
                 $proxies .= self::buildTrojan($user['uuid'], $item);
                 // [Proxy Group]
                 $proxyGroup .= $item['name'] . ', ';
-            }elseif ($item['type'] === 'hysteria' && $item['version'] === 2) { //surge只支持hysteria2
+            }elseif ($item['type'] === 'hysteria2') {
+                // [Proxy]
+                $proxies .= self::buildHysteria($user['uuid'], $item);
+                // [Proxy Group]
+                $proxyGroup .= $item['name'] . ', ';
+            }elseif ($item['type'] === 'hysteria' && (int)($item['version'] ?? 0) === 2) {
                 // [Proxy]
                 $proxies .= self::buildHysteria($user['uuid'], $item);
                 // [Proxy Group]
@@ -205,18 +210,22 @@ class Surge
             $firstPort = $firstPart;
         }
 
+        $tlsSettings = $server['tls_settings'] ?? [];
+        $serverName = $server['server_name'] ?? ($tlsSettings['server_name'] ?? '');
+        $insecure = $server['insecure'] ?? ($tlsSettings['allow_insecure'] ?? 0);
+
         $config = [
             "{$server['name']}=hysteria2",
             "{$server['host']}",
             "{$firstPort}",
             "password={$password}",
             "download-bandwidth={$server['up_mbps']}",
-            $server['server_name'] ? "sni={$server['server_name']}" : "",
+            $serverName ? "sni={$serverName}" : "",
             // 'tfo=true', 
             'udp-relay=true'
         ];
-        if (!empty($server['insecure'])) {
-            array_push($config, $server['insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+        if (!empty($insecure)) {
+            array_push($config, $insecure ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
         }
         $config = array_filter($config);
         $uri = implode(',', $config);

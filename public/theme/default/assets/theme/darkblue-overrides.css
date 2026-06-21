@@ -1,0 +1,294 @@
+/* Extra framework-level overrides for the pink replacement of the old darkblue theme. */
+#page-container.page-header-dark #page-header,
+#page-container.page-header-glass.page-header-fixed.page-header-scroll.page-header-dark #page-header,
+.bg-header-dark,
+.bg-primary-dark,
+.bg-primary-darker {
+    background-color: #e184ad !important;
+}
+
+a.bg-header-dark:focus,
+a.bg-header-dark:hover,
+button.bg-header-dark:focus,
+button.bg-header-dark:hover,
+a.bg-primary-dark:focus,
+a.bg-primary-dark:hover,
+button.bg-primary-dark:focus,
+button.bg-primary-dark:hover,
+a.bg-primary-darker:focus,
+a.bg-primary-darker:hover,
+button.bg-primary-darker:focus,
+button.bg-primary-darker:hover {
+    background-color: #c45f91 !important;
+}
+
+.page-header-dark #page-header .btn-dual,
+.sidebar-dark #sidebar .btn-dual {
+    color: #fff !important;
+    background-color: #e184ad !important;
+    border-color: #e184ad !important;
+}
+
+.page-header-dark #page-header .btn-dual:focus,
+.page-header-dark #page-header .btn-dual:hover,
+.sidebar-dark #sidebar .btn-dual:focus,
+.sidebar-dark #sidebar .btn-dual:hover {
+    color: #fff !important;
+    background-color: #c45f91 !important;
+    border-color: #c45f91 !important;
+    box-shadow: none !important;
+}
+
+.bg-gd-primary {
+    background: #e184ad linear-gradient(135deg, #e184ad, #f0a5c7) !important;
+}
+
+.bg-gd-dusk {
+    background: #c45f91 linear-gradient(135deg, #c45f91, #e184ad) !important;
+}
+
+.list-group-item.active,
+.block.block-themed > .block-header,
+.ribbon-primary .ribbon-box,
+#page-loader {
+    background-color: #e184ad !important;
+    border-color: #e184ad !important;
+}
+
+.btn-hero-primary,
+.btn-block-option {
+    color: #e184ad !important;
+}
+
+.btn-hero-primary {
+    background-color: #e184ad !important;
+    color: #fff !important;
+    box-shadow: 0 .125rem .75rem rgba(212, 111, 158, .25) !important;
+}
+
+.alert-info,
+.alert-primary {
+    color: #8f3e65 !important;
+    background-color: #fde8f1 !important;
+    border-color: #efd0df !important;
+}
+
+.alert-info hr,
+.alert-primary hr {
+    border-top-color: #efc7da !important;
+}
+
+.alert-info .alert-link,
+.alert-primary .alert-link {
+    color: #783454 !important;
+}
+
+.btn-alt-primary {
+    color: #c45f91 !important;
+    background-color: #fde8f1 !important;
+    border-color: #fde8f1 !important;
+}
+
+.btn-alt-primary:hover,
+.btn-alt-primary:focus,
+.btn-alt-primary.focus {
+    color: #8f3e65 !important;
+    background-color: #efd0df !important;
+    border-color: #efd0df !important;
+    box-shadow: 0 0 0 .2rem rgba(212, 111, 158, .18) !important;
+}
+
+.btn-alt-primary.disabled,
+.btn-alt-primary:disabled {
+    color: #8f3e65 !important;
+    background-color: #fde8f1 !important;
+    border-color: #fde8f1 !important;
+}
+
+.btn-alt-primary:not(:disabled):not(.disabled).active,
+.btn-alt-primary:not(:disabled):not(.disabled):active,
+.show > .btn-alt-primary.dropdown-toggle {
+    color: #783454 !important;
+    background-color: #efc7da !important;
+    border-color: #efc7da !important;
+}
+
+.btn-alt-primary:not(:disabled):not(.disabled).active:focus,
+.btn-alt-primary:not(:disabled):not(.disabled):active:focus,
+.show > .btn-alt-primary.dropdown-toggle:focus {
+    box-shadow: 0 0 0 .2rem rgba(225, 132, 173, .22) !important;
+}
+
+.v2board-plan-features > li:before {
+    color: #e184ad !important;
+}
+
+.v2board-plan-tabs {
+    border-color: #e184ad !important;
+}
+
+.v2board-plan-tabs > .active {
+    color: #fff !important;
+    background-color: #e184ad !important;
+}
+
+#sidebar .nav-main-heading,
+#page-header .nav-main-heading {
+    color: #a77b8f !important;
+}
+
+#sidebar .nav-main-link .nav-main-link-icon,
+#page-header .nav-main-link .nav-main-link-icon {
+    color: rgba(225, 132, 173, .82) !important;
+}
+
+#sidebar .nav-main-link.active,
+#sidebar .nav-main-link:hover,
+#sidebar .nav-main-item.open > .nav-main-link-submenu,
+#page-header .nav-main-link.active,
+#page-header .nav-main-link:hover,
+#page-header .nav-main-item.open > .nav-main-link-submenu {
+    color: #2b2026 !important;
+    background-color: #fde8f1 !important;
+}
+
+#sidebar .nav-main-link.active .nav-main-link-icon,
+#sidebar .nav-main-link:hover .nav-main-link-icon,
+#sidebar .nav-main-item.open > .nav-main-link-submenu .nav-main-link-icon,
+#page-header .nav-main-link.active .nav-main-link-icon,
+#page-header .nav-main-link:hover .nav-main-link-icon,
+#page-header .nav-main-item.open > .nav-main-link-submenu .nav-main-link-icon {
+    color: #e184ad !important;
+}
+
+#sidebar .nav-main-submenu,
+#page-header .nav-main-submenu {
+    background-color: #fff4f8 !important;
+}
+
+#sidebar .nav-main-submenu .nav-main-link.active,
+#sidebar .nav-main-submenu .nav-main-link:hover,
+#page-header .nav-main-submenu .nav-main-link.active,
+#page-header .nav-main-submenu .nav-main-link:hover {
+    color: #c45f91 !important;
+    background-color: transparent !important;
+}
+
+.sidebar-dark #sidebar .nav-main-link.active,
+.sidebar-dark #sidebar .nav-main-link:hover,
+.sidebar-dark #sidebar .nav-main-item.open > .nav-main-link-submenu,
+.page-header-dark #page-header .nav-main-link.active,
+.page-header-dark #page-header .nav-main-link:hover,
+.page-header-dark #page-header .nav-main-item.open > .nav-main-link-submenu {
+    color: #fff !important;
+    background-color: #c45f91 !important;
+}
+
+.sidebar-dark #sidebar .nav-main-link.active .nav-main-link-icon,
+.sidebar-dark #sidebar .nav-main-link:hover .nav-main-link-icon,
+.page-header-dark #page-header .nav-main-link.active .nav-main-link-icon,
+.page-header-dark #page-header .nav-main-link:hover .nav-main-link-icon {
+    color: #fff !important;
+}
+
+/* Keep the left logo/header strip aligned with the pink top bar. */
+#page-container.page-header-dark #sidebar .content-header,
+#page-container.page-header-dark #sidebar .content-header.bg-primary,
+#page-container.page-header-dark #sidebar .content-header.bg-primary-dark,
+#page-container.page-header-dark #sidebar .content-header.bg-primary-darker,
+#page-container.page-header-dark #sidebar .content-header.bg-header-dark,
+#sidebar .content-header,
+#sidebar .content-header.bg-primary,
+#sidebar .content-header.bg-primary-dark,
+#sidebar .content-header.bg-primary-darker,
+#sidebar .content-header.bg-header-dark,
+#sidebar .content-header .content-header-section,
+#sidebar .site-logo,
+#sidebar .brand,
+#sidebar .navbar-brand,
+#sidebar .sidebar-brand {
+    background-color: #e184ad !important;
+    background-image: none !important;
+}
+
+/* Remove transparent overlays from the frontend logo/header strip. */
+#sidebar .content-header.bg-white-5,
+#sidebar .content-header.bg-white-10,
+#sidebar .content-header.bg-white-25,
+#sidebar .content-header.bg-black-5,
+#sidebar .content-header.bg-black-10,
+#sidebar .content-header.bg-black-25,
+#sidebar .content-header [class*="bg-white-"],
+#sidebar .content-header [class*="bg-black-"] {
+    background-color: transparent !important;
+    background-image: none !important;
+}
+
+#page-container.page-header-dark #page-header,
+#page-container.page-header-dark #sidebar .content-header,
+#page-container.page-header-dark #sidebar .content-header::before,
+#page-container.page-header-dark #sidebar .content-header::after,
+#page-container.sidebar-dark #sidebar .content-header,
+#page-container.sidebar-dark #sidebar .content-header::before,
+#page-container.sidebar-dark #sidebar .content-header::after {
+    background-color: #e184ad !important;
+    background-image: none !important;
+}
+
+/* Exact frontend sidebar logo strip: remove bg-white-10 tint and match header color. */
+#sidebar > .smini-hidden.bg-header-dark,
+#sidebar > .smini-hidden.bg-header-dark > .content-header,
+#sidebar > .smini-hidden.bg-header-dark > .content-header.bg-white-10,
+#page-container.sidebar-dark #sidebar > .smini-hidden.bg-header-dark,
+#page-container.sidebar-dark #sidebar > .smini-hidden.bg-header-dark > .content-header,
+#page-container.sidebar-dark #sidebar > .smini-hidden.bg-header-dark > .content-header.bg-white-10 {
+    background: #e184ad !important;
+    background-color: #e184ad !important;
+    background-image: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    mix-blend-mode: normal !important;
+}
+
+#sidebar > .smini-hidden.bg-header-dark > .content-header.bg-white-10::before,
+#sidebar > .smini-hidden.bg-header-dark > .content-header.bg-white-10::after {
+    background: transparent !important;
+    opacity: 0 !important;
+}
+
+/* Fully flatten the frontend sidebar logo area to the same pink as the top bar. */
+html body #page-container #sidebar > .smini-hidden,
+html body #page-container #sidebar > .smini-hidden.bg-header-dark,
+html body #page-container #sidebar > .smini-hidden > .content-header,
+html body #page-container #sidebar > .smini-hidden > .content-header.bg-white-10,
+html body #page-container #sidebar > .smini-hidden > .content-header.justify-content-lg-center,
+html body #page-container #sidebar > .smini-hidden > .content-header > a,
+html body #page-container #sidebar > .smini-hidden > .content-header > a > span,
+html body #page-container #sidebar > .smini-hidden > .content-header > .d-lg-none,
+html body #page-container #sidebar > .smini-hidden > .content-header > .d-lg-none > a {
+    background: #e184ad !important;
+    background-color: #e184ad !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    mix-blend-mode: normal !important;
+}
+
+html body #page-container #page-header,
+html body #page-container.page-header-dark #page-header,
+html body #page-container #page-header > .content-header {
+    background: #e184ad !important;
+    background-color: #e184ad !important;
+    background-image: none !important;
+}
+
+html body #page-container #sidebar > .smini-hidden > .content-header::before,
+html body #page-container #sidebar > .smini-hidden > .content-header::after,
+html body #page-container #sidebar > .smini-hidden::before,
+html body #page-container #sidebar > .smini-hidden::after {
+    content: none !important;
+    display: none !important;
+    background: transparent !important;
+    opacity: 0 !important;
+}

@@ -97,7 +97,7 @@ class AiRiskService
             $content = $this->callModel($config, [
                 [
                     'role' => 'system',
-                    'content' => 'You are a realtime subscription risk engine. Return compact JSON only: {"decision":"allow|block","risk_score":0-100,"reason":"short Chinese reason"}. decision must be exactly allow or block. Use 0-100 scale. The query flag is user-controlled and can be forged; never treat flag=clash, flag=shadowrocket, or similar as proof of a normal client. Trust the actual User-Agent and the current_hit.rule_type more than the flag. Known proxy clients are allow only when the actual User-Agent itself contains Shadowrocket, Clash, Sing-box, V2RayN, V2RayNG, Surge, Loon, Stash, Quantumult, etc. If the actual User-Agent is curl, wget, httpie, PowerShell, python-requests, Go-http-client, Postman, browser Chrome/Safari/Firefox/Edge, Telegram/Wechat/QQ webview, scanner Censys/Shodan/zgrab/nmap, or empty, block when current_hit.rule_type confirms that evidence, even if flag claims a proxy client. If current_hit.rule_type is ua_cli_fetch and User-Agent is curl/wget/httpie/PowerShell, score 90-100 and block. If rule_type is ua_api_fetch and User-Agent is python-requests/Go-http-client/Postman/axios, score 90-100 and block. If rule_type is ua_scanner, score 95-100 and block. If rule_type is ua_browser or ua_social and User-Agent is browser/social webview, score 85-95 and block. If rule_type is node_alive_ip_over_limit, treat it as likely single-node credential sharing, score 92-100 and block unless the evidence clearly shows a normal small household. If rule_type is direct_ip_host or head_method_probe, trust the current_hit evidence and block when it indicates direct-IP access or probing. If evidence is weak or AI is unsure, allow with score below 80. For block decisions, the reason must describe why the subscription was refused; do not use suggestion or recommendation wording such as 建议. Never include full IPs, emails, tokens, or node data.'
+                    'content' => 'You are a realtime subscription risk engine. Return compact JSON only: {"decision":"allow|block","risk_score":0-100,"reason":"short Chinese reason"}. decision must be exactly allow or block. Use 0-100 scale. The query flag is user-controlled and can be forged; never treat flag=clash, flag=shadowrocket, or similar as proof of a normal client. Trust request_context.known_proxy_user_agent and the actual User-Agent more than flag. Known proxy clients include Shadowrocket, Clash, Mihomo, Sing-box, V2RayN, V2RayNG, Surge, Loon, Stash, Quantumult, FlowZ, Hiddify, and Karing. If current_hit.rule_type is pull_frequency and request_context.known_proxy_user_agent is true, this is usually a proxy app refresh/retry; allow unless recent_same_user_hits show clear credential sharing, many unrelated IP ranges, scanner/client mismatch, or repeated hard blocks. If actual User-Agent is browser Chrome/Safari/Firefox/Edge or social/webview and request_context.known_proxy_user_agent is false, block when current_hit.rule_type is ua_browser, ua_social, or header_browser_context, even if flag claims a proxy client. If the actual User-Agent is curl, wget, httpie, PowerShell, python-requests, Go-http-client, Postman, browser Chrome/Safari/Firefox/Edge, Telegram/Wechat/QQ webview, scanner Censys/Shodan/zgrab/nmap, or empty, block when current_hit.rule_type confirms that evidence. If current_hit.rule_type is ua_cli_fetch and User-Agent is curl/wget/httpie/PowerShell, score 90-100 and block. If rule_type is ua_api_fetch and User-Agent is python-requests/Go-http-client/Postman/axios, score 90-100 and block. If rule_type is ua_scanner, score 95-100 and block. If rule_type is node_alive_ip_over_limit, treat the over-limit count as a review signal, not automatic proof. Block only when matched_value and recent_same_user_hits indicate credential sharing, many unrelated network ranges, repeated over-limit hits, or clearly non-household use. Allow when the evidence can reasonably fit a small household, router, mobile network switch, or normal multi-device use. If rule_type is direct_ip_host or head_method_probe, trust the current_hit evidence and block when it indicates direct-IP access or probing. If evidence is weak or AI is unsure, allow with score below 80. For block decisions, the reason must describe why the subscription was refused; do not use suggestion or recommendation wording such as 建议. Never include full IPs, emails, tokens, or node data.'
                 ],
                 [
                     'role' => 'user',
@@ -171,6 +171,8 @@ class AiRiskService
 
     private function buildRealtimePayload(Request $request, User $user, SubscriptionRule $rule, $reason, $matchedValue)
     {
+        $ua = (string)$request->header('User-Agent', '');
+        $flag = (string)$request->input('flag', '');
         $history = SubscriptionRuleLog::where('user_id', $user->id)
             ->orderBy('id', 'DESC')
             ->limit(12)
@@ -201,12 +203,19 @@ class AiRiskService
                 'client_ip_range' => $this->maskIp($this->clientIp($request)),
                 'proxy_ip_range' => $this->maskIp((string)$request->ip()),
                 'x_forwarded_for_ranges' => $this->maskIpList((string)$request->header('X-Forwarded-For', '')),
-                'user_agent' => $this->trimText((string)$request->header('User-Agent', ''), 180),
-                'flag' => $this->trimText((string)$request->input('flag', ''), 80),
+                'user_agent' => $this->trimText($ua, 180),
+                'flag' => $this->trimText($flag, 80),
                 'path' => '/' . ltrim($request->path(), '/'),
                 'method' => $request->method(),
                 'referer_present' => $request->header('referer') ? true : false,
                 'accept' => $this->trimText((string)$request->header('accept', ''), 120)
+            ],
+            'request_context' => [
+                'known_proxy_user_agent' => $this->hasProxyClientUa(strtolower($ua)),
+                'flag_claims_proxy_client' => $this->flagClaimsProxyClient($flag),
+                'has_browser_context_header' => $this->hasBrowserContextHeader($request),
+                'browser_context_header' => $this->browserContextHeader($request),
+                'flag_user_agent_mismatch' => $this->flagClaimsProxyClient($flag) && !$this->hasProxyClientUa(strtolower($ua)),
             ],
             'user_snapshot' => [
                 'traffic_status' => $this->trafficStatus($user),
@@ -348,9 +357,7 @@ class AiRiskService
         $hasProxyClientUa = $this->hasProxyClientUa($ua);
         $floor = null;
 
-        if (in_array($type, ['node_alive_ip_over_limit'], true)) {
-            $floor = 92;
-        } elseif (in_array($type, ['ua_scanner'], true)) {
+        if (in_array($type, ['ua_scanner'], true)) {
             $floor = 98;
         } elseif (in_array($type, ['ua_cli_fetch', 'ua_api_fetch', 'empty_user_agent'], true) && !$hasProxyClientUa) {
             $floor = 95;
@@ -365,11 +372,42 @@ class AiRiskService
         if ($floor !== null && (int)($decision['risk_score'] ?? 0) < $floor) {
             $decision['decision'] = 'block';
             $decision['risk_score'] = $floor;
-            $decision['reason'] = '命中高危规则，忽略可伪造flag';
+            $decision['reason'] = $this->ruleFloorReason($type, $hasProxyClientUa);
             $decision['block'] = true;
         }
 
         return $decision;
+    }
+
+    private function ruleFloorReason($type, $hasProxyClientUa)
+    {
+        switch ($type) {
+            case 'direct_ip_host':
+                return '已拒绝下发订阅：请求使用服务器IP、本地Host或空Host访问订阅，不是正常域名入口';
+            case 'head_method_probe':
+                return '已拒绝下发订阅：请求使用HEAD/OPTIONS探测订阅接口';
+            case 'ua_scanner':
+                return '已拒绝下发订阅：真实User-Agent命中扫描器特征';
+            case 'ua_cli_fetch':
+                return '已拒绝下发订阅：真实User-Agent命中命令行抓取工具';
+            case 'ua_api_fetch':
+                return '已拒绝下发订阅：真实User-Agent命中接口抓取工具';
+            case 'empty_user_agent':
+                return '已拒绝下发订阅：请求缺少User-Agent';
+            case 'ua_browser':
+            case 'ua_social':
+            case 'header_browser_context':
+                if ($hasProxyClientUa) {
+                    return '已拒绝下发订阅：代理客户端请求同时携带异常浏览器上下文';
+                }
+                return '已拒绝下发订阅：真实User-Agent或请求头表现为浏览器/内置浏览器，flag不可作为放行依据';
+            case 'converter_query':
+                return '已拒绝下发订阅：请求携带订阅转换器参数';
+            case 'untrusted_proxy_header':
+                return '已拒绝下发订阅：请求携带不可信转发头';
+            default:
+                return '已拒绝下发订阅：命中高危风控规则';
+        }
     }
 
     private function hasProxyClientUa($ua)
@@ -387,6 +425,7 @@ class AiRiskService
             'loon',
             'stash',
             'quantumult',
+            'flowz',
             'sfa',
             'sfi',
             'hiddify',
@@ -396,6 +435,54 @@ class AiRiskService
             }
         }
         return false;
+    }
+
+    private function flagClaimsProxyClient($flag)
+    {
+        $flag = strtolower((string)$flag);
+        foreach ([
+            'shadowrocket',
+            'clash',
+            'meta',
+            'mihomo',
+            'sing-box',
+            'singbox',
+            'v2ray',
+            'v2rayn',
+            'v2rayng',
+            'surge',
+            'loon',
+            'stash',
+            'quantumult',
+            'quanx',
+            'flowz',
+            'hiddify',
+            'karing',
+        ] as $needle) {
+            if (strpos($flag, $needle) !== false) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function hasBrowserContextHeader(Request $request)
+    {
+        return (bool)($request->header('sec-fetch-site')
+            || $request->header('sec-fetch-mode')
+            || $request->header('sec-fetch-dest')
+            || $request->header('sec-fetch-user')
+            || $request->header('referer'));
+    }
+
+    private function browserContextHeader(Request $request)
+    {
+        foreach (['sec-fetch-site', 'sec-fetch-mode', 'sec-fetch-dest', 'sec-fetch-user', 'referer'] as $header) {
+            if ($request->header($header)) {
+                return $header;
+            }
+        }
+        return '';
     }
 
     private function shouldRetryWithLegacyMaxTokens($data)

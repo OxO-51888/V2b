@@ -31102,7 +31102,34 @@
                     id: "\u8d2d\u4e70\u8ba2\u9605"
                 }))))) : l.a.createElement(w["a"], {
                     className: "font-size-h3 mb-3"
-                }))))), l.a.createElement("div", {
+                }))))), Array.isArray(d.subscription_rule_explanations) && d.subscription_rule_explanations.length ? l.a.createElement("div", {
+                    className: "row v2-subscribe-warning-row"
+                }, l.a.createElement("div", {
+                    className: "col-xl-12"
+                }, l.a.createElement("div", {
+                    className: "alert alert-warning mb-0 v2-subscribe-warning-card",
+                    role: "alert",
+                    style: {
+                        borderRadius: 10
+                    }
+                }, l.a.createElement("div", {
+                    className: "font-w700 mb-2"
+                }, "\u8ba2\u9605\u5b89\u5168\u5c0f\u63d0\u9192"), d.subscription_rule_explanations.slice(0, 3).map(e=>l.a.createElement("div", {
+                    key: e.id,
+                    className: "font-size-sm mb-2"
+                }, l.a.createElement("div", {
+                    className: "font-w600"
+                }, e.title, e.admin_preview ? l.a.createElement("span", {
+                    className: "badge badge-info ml-2"
+                }, "\u7ba1\u7406\u5458\u9884\u89c8") : null), l.a.createElement("div", {
+                    className: "text-muted font-size-xs mb-1"
+                }, e.created_at ? new Date(1e3 * e.created_at).toLocaleString("zh-CN", {
+                    hour12: !1
+                }) : null), l.a.createElement("div", {
+                    className: "text-muted"
+                }, e.summary), l.a.createElement("div", {
+                    className: "text-primary"
+                }, e.advice)))))) : null, l.a.createElement("div", {
                     className: "row mb-3 mb-md-0"
                 }, l.a.createElement("div", {
                     className: "col-xl-12"

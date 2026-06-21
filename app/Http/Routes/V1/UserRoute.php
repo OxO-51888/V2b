@@ -49,11 +49,7 @@ class UserRoute
             $router->get ('/ticket/fetch', 'V1\\User\\TicketController@fetch');
             $router->post('/ticket/withdraw', 'V1\\User\\TicketController@withdraw');
             // Server
-            $router->group([
-                'middleware' => 'client.signature'
-            ], function ($router) {
-                $router->get('/server/fetch', 'V1\\User\\ServerController@fetch');
-            });
+            $router->get ('/server/fetch', 'V1\\User\\ServerController@fetch');
             // Coupon
             $router->post('/coupon/check', 'V1\\User\\CouponController@check');
             // Telegram

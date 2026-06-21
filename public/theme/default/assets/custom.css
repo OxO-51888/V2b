@@ -1,0 +1,60 @@
+
+/* Frontend subscription warning card spacing */
+.v2-subscribe-warning-row {
+    margin-top: 0 !important;
+    margin-bottom: 28px !important;
+}
+
+.v2-subscribe-warning-card {
+    margin-bottom: 0 !important;
+    padding: 16px 20px !important;
+    border-radius: 10px !important;
+}
+
+.v2-subscribe-warning-card > .font-w700 {
+    margin-bottom: 10px !important;
+}
+
+.v2-subscribe-warning-card > .font-size-sm {
+    margin-bottom: 10px !important;
+}
+
+.v2-subscribe-warning-card > .font-size-sm:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Frontend subscription AI card color polish */
+.v2-subscribe-warning-card.alert-warning {
+    color: #3d3440 !important;
+    background: linear-gradient(135deg, #fff7fb 0%, #fff0f6 46%, #fff9f0 100%) !important;
+    border: 1px solid #f2bfd3 !important;
+    box-shadow: 0 12px 30px rgba(225, 132, 173, 0.14) !important;
+}
+
+.v2-subscribe-warning-card.alert-warning > .font-w700 {
+    color: #b94f82 !important;
+    letter-spacing: 0 !important;
+}
+
+.v2-subscribe-warning-card.alert-warning > .font-size-sm {
+    padding: 10px 12px !important;
+    color: #4d4650 !important;
+    background: rgba(255, 255, 255, 0.58) !important;
+    border: 1px solid rgba(242, 191, 211, 0.52) !important;
+    border-radius: 8px !important;
+}
+
+.v2-subscribe-warning-card.alert-warning .font-w600 {
+    color: #5c3348 !important;
+    font-weight: 600 !important;
+}
+
+.v2-subscribe-warning-card.alert-warning .text-muted {
+    color: #c84f88 !important;
+    font-weight: 500 !important;
+}
+
+.v2-subscribe-warning-card.alert-warning .text-primary {
+    color: #756a75 !important;
+    font-weight: 400 !important;
+}

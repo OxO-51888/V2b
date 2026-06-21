@@ -14,6 +14,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Services\AuthService;
 use App\Services\OrderService;
+use App\Services\SubscriptionRuleExplanationService;
 use App\Services\UserService;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
@@ -345,12 +346,22 @@ class UserController extends Controller
         $user['alive_ip'] = $countalive;
 
         $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
+        $explanationService = new SubscriptionRuleExplanationService();
+        $explanations = $explanationService->recentForUser($request->user['id'], 3);
+        $user['subscription_rule_explanations'] = $explanations;
 
         $userService = new UserService();
         $user['reset_day'] = $userService->getResetDay($user);
         $user['allow_new_period'] = config('v2board.allow_new_period', 0);
         return response([
             'data' => $user
+        ]);
+    }
+
+    public function subscriptionRuleExplanations(Request $request)
+    {
+        return response([
+            'data' => (new SubscriptionRuleExplanationService())->recentForUser($request->user['id'], $request->input('limit', 10))
         ]);
     }
 
