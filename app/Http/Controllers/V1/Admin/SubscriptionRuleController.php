@@ -28,7 +28,7 @@ class SubscriptionRuleController extends Controller
         'pull_frequency' => ['condition' => 30, 'name' => '5分钟同订阅超过%d次'],
         'ip_spread' => ['condition' => 8, 'name' => '10分钟同订阅超过%d个真实IP'],
         'ip_multi_user' => ['condition' => 6, 'name' => '10分钟同IP拉取超过%d个用户'],
-        'node_alive_ip_over_limit' => ['condition' => 5, 'name' => '同账号节点在线IP超过%d个'],
+        'node_alive_ip_over_limit' => ['condition' => 8, 'name' => '同账号在线IP超过%d个AI审查'],
         'direct_ip_host' => ['condition' => null, 'name' => '直连IP或本地Host访问订阅'],
         'head_method_probe' => ['condition' => null, 'name' => 'HEAD/OPTIONS探测订阅接口'],
         'ua_scanner' => ['condition' => null, 'name' => 'Censys/Shodan等扫描器UA'],
@@ -281,6 +281,13 @@ class SubscriptionRuleController extends Controller
         if ($defaults['condition'] === null) {
             $params['condition_value'] = null;
             $params['name'] = $defaults['name'];
+        } elseif ($type === 'node_alive_ip_over_limit') {
+            $params['condition_value'] = 8;
+            $params['name'] = sprintf($defaults['name'], 8);
+            $params['action'] = 'ai_review';
+            if (empty($params['remark'])) {
+                $params['remark'] = '超过8个真实在线IP交给AI审查，AI判断异常会重置订阅；超过15个真实在线IP直接重置订阅。';
+            }
         } else {
             $condition = $params['condition_value'];
             $condition = $condition === '' || $condition === null ? $defaults['condition'] : (int)$condition;

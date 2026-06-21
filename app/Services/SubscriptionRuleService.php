@@ -12,6 +12,9 @@ use Throwable;
 
 class SubscriptionRuleService
 {
+    private const NODE_ALIVE_AI_REVIEW_LIMIT = 8;
+    private const NODE_ALIVE_RESET_LIMIT = 15;
+
     private const GOOD_UA = [
         'clash',
         'clash meta',
@@ -251,8 +254,8 @@ class SubscriptionRuleService
             return null;
         }
 
-        $limit = (int)($rule->condition_value ?: 5);
-        if ((int)$aliveIpCount <= $limit) {
+        $aliveIpCount = (int)$aliveIpCount;
+        if ($aliveIpCount <= self::NODE_ALIVE_AI_REVIEW_LIMIT) {
             return null;
         }
 
@@ -261,13 +264,21 @@ class SubscriptionRuleService
             return null;
         }
 
-        $dedupeKey = 'SUB_RULE_NODE_ALIVE_' . $rule->id . '_' . $user->id;
+        $action = $aliveIpCount > self::NODE_ALIVE_RESET_LIMIT ? 'reset_subscribe' : 'ai_review';
+        $dedupeKey = 'SUB_RULE_NODE_ALIVE_' . $rule->id . '_' . $user->id . '_' . $action;
         if (!Cache::add($dedupeKey, time(), 600)) {
             return null;
         }
 
-        $matchedValue = $this->summarizeAliveIps($aliveData, (int)$aliveIpCount, (string)$nodeType, (string)$nodeId, $limit);
-        return $this->applyNodeAction($rule, $request, $user, 'node_alive_ip_over_limit', $matchedValue);
+        $matchedValue = $this->summarizeAliveIps(
+            $aliveData,
+            $aliveIpCount,
+            (string)$nodeType,
+            (string)$nodeId,
+            self::NODE_ALIVE_AI_REVIEW_LIMIT,
+            self::NODE_ALIVE_RESET_LIMIT
+        );
+        return $this->applyNodeAction($rule, $request, $user, 'node_alive_ip_over_limit', $matchedValue, $action);
     }
 
     private function guardPullFrequency(Request $request, User $user)
@@ -549,15 +560,15 @@ class SubscriptionRuleService
         }
     }
 
-    private function applyNodeAction(SubscriptionRule $rule, Request $request, User $user, $reason, $matchedValue = '')
+    private function applyNodeAction(SubscriptionRule $rule, Request $request, User $user, $reason, $matchedValue = '', $forcedAction = null)
     {
-        $log = $this->logHit($rule, $request, $user, $reason, $matchedValue);
-        $action = $this->normalizeAction($rule->action);
+        $action = $this->normalizeAction($forcedAction ?: $rule->action);
+        $log = $this->logHit($rule, $request, $user, $reason, $matchedValue, $action);
 
         if ($action === 'ai_review') {
             $decision = (new AiRiskService())->reviewSubscriptionRequest($request, $user, $rule, $reason, $matchedValue);
             $this->updateAiDecisionLog($log, $decision);
-            if (!empty($decision['block']) && $reason !== 'node_alive_ip_over_limit') {
+            if (!empty($decision['block'])) {
                 $this->resetUserSecret($user);
             }
             return null;
@@ -627,7 +638,7 @@ class SubscriptionRuleService
         $user->save();
     }
 
-    private function summarizeAliveIps(array $aliveData, $aliveIpCount, $nodeType, $nodeId, $limit)
+    private function summarizeAliveIps(array $aliveData, $aliveIpCount, $nodeType, $nodeId, $aiLimit, $resetLimit)
     {
         $ips = [];
         foreach ($aliveData as $nodeData) {
@@ -644,9 +655,10 @@ class SubscriptionRuleService
 
         $samples = array_slice(array_keys($ips), 0, 8);
         return substr(sprintf(
-            'alive_ip=%d limit=%d node=%s%s sample=%s',
+            'alive_ip=%d ai_limit=%d reset_limit=%d node=%s%s sample=%s',
             (int)$aliveIpCount,
-            (int)$limit,
+            (int)$aiLimit,
+            (int)$resetLimit,
             $nodeType,
             $nodeId,
             implode(',', $samples)
@@ -672,7 +684,7 @@ class SubscriptionRuleService
         }
     }
 
-    private function logHit(SubscriptionRule $rule, Request $request, User $user, $reason, $matchedValue = '')
+    private function logHit(SubscriptionRule $rule, Request $request, User $user, $reason, $matchedValue = '', $action = null)
     {
         try {
             return SubscriptionRuleLog::create([
@@ -680,7 +692,7 @@ class SubscriptionRuleService
                 'user_id' => $user->id,
                 'token_hash' => hash('sha256', (string)$user->token),
                 'rule_type' => $rule->type,
-                'action' => $rule->action,
+                'action' => $action ?: $rule->action,
                 'reason' => $reason,
                 'matched_value' => substr((string)$matchedValue, 0, 255),
                 'client_ip' => substr((string)$this->clientIp($request), 0, 45),
