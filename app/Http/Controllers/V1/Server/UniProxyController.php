@@ -174,26 +174,8 @@ class UniProxyController extends Controller
                 }
             }
 
-            // 计算活跃IP数量
-            $count = 0;
-            if (config('v2board.device_limit_mode', 0) == 1) {
-                $ipmap = [];
-                foreach ($ips_array as $nodetypeid => $newdata) {
-                    if ($nodetypeid !== 'alive_ip' && is_array($newdata) && isset($newdata['aliveips'])) {
-                        foreach ($newdata['aliveips'] as $ip_NodeId) {
-                            $ip = explode("_", $ip_NodeId)[0];
-                            $ipmap[$ip] = 1;
-                        }
-                    }
-                }
-                $count = count($ipmap);
-            } else {
-                foreach ($ips_array as $nodetypeid => $newdata) {
-                    if ($nodetypeid !== 'alive_ip' && is_array($newdata) && isset($newdata['aliveips'])) {
-                        $count += count($newdata['aliveips']);
-                    }
-                }
-            }
+            // 在线设备按真实 IP 去重，避免同一出口访问多个节点时重复计数。
+            $count = $this->countUniqueAliveIps($ips_array);
             $ips_array['alive_ip'] = $count;
             (new SubscriptionRuleService())->guardNodeAliveIp(
                 $request,
@@ -215,6 +197,40 @@ class UniProxyController extends Controller
         return response([
             'data' => true
         ]);
+    }
+
+    private function countUniqueAliveIps(array $ipsArray)
+    {
+        $ipmap = [];
+        foreach ($ipsArray as $nodetypeid => $newdata) {
+            if ($nodetypeid === 'alive_ip' || !is_array($newdata) || empty($newdata['aliveips']) || !is_array($newdata['aliveips'])) {
+                continue;
+            }
+            foreach ($newdata['aliveips'] as $ipNodeId) {
+                $ip = explode('_', (string)$ipNodeId)[0];
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    $ipmap[$ip] = true;
+                }
+            }
+        }
+        return count($ipmap);
+    }
+
+
+    // Compatible with v2node backends that request incremental users; return JSON full list.
+    public function user_delta(Request $request)
+    {
+        ini_set('memory_limit', -1);
+        $this->observeNodeExitIp($request);
+        Cache::put(CacheKey::get('SERVER_' . strtoupper($this->nodeType) . '_LAST_CHECK_AT', $this->nodeInfo->id), time(), 3600);
+        $users = $this->serverService->getAvailableUsers($this->nodeInfo->group_id)
+            ->map(function ($user) {
+                return array_filter($user->toArray(), function ($v) {
+                    return !is_null($v);
+                });
+            })->toArray();
+
+        return response(['users' => $users]);
     }
 
     private function nodeHost()

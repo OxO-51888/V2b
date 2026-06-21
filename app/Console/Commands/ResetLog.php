@@ -6,6 +6,7 @@ use App\Models\Log;
 use App\Models\Plan;
 use App\Models\StatServer;
 use App\Models\StatUser;
+use App\Models\SubscriptionRuleLog;
 use App\Utils\Helper;
 use Illuminate\Console\Command;
 use App\Models\User;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 class ResetLog extends Command
 {
+    private const SUBSCRIPTION_RULE_LOG_KEEP = 5000;
+
     protected $builder;
     /**
      * The name and signature of the console command.
@@ -48,5 +51,19 @@ class ResetLog extends Command
         StatUser::where('record_at', '<', strtotime('-2 month', time()))->delete();
         StatServer::where('record_at', '<', strtotime('-2 month', time()))->delete();
         Log::where('created_at', '<', strtotime('-1 month', time()))->delete();
+        $this->pruneSubscriptionRuleLogs();
+    }
+
+    private function pruneSubscriptionRuleLogs()
+    {
+        $cutoffId = SubscriptionRuleLog::orderBy('id', 'DESC')
+            ->skip(self::SUBSCRIPTION_RULE_LOG_KEEP)
+            ->value('id');
+
+        if (!$cutoffId) {
+            return;
+        }
+
+        SubscriptionRuleLog::where('id', '<=', $cutoffId)->delete();
     }
 }

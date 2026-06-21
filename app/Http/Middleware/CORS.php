@@ -18,7 +18,7 @@ class CORS
         $response = $next($request);
         $response->header('Access-Control-Allow-Origin', trim($origin, '/'));
         $response->header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS,HEAD');
-        $response->header('Access-Control-Allow-Headers', 'Origin,Content-Type,Accept,Authorization,X-Request-With,X-Xiao-Client,X-Xiao-Version,X-Xiao-Timestamp,X-Xiao-Nonce,X-Xiao-Sign');
+        $response->header('Access-Control-Allow-Headers', 'Origin,Content-Type,Accept,Authorization,X-Request-With');
         $response->header('Access-Control-Allow-Credentials', 'true');
         $response->header('Access-Control-Max-Age', 10080);
 
