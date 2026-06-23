@@ -70,7 +70,12 @@ class ConfigController extends Controller
         $key = $request->input('key');
         $data = [
             'ticket' => [
-                'ticket_status' => config('v2board.ticket_status', 0)
+                'ticket_status' => config('v2board.ticket_status', 0),
+                'ticket_ai_enable' => (int)config('v2board.ticket_ai_enable', 1),
+                'ticket_ai_auto_reply_enable' => (int)config('v2board.ticket_ai_auto_reply_enable', 0),
+                'ticket_ai_base_url' => config('v2board.ticket_ai_base_url', 'http://152.53.36.230:11434'),
+                'ticket_ai_model' => config('v2board.ticket_ai_model', 'qwen2.5:7b-instruct'),
+                'ticket_ai_recent_context' => config('v2board.ticket_ai_recent_context', '')
             ],
             'deposit' => [
                 'deposit_bounus' => config('v2board.deposit_bounus', [])

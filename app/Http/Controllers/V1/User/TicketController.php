@@ -94,6 +94,7 @@ class TicketController extends Controller
 
             DB::commit();
             $this->sendNotify($ticket, $request->input('message'),$request->user['id']);
+            (new TicketService())->autoReplyByAi($ticket, $request->input('message'), 'new_ticket');
             return response([
                 'data' => true
             ]);
@@ -134,6 +135,7 @@ class TicketController extends Controller
             abort(500, __('Ticket reply failed'));
         }
         $this->sendNotify($ticket, $request->input('message'), $request->user['id']);
+        $ticketService->autoReplyByAi($ticket, $request->input('message'), 'user_reply');
         return response([
             'data' => true
         ]);
