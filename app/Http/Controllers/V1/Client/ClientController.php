@@ -27,9 +27,11 @@ class ClientController extends Controller
 
     private function buildSubscribeResponse(Request $request)
     {
-        $flag = $request->input('flag')
-            ?? ($_SERVER['HTTP_USER_AGENT'] ?? '');
-        $flag = strtolower($flag);
+        $flag = strtolower(trim((string)$request->input('flag', '')));
+        if ($flag === '') {
+            $flag = strtolower((string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
+        }
+        $flag = $this->normalizeClientFlag($flag);
         $user = $request->user;
 
         // account not expired and is not banned.
@@ -66,6 +68,22 @@ class ClientController extends Controller
         }
         $class = new General($user, $servers);
         return $class->handle();
+    }
+
+    private function normalizeClientFlag($flag)
+    {
+        if (strpos($flag, 'go-http-client') !== false) {
+            return 'meta';
+        }
+        if (strpos($flag, 'hiddify') !== false
+            || strpos($flag, 'sfa') !== false
+            || strpos($flag, 'sfi') !== false) {
+            return 'sing-box 1.12.0';
+        }
+        if (strpos($flag, 'nekobox') !== false || strpos($flag, 'nekoray') !== false) {
+            return 'meta';
+        }
+        return $flag;
     }
 
     private function setSubscribeInfoToServers(&$servers, $user)
