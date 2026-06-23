@@ -70,6 +70,7 @@ class ClientController extends Controller
         return $class->handle();
     }
 
+
     private function normalizeClientFlag($flag)
     {
         if (strpos($flag, 'go-http-client') !== false) {

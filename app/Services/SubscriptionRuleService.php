@@ -572,7 +572,7 @@ class SubscriptionRuleService
         if ($action === 'ai_review') {
             $decision = (new AiRiskService())->reviewSubscriptionRequest($request, $user, $rule, $reason, $matchedValue);
             $this->updateAiDecisionLog($log, $decision);
-            if (!empty($decision['block']) && $reason !== 'node_alive_ip_over_limit') {
+            if (!empty($decision['block'])) {
                 $this->resetUserSecret($user);
             }
             return null;
