@@ -388,6 +388,7 @@ class ClashNyanpasu
         $array = [
             'name' => $server['name'],
             'type' => 'tuic',
+            'version' => 5,
             'server' => $server['host'],
             'port' => $server['port'],
             'uuid' => $password,

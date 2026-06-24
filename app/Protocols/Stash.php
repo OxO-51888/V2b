@@ -306,7 +306,7 @@ class Stash
             //'reduce-rtt' => $server['zero_rtt_handshake'] ? true : false,
             //'udp-relay-mode' => $server['udp_relay_mode'] ?? 'native',
             //congestion-controller' => $server['congestion_control'] ?? 'cubic',
-            'skip-cert-verify' => $server['insecure'] ? true : false,
+            'skip-cert-verify' => !empty($server['insecure']) ? true : false,
         ];
         if (isset($server['server_name'])) {
             $array['sni'] = $server['server_name'];
@@ -335,7 +335,7 @@ class Stash
             $array['mport'] = $server['port'];   
         }
         $array['udp'] = true;
-        $array['skip-cert-verify'] = $server['insecure'] == 1 ? true : false;
+        $array['skip-cert-verify'] = !empty($server['insecure']) ? true : false;
 
         if (isset($server['server_name'])) $array['sni'] = $server['server_name'];
 

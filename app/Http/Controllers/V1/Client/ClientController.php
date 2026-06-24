@@ -109,7 +109,12 @@ class ClientController extends Controller
         if (strpos($text, 'ssrplus') !== false) return 'ssrplus';
         if (strpos($text, 'sagernet') !== false) return 'sagernet';
         if (strpos($text, 'nekobox') !== false || strpos($text, 'nekoray') !== false) return 'meta';
-        if (strpos($text, 'flclash') !== false || strpos($text, 'clashmeta') !== false || strpos($text, 'clash meta') !== false || strpos($text, 'mihomo') !== false) return 'meta';
+        if (strpos($text, 'flclash') !== false
+            || strpos($text, 'clashmeta') !== false
+            || strpos($text, 'clash meta') !== false
+            || strpos($text, 'clash.meta') !== false
+            || strpos($text, 'clash-meta') !== false
+            || strpos($text, 'mihomo') !== false) return 'meta';
         if (strpos($text, 'nyanpasu') !== false) return 'nyanpasu';
         if (strpos($text, 'clash-verge') !== false || strpos($text, 'clash verge') !== false || strpos($text, 'verge') !== false) return 'verge';
         if (strpos($text, 'clash') !== false) return 'clash';

@@ -423,6 +423,7 @@ class Helper
     {
         $tlsSettings = $server['tls_settings'] ?? [];
         $config = [
+            'version' => 5,
             'sni' => $server['server_name'] ?? ($tlsSettings['server_name'] ?? ''),
             'alpn'=> 'h3',
             'congestion_control' => $server['congestion_control'],
