@@ -70,14 +70,15 @@ class ClientController extends Controller
         return $class->handle();
     }
 
-
     private function normalizeClientFlag($flag)
     {
         if (strpos($flag, 'go-http-client') !== false) {
             return 'meta';
         }
-        if (strpos($flag, 'hiddify') !== false
-            || strpos($flag, 'sfa') !== false
+        if (strpos($flag, 'hiddify') !== false) {
+            return 'sing-box 1.11.0';
+        }
+        if (strpos($flag, 'sfa') !== false
             || strpos($flag, 'sfi') !== false) {
             return 'sing-box 1.12.0';
         }

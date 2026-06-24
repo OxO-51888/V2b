@@ -35,7 +35,7 @@ class UniProxyController extends Controller
         $this->nodeId = $request->input('node_id');
         $this->serverService = new ServerService();
         $this->nodeInfo = $this->serverService->getServer($this->nodeId, $this->nodeType);
-        if (!$this->nodeInfo) abort(500, 'server is not exist');
+        if (!$this->nodeInfo) abort(404, 'server is not exist');
     }
 
     // 后端获取用户

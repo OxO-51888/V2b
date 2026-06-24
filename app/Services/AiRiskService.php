@@ -83,6 +83,11 @@ class AiRiskService
                     'task' => 'Generate a support ticket reply draft in Chinese.',
                     'tone' => '亲亲语气，清楚、耐心、可爱一点，但不要油腻；开头要让客户知道这是 AI 小助手回复',
                     'reply_requirements' => [
+                        'Keep the reply short: normally 2 short paragraphs, 3 to 5 sentences, under 260 Chinese characters unless the user asks for a tutorial.',
+                        'Do not repeat the same diagnosis, question, or instruction that already appears in previous staff replies.',
+                        'If the user has provided the client name, version, screenshot, or log, acknowledge it and do not ask for that same detail again.',
+                        'Ask at most one missing detail. Put the next action before the question.',
+                        'Do not use generic endings such as "随时告诉我", "希望能帮到您", or repeated cute closing lines.',
                         'Focus on the newest user question or follow-up.',
                         'Clearly identify as an AI assistant near the beginning.',
                         'Use 亲亲 naturally when appropriate, but keep troubleshooting steps accurate.',
@@ -437,6 +442,7 @@ class AiRiskService
             $reply = preg_replace('/.*光猫.*运营商出口IP.*[。！？!?][\\r\\n]*/u', '', $reply);
         }
 
+        $reply = $this->normalizeTicketReplyStyle($reply, $userText);
         $reply = $this->ensureTicketAiIdentity($reply);
 
         return trim($reply);
@@ -451,7 +457,89 @@ class AiRiskService
         }
 
         $reply = preg_replace('/^亲亲[，,]\s*/u', '', $reply);
-        return "亲亲，我是 AI 小助手，先帮你看一下。\n" . $reply;
+        return "亲亲，我是 AI 小助手。\n" . $reply;
+    }
+
+    private function normalizeTicketReplyStyle($reply, $userText)
+    {
+        $reply = trim((string)$reply);
+        $reply = preg_replace('/\r\n|\r/u', "\n", $reply);
+        if (preg_match('/如何.*截图|怎么.*截图|截图.*怎么|发送截图|发截图/u', (string)$userText)) {
+            return '截图可以直接在工单回复里上传或粘贴；如果页面没有上传按钮，就把客户端测速结果、报错文字复制到工单里。';
+        }
+
+        $reply = preg_replace('/支持\s*HY2\s*的支持\s*HY2\s*的客户端\s*Party/iu', 'Mihomo Party', $reply);
+        $reply = preg_replace('/支持\s*HY2\s*的客户端\s*Party/iu', 'Mihomo Party', $reply);
+        $reply = preg_replace('/Mihomo\s*支持\s*HY2\s*的客户端/iu', 'Mihomo Party', $reply);
+        $reply = preg_replace('/关闭代理设备（如路由器）/u', '关闭代理', $reply);
+        $reply = preg_replace('/我是\s*AI\s*小助手(哦)?[，,。]?\s*(先帮你看一下[。.]?)?/u', '', $reply);
+        $reply = preg_replace('/亲亲[，,]?\s*/u', '', $reply);
+
+        if ($this->ticketUserProvidedClientInfo($userText)) {
+            $reply = preg_replace('/[^。！？!?\n]*(请|麻烦|需要|可以|先)?[^。！？!?\n]*(确认|告知|告诉|提供|发来)[^。！？!?\n]*(客户端名称和版本|客户端.*版本|使用的.*客户端|软件.*版本|是什么客户端|哪个客户端)[^。！？!?\n]*[。！？!?]?/u', '', $reply);
+            $reply = preg_replace('/[^。！？!?\n]*(如果有|若有)?[^。！？!?\n]*(客户端版本|客户端名称)[^。！？!?\n]*(可以|请|麻烦)?[^。！？!?\n]*(提供|发来|告诉)[^。！？!?\n]*[。！？!?]?/u', '', $reply);
+        }
+
+        if ($this->ticketUserProvidedDiagnosticDetail($userText)) {
+            $reply = preg_replace('/[^。！？!?\n]*(最近一直|已经试过|是否|有没有|是不是|吗)[^。！？!?\n]*[？?]/u', '', $reply);
+            $reply = preg_replace('/[^。！？!?\n]*根据[^。！？!?\n]*(日志|错误日志|提示信息)[^。！？!?\n]*[。！？!?]/u', '', $reply);
+            $reply = preg_replace('/这提示[^。！？!?\n]*连接超时[。！？!?]/u', '这个报错更像是本地网络到目标站连接超时。', $reply);
+            $reply = preg_replace('/[^。！？!?\n]*(请|麻烦|可以)?[^。！？!?\n]*(提供|发来|告诉)[^。！？!?\n]*(日志|错误日志|提示信息|截图)[^。！？!?\n]*[。！？!?]?/u', '', $reply);
+            $reply = preg_replace('/[^。！？!?\n]*(日志|错误日志|提示信息|截图)[^。！？!?\n]*(可以|请|麻烦)?[^。！？!?\n]*(提供|发来|告诉)[^。！？!?\n]*[。！？!?]?/u', '', $reply);
+        }
+
+        $reply = preg_replace('/请检查一下本地网络设置和DNS配置是否正常。/u', '先关闭代理刷新订阅，再换个网络或重启光猫后测试。', $reply);
+        if (preg_match('/全部.*超时|全.*红|所有.*节点.*(超时|不可用|红)|timeout/i', (string)$userText . "\n" . $reply)
+            && !preg_match('/光猫|飞行模式|刷新订阅|重新导入|换个网络|网络出口/u', $reply)) {
+            $reply .= "\n先关闭代理刷新订阅；如果仍然全部超时，家里宽带请断电重启光猫 3-5 分钟，手机流量请开关一次飞行模式。";
+        }
+
+        $reply = preg_replace('/[^。！？!?\n]*(我们来一起看看|接下来可以怎么排查|如果有任何疑问|如有任何疑问|需要更多帮助|随时告诉我|随时联系|希望.*帮到|这样应该能帮到|这样应该能帮助)[^。！？!?\n]*[。！？!?]?/u', '', $reply);
+        $reply = preg_replace('/\s+/u', ' ', $reply);
+        $reply = trim($reply);
+
+        return $this->compactTicketReply($reply);
+    }
+
+    private function ticketUserProvidedClientInfo($text)
+    {
+        return (bool)preg_match('/Mihomo\s*Party|Clash\s*Party|Clash\s*Meta|Shadowrocket|小火箭|Surge|Loon|Stash|sing-?box|v2rayN|OpenClash|PassWall|Karing|Hiddify|Quantumult|NekoBox|版本|v?\d+\.\d+|内核/u', (string)$text);
+    }
+
+    private function ticketUserProvidedDiagnosticDetail($text)
+    {
+        return (bool)preg_match('/日志|error|timeout|deadline exceeded|not found|截图|报错|提示|版本|v?\d+\.\d+/iu', (string)$text);
+    }
+
+    private function compactTicketReply($reply)
+    {
+        $sentences = preg_split('/(?<=[。！？!?])\s*/u', trim((string)$reply), -1, PREG_SPLIT_NO_EMPTY);
+        if (!$sentences) {
+            return trim((string)$reply);
+        }
+
+        $kept = [];
+        $seen = [];
+        $length = 0;
+        foreach ($sentences as $sentence) {
+            $sentence = trim($sentence);
+            if ($sentence === '') {
+                continue;
+            }
+            $key = preg_replace('/[，,。！？!?\s\dA-Za-z]+/u', '', $sentence);
+            $key = mb_substr($key, 0, 24);
+            if ($key !== '' && isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $kept[] = $sentence;
+            $length += mb_strlen($sentence);
+            if (count($kept) >= 4 || $length >= 320) {
+                break;
+            }
+        }
+
+        return trim(implode("\n", $kept));
     }
 
     private function isTicketWebsiteAccessQuestion($text)
@@ -494,6 +582,7 @@ class AiRiskService
         $client = $this->primaryTicketClient($userText);
 
         $clientPatterns = [
+            '/Mihomo\s*Party/iu',
             '/Clash\s*Party/iu',
             '/Clash\s*Meta/iu',
             '/Clash(?!\s*(Party|Meta))/iu',
@@ -532,8 +621,9 @@ class AiRiskService
     private function primaryTicketClient($text)
     {
         $clients = [
+            'Mihomo Party' => '/Mihomo\s*Party/iu',
             'Clash Party' => '/Clash\s*Party/iu',
-            'Clash Meta' => '/Clash\s*Meta|Mihomo/iu',
+            'Clash Meta' => '/Clash\s*Meta|(?<!Party\s)Mihomo(?!\s*Party)/iu',
             'Shadowrocket' => '/Shadowrocket|小火箭/u',
             'Surge' => '/Surge/iu',
             'Loon' => '/Loon/iu',
@@ -696,7 +786,8 @@ class AiRiskService
                 'stream' => false,
                 'messages' => $messages,
                 'options' => [
-                    'temperature' => 0.25
+                    'temperature' => 0.15,
+                    'num_predict' => 280
                 ]
             ]
         ]);
