@@ -1,7 +1,0 @@
-<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="退出登录">
-  <path d="M10.4 5.1H7.1c-1 0-1.8.8-1.8 1.8v10.2c0 1 .8 1.8 1.8 1.8h3.3" fill="#FFE5F0"/>
-  <path d="M10.4 5.1H7.1c-1 0-1.8.8-1.8 1.8v10.2c0 1 .8 1.8 1.8 1.8h3.3" stroke="#F0609A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M10.2 12h8.1" stroke="#F0609A" stroke-width="1.7" stroke-linecap="round"/>
-  <path d="m15.4 8.7 3.3 3.3-3.3 3.3" stroke="#F0609A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M8.6 9.5v5" stroke="#FF8FBE" stroke-width="1.6" stroke-linecap="round"/>
-</svg>
