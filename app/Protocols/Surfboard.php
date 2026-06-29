@@ -56,6 +56,12 @@ class Surfboard
                 // [Proxy Group]
                 $proxyGroup .= $item['name'] . ', ';
             }
+            if ($item['type'] === 'hysteria2' || ($item['type'] === 'hysteria' && (int)($item['version'] ?? 0) === 2)) {
+                // [Proxy]
+                $proxies .= self::buildHysteria($user['uuid'], $item);
+                // [Proxy Group]
+                $proxyGroup .= $item['name'] . ', ';
+            }
             if ($item['type'] === 'anytls') {
                 // [Proxy]
                 $proxies .= self::buildAnyTLS($user['uuid'], $item);
@@ -172,6 +178,42 @@ class Surfboard
             if(isset($server['network_settings']['headers']['Host'])) {
                 array_push($config, "ws-headers=Host:{$server['network_settings']['headers']['Host']}");
             }
+        }
+        $config = array_filter($config);
+        $uri = implode(',', $config);
+        $uri .= "\r\n";
+        return $uri;
+    }
+
+    public static function buildHysteria($password, $server)
+    {
+        $parts = explode(",", $server['port']);
+        $firstPart = $parts[0];
+        if (strpos($firstPart, '-') !== false) {
+            $range = explode('-', $firstPart);
+            $firstPort = $range[0];
+        } else {
+            $firstPort = $firstPart;
+        }
+
+        $tlsSettings = $server['tls_settings'] ?? [];
+        $serverName = $server['server_name'] ?? ($tlsSettings['server_name'] ?? '');
+        $insecure = $server['insecure'] ?? ($tlsSettings['allow_insecure'] ?? 0);
+
+        $config = [
+            "{$server['name']}=hysteria2",
+            "{$server['host']}",
+            "{$firstPort}",
+            "password={$password}",
+            "download-bandwidth={$server['up_mbps']}",
+            $serverName ? "sni={$serverName}" : "",
+            'udp-relay=true'
+        ];
+        if (!empty($insecure)) {
+            array_push($config, $insecure ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+        }
+        if (isset($server['obfs'])) {
+            array_push($config, 'salamander-password=' . $server['obfs_password']);
         }
         $config = array_filter($config);
         $uri = implode(',', $config);
