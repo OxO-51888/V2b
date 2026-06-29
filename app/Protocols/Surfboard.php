@@ -195,6 +195,9 @@ class Surfboard
         } else {
             $firstPort = $firstPart;
         }
+        $portHopping = (strpos($server['port'], '-') !== false || strpos($server['port'], ',') !== false)
+            ? str_replace(',', ';', $server['port'])
+            : '';
 
         $tlsSettings = $server['tls_settings'] ?? [];
         $serverName = $server['server_name'] ?? ($tlsSettings['server_name'] ?? '');
@@ -209,6 +212,10 @@ class Surfboard
             $serverName ? "sni={$serverName}" : "",
             'udp-relay=true'
         ];
+        if ($portHopping) {
+            $config[] = 'port-hopping="' . $portHopping . '"';
+            $config[] = 'port-hopping-interval=30';
+        }
         if (!empty($insecure)) {
             array_push($config, $insecure ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
         }
