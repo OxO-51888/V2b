@@ -17,6 +17,7 @@ class AiRiskService
     private const OPENAI_BASE_URL = 'https://api.openai.com/v1';
     private const OPENAI_MODEL = 'gpt-5-nano';
     private const RUNTIME_CACHE_KEY = 'SUBSCRIPTION_RULE_AI_RUNTIME_STATUS';
+    private $lastTicketToolUsage = [];
 
     public function analyzeLogs($logs, array $config)
     {
@@ -71,88 +72,348 @@ class AiRiskService
     public function generateTicketReplyDraft(array $context, array $config)
     {
         $context = $this->enrichTicketContext($context, $config);
-        $selectedKnowledge = $this->selectTicketKnowledge($context);
-        $content = $this->callTicketModel($config, [
+        $selectedKnowledge = [];
+        if ($this->ticketAiToolEnabled($config, 'ticket_ai_tool_knowledge_enable', true)) {
+            $selectedKnowledge = $this->selectTicketKnowledge($context, $config, 3);
+            $this->recordTicketToolUsage($context, 'knowledge_search', '知识库检索', true, !empty($selectedKnowledge), [
+                'items' => count($selectedKnowledge)
+            ]);
+        } else {
+            $this->recordTicketToolUsage($context, 'knowledge_search', '知识库检索', false, false);
+        }
+
+        $selectedExamples = $this->selectTicketReplyExamples($context, 3);
+        $this->recordTicketToolUsage($context, 'reply_examples', '历史工单范例', true, !empty($selectedExamples), [
+            'items' => count($selectedExamples)
+        ]);
+
+        $messages = [
             [
                 'role' => 'system',
-                'content' => 'You are an AI customer support assistant for a proxy subscription panel. Write concise, friendly Chinese customer-service replies with a gentle "亲亲" tone, cute but not oily. The customer must know the reply is from an AI assistant. Answer the latest user message specifically. Use the selected knowledge only when relevant. Use ticket_context.ops_context.recent_changes as current operational facts only when it is relevant; if it is empty, never invent backend, node, domain, or subscription changes. Use ticket_context.read_only_user_snapshot, recent_orders, and recent_subscription_hits only as read-only evidence; never say you changed data, never promise a reset, and never expose internal rule names, full IPs, emails, tokens, database fields, or node secrets. Do not mix unrelated categories: payment questions must never mention proxy clients, client versions, nodes, subscriptions, imports, URLs, or proxy settings; client/import questions must not mention payment or orders unless the user explicitly asks. In long conversations, first identify what the user already tried or already provided, then give only the next 1 to 3 useful checks. A staff suggestion is not a completed user action unless the user explicitly says they did it. If the latest user message asks whether something is normal, answer normal or abnormal first, then explain. If a message mixes normal household device count with nodes turning red or timing out, split the answer: the device count can be normal, but the repeated timeout is the part to troubleshoot. If all nodes are timeout/red across regions and the account/subscription looks normal or the user says subscription can update, start with local network exit IP troubleshooting. For home broadband, ask the user to power off the optical modem/ONT or reconnect PPPoE for 3-5 minutes to get a new ISP exit IP; do not say rebooting only the router will change the exit IP. For mobile data, say exactly that the user should turn airplane mode ON, wait 10-20 seconds, then turn airplane mode OFF to reconnect mobile data and get a fresh mobile network exit IP. Do not ask a mobile-data user to test with mobile hotspot as the first step. Do not ask for client version before this first local-IP step unless the user says only one client has the problem. If recent_subscription_hits show reset_subscribe, tell the user the old subscription may have been reset recently and they should copy the latest subscription from the panel. If previous staff replies already gave basic steps, do not repeat them unchanged. If the user already provided an order number, payment time, client version, screenshot, or error log, acknowledge it and do not ask for it again. Do not claim the user has provided account, order, or screenshot information unless it is visible in user messages. Do not mention internal rules, tokens, full IPs, database fields, or implementation details. Do not promise actions that were not confirmed. Do not start with generic greetings like "您好" and do not add signatures. Return only the reply text.'
+                'content' => '你是代理订阅面板的 AI 客服小助手。只用中文回复，开头必须让用户知道是 AI 小助手在回复，例如“亲亲，我是 AI 小助手。”或“AI 小助手来啦”。禁止用“您好”开头。语气亲切、清楚、略可爱但不要油腻。先读完整工单上下文、用户最新消息、近期变动、只读查询结果和知识库，再判断最可能原因；不要只因为出现某个关键词就套固定模板。只根据 payload 回答，不编造后台、节点、域名、订阅变化；不要输出“帮你草拟回复”这种内部话。不要暴露邮箱、完整 IP、token、规则名、数据库字段或实现细节；不要承诺已经修改数据。付款问题只谈订单/支付，客户端或节点问题只谈客户端/订阅/网络。用户已经提供的信息不要重复索要；最多问一个必要问题。输出 2 段内，通常 3-5 句。不要签名。'
             ],
             [
                 'role' => 'user',
                 'content' => json_encode([
-                    'task' => 'Generate a support ticket reply draft in Chinese.',
-                    'tone' => '亲亲语气，清楚、耐心、可爱一点，但不要油腻；开头要让客户知道这是 AI 小助手回复',
-                    'reply_requirements' => [
-                        'Keep the reply short: normally 2 short paragraphs, 3 to 5 sentences, under 260 Chinese characters unless the user asks for a tutorial.',
-                        'Do not repeat the same diagnosis, question, or instruction that already appears in previous staff replies.',
-                        'If the user has provided the client name, version, screenshot, or log, acknowledge it and do not ask for that same detail again.',
-                        'Ask at most one missing detail. Put the next action before the question.',
-                        'Do not use generic endings such as "随时告诉我", "希望能帮到您", or repeated cute closing lines.',
-                        'Focus on the newest user question or follow-up.',
-                        'Clearly identify as an AI assistant near the beginning.',
-                        'Use 亲亲 naturally when appropriate, but keep troubleshooting steps accurate.',
-                        'Use different guidance for different clients such as Loon, Surge, Shadowrocket, Clash, Stash, sing-box, v2rayN, and soft routers.',
-                        'When the user says they already tried a step, move to the next step instead of repeating the same sentence.',
-                        'For the third or later round of the same issue, summarize confirmed facts in one short sentence and then give deeper checks or escalation.',
-                        'Treat staff messages as suggestions, not as proof that the user completed the step.',
-                        'When the user asks "is this normal", answer that directly before asking for more information.',
-                        'When device count looks normal but nodes still time out, separate those two conclusions clearly.',
-                        'If the user has already provided an order number, payment time, client version, screenshot, or log, do not ask for the same item again.',
-                        'Never say the user has already provided account or order details unless those details are visible in user messages.',
-                        'Ask at most two missing details, and only when needed.',
-                        'Do not ask for the same missing detail twice in one reply.',
-                        'Do not add unrelated tips just because they are generally safe.',
-                        'If recent_changes says the subscription was changed, renewed, adjusted, or replaced, describe it as the site subscription entry/link being updated, not the user subscription being updated. If the user asks about subscription import, missing nodes, or old links, never say old subscription links can continue to be used. Tell the user to delete the old subscription and copy the latest subscription link from the panel.',
-                        'If recent_changes mentions HY2/Hysteria2 blocking, say HY2 protocol recently has some blocking. Never say new protocol blocking or new protocol caused the blocking.',
-                        'Do not mention kernels, cores, or Mihomo kernel to customers. Say client or client version instead.',
-                        'Follow detected_policy strictly. Never mention forbidden_topics.',
-                        'Do not sign the reply or include placeholder names.',
-                        'Keep the reply practical and easy for a normal user to understand.'
-                    ],
-                    'panel_context' => [
-                        'service_type' => 'subscription panel',
-                        'safe_reply_rules' => [
-                            'Ask the user to provide client name, version, and operation time when needed.',
-                            'For subscription import issues only, suggest copying the full subscription link from the panel and importing it inside the proxy client.',
-                            'For browser or chat app preview issues only, tell the user not to open the subscription link directly in browser or chat software.',
-                            'For possible proxy-on import issues only, remind the user to turn off proxy before importing subscription.',
-                            'For all-node timeout cases, first distinguish account/subscription problems from local network exit IP problems.',
-                            'If recent operational changes are provided, explain them plainly only when the user issue matches.',
-                            'If recent subscription hit summary shows a reset, tell the user to delete the old subscription and copy the newest one from the panel.',
-                            'Keep the reply practical and easy to understand.'
-                        ]
+                    'task' => '生成一条工单回复草稿。',
+                    'must_follow' => [
+                        '知识库只是参考材料，不是关键词命令。必须结合完整上下文判断：同样出现“timeout、报错、导入失败、订阅”等词时，可能分别是网络、客户端版本、订阅入口、配置解析或用户操作问题。',
+                        '如果证据不足，先问一个最关键的信息，例如“具体提示了什么文字”或“使用的客户端名称和版本”，不要凭关键词直接下结论。',
+                        '如果用户给出了导入失败、证书校验、配置解析、proxy group、domain_resolver、x509、unknown field 等明确报错，优先解释这个报错本身，不要套用全部节点超时或本地网络出口排查。',
+                        '如果 Meta、Clash Meta、Mihomo、Hiddify 这类客户端导入订阅时出现 x509、certificate signed by unknown authority 或 tls failed to verify certificate，优先按客户端 Meta 版本太低或组件太旧处理：让用户去教程页下载新版/推荐客户端后重新导入，不要说服务器证书危险。',
+                        '如果 Shadowrocket/小火箭仍然提示证书无效、服务器 URL 遇到问题、伪装服务器或连接到不可信服务器，先让用户暂时换用教程页里的 iOS 推荐客户端，例如 Loon、Surge 或 Stash；不要推荐安卓或电脑端客户端，也不要继续让用户在小火箭里反复导入或确认提示。',
+                        '如果是全部节点超时且订阅可更新，优先判断本地网络出口 IP 问题：宽带断电光猫/ONT 或重新拨号 PPPoE 3-5 分钟；手机流量开关飞行模式 10-20 秒。',
+                        '只有 recent_changes 明确写到“网站订阅入口、订阅地址、订阅链接、订阅域名、发布页入口”这类入口变更时，才允许说“网站订阅入口/订阅地址换新”；如果只是写“订阅已换新”，不要主动提订阅入口换新。',
+                        '如果提到 HY2/Hysteria2，只能说 HY2 协议最近有些阻断；不要说新协议，不要说内核，客户只看客户端/客户端版本。',
+                        '如果命中记录显示订阅被重置，提醒用户删除旧订阅，并从面板复制最新订阅重新导入。',
+                        '如果用户已经说删除过旧订阅、重新导入过、关闭过代理或刷新成功，不要再要求重复同一步，直接给下一步检查。',
+                        '如果用户没说客户端名称，不要假定 Shadowrocket、Loon、Clash 或其他具体客户端。',
+                        '不要把“远程订阅、远程配置、普通节点、本地配置、策略组、解析”这类内部排查词直接发给客户；必须改成客户能照做的步骤。',
+                        'Loon 不显示节点时，优先说：请在 Loon 里删除旧订阅，点右上角 +，选择用链接或 URL 添加订阅，粘贴面板复制的完整订阅链接；添加后手动刷新一次。',
+                        '工单目前不能直接上传图片；除非用户明确说已经在售后群发图，否则不要主动要求截图或图片，优先让用户复制报错文字、客户端名称、版本和操作时间。',
+                        '付款问题不要凭最近订单直接说“已完成”或“系统正在处理中”；只有用户提供订单号或付款时间并且只读查询能对应上时，才描述具体订单状态。否则只让用户查看订单页，并补充订单号和付款时间。',
+                        'selected_examples 是正式服历史工单范例，只能学习客服排查顺序、表达习惯和信息取舍；当前工单事实、只读查询结果和 selected_knowledge 优先。不要复制范例中的账号、时间、链接、站点、旧公告或不适合当前场景的结论。'
                     ],
                     'detected_policy' => $this->ticketReplyPolicy($context),
                     'selected_knowledge' => $selectedKnowledge,
-                    'ticket_context' => $context
+                    'selected_examples' => $selectedExamples,
+                    'ticket_context' => $this->ticketModelContext($context)
                 ], JSON_UNESCAPED_UNICODE)
             ]
-        ], 30, 1200);
+        ];
 
-        $content = $this->guardTicketReply($this->trimText($content, 1600), $context);
+        $content = $this->generateGuardedTicketReply($config, $messages, $context);
+        $this->lastTicketToolUsage = array_values($context['ai_tool_usage'] ?? []);
 
         $this->markRuntimeStatus(true, 'ticket_draft_success');
         return $this->trimText($content, 1600);
     }
 
+    private function generateGuardedTicketReply(array $config, array $messages, array $context)
+    {
+        $content = $this->guardTicketReply($this->trimText($this->callTicketModel($config, $messages), 1600), $context);
+        $blockReason = $this->ticketAutoPublishBlockReason($content, $context);
+        if (!$blockReason) {
+            return $content;
+        }
+
+        $retryMessages = $messages;
+        $retryMessages[] = [
+            'role' => 'assistant',
+            'content' => $content
+        ];
+        $retryMessages[] = [
+            'role' => 'user',
+            'content' => '上一条回复没有通过发布检查，原因：' . $blockReason . '。请重新生成一条可以直接发给用户的完整中文工单回复：必须说明你是 AI 小助手，必须结合用户问题给出具体下一步；不要只写开场白，不要输出内部规则、后台、数据库、token、完整 IP 或无关建议。'
+        ];
+
+        return $this->guardTicketReply($this->trimText($this->callTicketModel($config, $retryMessages), 1600), $context);
+    }
+
+    public function lastTicketToolUsage()
+    {
+        return $this->lastTicketToolUsage;
+    }
+
+    public function ticketAutoReplySkipReason(array $context)
+    {
+        if ($this->ticketPaymentOrderQuestion($context)) {
+            return 'payment_order';
+        }
+
+        return '';
+    }
+
+    public function ticketAutoPublishBlockReason($reply, array $context)
+    {
+        $reply = trim((string)$reply);
+        $userText = trim($this->ticketRoleText($context, 'user') . "\n" . (string)($context['question'] ?? ''));
+        if ($reply === '' || mb_strlen($reply) < 24) {
+            return 'empty_or_too_short';
+        }
+        if (!preg_match('/AI\s*小助手/u', $reply)) {
+            return 'missing_ai_identity';
+        }
+        if ($this->ticketPaymentOrderQuestion($context)) {
+            return 'payment_order';
+        }
+        if (preg_match('/正在.*核实|正在.*核对|正在处理中|第一时间(给您|给你)?回复|第一时间通知|已经收到.*订单|已收到.*订单|请您稍等|尽快为您处理/u', $reply)) {
+            return 'unsafe_manual_commitment';
+        }
+        if (!preg_match('/付款|支付|订单|充值|未到账|没到账|扣款|余额|退款/u', $userText)
+            && preg_match('/付款|支付|订单|充值|未到账|没到账|扣款|余额|退款/u', $reply)) {
+            return 'unrelated_payment_topic';
+        }
+        $asksForFullSubscription = preg_match('/(发来|发给|提供|发送|贴出|提交)[^。！？\n]{0,24}完整订阅链接|完整订阅链接[^。！？\n]{0,24}(发来|发给|提供|发送|贴出|提交)/u', $reply)
+            && !preg_match('/不要[^。！？\n]{0,24}(发来|发给|提供|发送|贴出|提交)[^。！？\n]{0,24}完整订阅链接|不要[^。！？\n]{0,24}完整订阅链接[^。！？\n]{0,24}(发来|发给|提供|发送|贴出|提交)/u', $reply);
+        if (preg_match('/密码|token|数据库|规则名|后台服务器|完整\s*IP|内核|核心/u', $reply)
+            || $asksForFullSubscription) {
+            return 'sensitive_or_internal_term';
+        }
+        if (!preg_match('/截图|图片|发图|上传/u', $userText)
+            && preg_match('/截图|图片|发图|上传/u', $reply)) {
+            return 'asks_for_image';
+        }
+        if (preg_match('/随时联系|继续反馈|更多信息|如有.*问题|希望.*帮助|欢迎/u', $reply)
+            && mb_strlen($reply) > 260) {
+            return 'too_much_filler';
+        }
+
+        return '';
+    }
+
+    private function ticketModelContext(array $context)
+    {
+        $ticket = (array)($context['ticket'] ?? []);
+        $messages = [];
+        foreach (array_slice((array)($ticket['messages'] ?? []), -6) as $message) {
+            $messages[] = [
+                'from' => $message['from'] ?? '',
+                'message' => $this->sanitizeTicketContextText($this->trimText((string)($message['message'] ?? ''), 260)),
+                'created_at' => $message['created_at'] ?? ''
+            ];
+        }
+
+        return [
+            'question' => $this->sanitizeTicketContextText($this->trimText((string)($context['question'] ?? ''), 500)),
+            'source' => $this->sanitizeTicketContextText((string)($context['source'] ?? '')),
+            'ticket' => [
+                'subject' => $this->sanitizeTicketContextText($this->trimText((string)($ticket['subject'] ?? ''), 160)),
+                'messages' => $messages
+            ],
+            'read_only_summary' => $this->sanitizeTicketContextText($this->trimText((string)($context['read_only_context_summary'] ?? ''), 800)),
+            'recent_changes' => $this->sanitizeTicketContextText($this->trimText((string)($context['ops_context']['recent_changes'] ?? ''), 500)),
+            'capabilities' => $context['ai_capabilities'] ?? []
+        ];
+    }
+
     private function enrichTicketContext(array $context, array $config)
     {
-        $recentChanges = trim((string)($config['ticket_ai_recent_context'] ?? ''));
-        $context['ops_context'] = [
-            'recent_changes' => $this->sanitizeTicketContextText($this->trimText($recentChanges, 1200)),
-            'recent_changes_present' => $recentChanges !== ''
-        ];
+        $context['ai_tool_usage'] = [];
+        $context['ai_capabilities'] = $this->ticketAiCapabilities($config);
+
+        if ($this->ticketAiToolEnabled($config, 'ticket_ai_tool_ops_context_enable', true)) {
+            $recentChanges = trim((string)($config['ticket_ai_recent_context'] ?? ''));
+            $context['ops_context'] = [
+                'recent_changes' => $this->sanitizeTicketContextText($this->trimText($recentChanges, 1200)),
+                'recent_changes_present' => $recentChanges !== ''
+            ];
+            $this->recordTicketToolUsage($context, 'ops_context', '近期变动说明', true, $recentChanges !== '');
+        } else {
+            $context['ops_context'] = [
+                'recent_changes' => '',
+                'recent_changes_present' => false
+            ];
+            $this->recordTicketToolUsage($context, 'ops_context', '近期变动说明', false, false);
+        }
 
         $user = $this->ticketContextUser($context);
         if (!$user) {
+            $this->recordTicketToolUsage($context, 'user_status', '用户状态查询', $this->ticketAiToolEnabled($config, 'ticket_ai_tool_user_status_enable', true), false, [
+                'reason' => 'ticket_user_not_found'
+            ]);
+            $this->recordTicketToolUsage($context, 'recent_orders', '订单查询', $this->ticketAiToolEnabled($config, 'ticket_ai_tool_order_enable', true), false, [
+                'reason' => 'ticket_user_not_found'
+            ]);
+            $this->recordTicketToolUsage($context, 'subscription_hits', '订阅命中查询', $this->ticketAiToolEnabled($config, 'ticket_ai_tool_subscription_hit_enable', true), false, [
+                'reason' => 'ticket_user_not_found'
+            ]);
             return $context;
         }
 
-        $context['read_only_user_snapshot'] = $this->ticketUserSnapshot($user);
-        $context['recent_orders'] = $this->ticketRecentOrders($user);
-        $context['recent_subscription_hits'] = $this->ticketRecentSubscriptionHits($user);
+        if ($this->ticketAiToolEnabled($config, 'ticket_ai_tool_user_status_enable', true)) {
+            $context['read_only_user_snapshot'] = $this->ticketUserSnapshot($user);
+            $this->recordTicketToolUsage($context, 'user_status', '用户状态查询', true, true);
+        } else {
+            $this->recordTicketToolUsage($context, 'user_status', '用户状态查询', false, false);
+        }
+
+        if ($this->ticketAiToolEnabled($config, 'ticket_ai_tool_order_enable', true)) {
+            $context['recent_orders'] = $this->ticketRecentOrders($user);
+            $this->recordTicketToolUsage($context, 'recent_orders', '订单查询', true, true, [
+                'items' => count($context['recent_orders'])
+            ]);
+        } else {
+            $this->recordTicketToolUsage($context, 'recent_orders', '订单查询', false, false);
+        }
+
+        if ($this->ticketAiToolEnabled($config, 'ticket_ai_tool_subscription_hit_enable', true)) {
+            $context['recent_subscription_hits'] = $this->ticketRecentSubscriptionHits($user);
+            $this->recordTicketToolUsage($context, 'subscription_hits', '订阅命中查询', true, true, [
+                'items' => count($context['recent_subscription_hits'])
+            ]);
+        } else {
+            $this->recordTicketToolUsage($context, 'subscription_hits', '订阅命中查询', false, false);
+        }
+
+        $context['read_only_context_summary'] = $this->ticketReadOnlyContextSummary($context);
 
         return $context;
+    }
+
+    private function ticketAiCapabilities(array $config)
+    {
+        return [
+            'user_status' => [
+                'label' => '用户状态查询',
+                'enabled' => $this->ticketAiToolEnabled($config, 'ticket_ai_tool_user_status_enable', true)
+            ],
+            'recent_orders' => [
+                'label' => '订单查询',
+                'enabled' => $this->ticketAiToolEnabled($config, 'ticket_ai_tool_order_enable', true)
+            ],
+            'subscription_hits' => [
+                'label' => '订阅命中查询',
+                'enabled' => $this->ticketAiToolEnabled($config, 'ticket_ai_tool_subscription_hit_enable', true)
+            ],
+            'ops_context' => [
+                'label' => '近期变动说明',
+                'enabled' => $this->ticketAiToolEnabled($config, 'ticket_ai_tool_ops_context_enable', true)
+            ],
+            'knowledge_search' => [
+                'label' => '知识库检索',
+                'enabled' => $this->ticketAiToolEnabled($config, 'ticket_ai_tool_knowledge_enable', true)
+            ],
+            'reply_examples' => [
+                'label' => '历史工单范例',
+                'enabled' => true
+            ]
+        ];
+    }
+
+    private function ticketAiToolEnabled(array $config, $key, $default = true)
+    {
+        if (!array_key_exists($key, $config)) {
+            return $default;
+        }
+        return (int)$config[$key] === 1;
+    }
+
+    private function recordTicketToolUsage(array &$context, $key, $label, $enabled, $used, array $meta = [])
+    {
+        $context['ai_tool_usage'][$key] = array_merge([
+            'key' => $key,
+            'label' => $label,
+            'enabled' => (bool)$enabled,
+            'used' => (bool)$used
+        ], $meta);
+    }
+
+    private function ticketReadOnlyContextSummary(array $context)
+    {
+        $lines = [];
+
+        $snapshot = $context['read_only_user_snapshot'] ?? [];
+        if ($snapshot) {
+            $status = [];
+            $status[] = !empty($snapshot['has_active_plan']) ? '有套餐' : '无套餐';
+            if (!empty($snapshot['plan_name'])) {
+                $status[] = '套餐：' . $snapshot['plan_name'];
+            }
+            $status[] = !empty($snapshot['is_banned']) ? '账号已封禁' : '账号未封禁';
+            $status[] = !empty($snapshot['is_expired']) ? '套餐已过期' : '套餐未过期';
+            if ($snapshot['traffic_used_percent'] !== null) {
+                $status[] = '流量已用约 ' . $snapshot['traffic_used_percent'] . '%';
+            }
+            if (!empty($snapshot['traffic_exhausted'])) {
+                $status[] = '流量已用尽';
+            }
+            if ($snapshot['device_limit'] !== null) {
+                $status[] = '设备限制 ' . $snapshot['device_limit'];
+            }
+            $lines[] = '用户状态：' . implode('，', $status) . '。';
+        }
+
+        if (array_key_exists('recent_orders', $context)) {
+            $orders = array_slice((array)$context['recent_orders'], 0, 3);
+            if ($orders) {
+                $parts = [];
+                foreach ($orders as $order) {
+                    $bits = array_filter([
+                        $order['created_at'] ?? '',
+                        $order['type'] ?? '',
+                        $order['period'] ?? '',
+                        $order['status'] ?? '',
+                        !empty($order['paid_at']) ? '支付于 ' . $order['paid_at'] : ''
+                    ]);
+                    $parts[] = implode(' / ', $bits);
+                }
+                $lines[] = '最近订单：' . implode('；', $parts) . '。';
+            } else {
+                $lines[] = '最近订单：未查到近期订单。';
+            }
+        }
+
+        if (array_key_exists('recent_subscription_hits', $context)) {
+            $hits = array_slice((array)$context['recent_subscription_hits'], 0, 5);
+            if ($hits) {
+                $parts = [];
+                foreach ($hits as $hit) {
+                    $bits = array_filter([
+                        $hit['created_at'] ?? '',
+                        $hit['rule_name'] ?? '',
+                        $hit['action'] ?? '',
+                        isset($hit['ai_score']) ? 'AI ' . $hit['ai_score'] . '分' : '',
+                        $hit['summary'] ?? '',
+                        $hit['matched_summary'] ?? '',
+                        $hit['client'] ?? ''
+                    ], function ($value) {
+                        return $value !== null && $value !== '';
+                    });
+                    $parts[] = implode(' / ', $bits);
+                }
+                $lines[] = '最近订阅安全记录：' . implode('；', $parts) . '。';
+            } else {
+                $lines[] = '最近订阅安全记录：未查到近期命中。';
+            }
+        }
+
+        $recentChanges = trim((string)($context['ops_context']['recent_changes'] ?? ''));
+        if ($recentChanges !== '') {
+            $lines[] = '近期后台说明：' . $recentChanges . '。';
+        }
+
+        return $this->trimText(implode("\n", array_filter($lines)), 1200);
     }
 
     private function ticketContextUser(array $context)
@@ -285,15 +546,81 @@ class AiRiskService
     private function guardTicketReply($reply, array $context)
     {
         $reply = trim((string)$reply);
-        $reply = preg_replace('/^您好[！!，,。\\s]+/u', '', $reply);
+        $reply = preg_replace('/^您好[呀啊哈呢哦]*[！!，,。～~\\s]+/u', '', $reply);
+        $reply = preg_replace('/(^|\\n)\\s*您好[呀啊哈呢哦]*[！!，,。～~\\s]+/u', '$1', $reply);
+        $reply = preg_replace('/(^|\\n)\\s*[～~]\\s*/u', '$1', $reply);
+        $reply = preg_replace('/帮你草拟回复[:：]?\\s*/u', '', $reply);
+        $reply = preg_replace('/^关于(您|你)的?问题[，,]\\s*/u', '', $reply);
 
         $userText = trim($this->ticketRoleText($context, 'user') . "\n" . (string)($context['question'] ?? ''));
         $recentChanges = (string)($context['ops_context']['recent_changes'] ?? '');
+        if (preg_match('/怎么.*(发图|发图片|截图|上传图片)|发图|发图片|上传图片|报错截图/u', $userText)) {
+            return "亲亲，我是 AI 小助手。\n工单这里暂时只能发文字，不能直接上传图片哦。你可以把报错弹窗里的文字复制到工单里，再写上使用的客户端名称、版本和大概操作时间；如果一定要发截图，请先发到售后群，然后回到这个工单说一声已发图。";
+        }
+        $paymentQuestion = (bool)preg_match('/付款|支付|订单|充值|扣款|套餐没开通|未到账|没到账|未到帐|没到帐|余额/u', $userText);
+        if (preg_match('/购买了?.*(订阅|套餐).*?(无法使用|不能用|没有节点|无节点|节点不可用|节点)|订阅后无法使用/u', $userText)) {
+            $paymentQuestion = false;
+        }
+        $userProvidedPaymentDetail = (bool)preg_match('/订单号|支付时间|付款时间|支付截图|付款截图|订单截图|流水号|交易号|[0-9]{6,}/u', $userText);
+        $shadowrocketCertIssue = preg_match('/Shadowrocket|小火箭/u', $userText)
+            && preg_match('/证书|URL|伪装|不可信|x509|certificate|unknown authority|verify certificate|服务器.*无效/i', $userText);
         if ($this->isTicketWebsiteAccessQuestion($userText)) {
             return $this->ensureTicketAiIdentity($this->ticketWebsiteAccessReply());
         }
+        if (preg_match('/Shadowrocket|小火箭/u', $userText)
+            && preg_match('/wifi|WiFi|WIFI|无线|流量|节点.*刷新|跳节点|加载不出来|节点.*加载/u', $userText)) {
+            return "亲亲，我是 AI 小助手。\n小火箭在手机流量下相对稳定、切到 WiFi 后一直跳节点或加载不出来时，更像是当前宽带网络到节点不稳定。宽带可以先断电重启光猫/ONT 3-5 分钟再试；如果还是不稳，也可以去教程页换用 iOS 推荐客户端，比如 Loon、Surge 或 Stash 后重新导入订阅。";
+        }
+        if (preg_match('/流量|用了多少|多少\s*[gG]|还能不能用|剩余|用不了了/u', $userText)
+            && !preg_match('/全部.*超时|所有.*超时|节点.*超时|导入失败|配置.*失败|报错|节点|小火箭|Shadowrocket|wifi|WiFi|WIFI/u', $userText)) {
+            return "亲亲，我是 AI 小助手。\n流量以面板里的「流量明细」和仪表盘剩余量为准，客户端里显示的总量或已用量有时不完整。规则模式和全局模式都会按实际经过节点的流量统计；如果面板显示还有流量但仍不能用，请把页面提示文字发来，我再继续帮你看。";
+        }
+        if (preg_match('/节点.*(变少|少了|只有.*绿|两三个.*绿|不稳定)|绿色.*(少|只有)|刷新.*(变换|换成).*国家|更新订阅.*不能改善/u', $userText)
+            && !preg_match('/流媒体|地区显示|归属地/u', $userText)) {
+            return "亲亲，我是 AI 小助手。\n看到你说节点变少、只有少数是绿色，而且更新订阅也没有改善，这更像是当前网络到节点不稳定，不是套餐丢了。宽带可以断电重启光猫/ONT 3-5 分钟，手机流量可以开关一次飞行模式；如果换个网络后节点恢复，就基本是本地网络出口问题。";
+        }
+        if (preg_match('/Loon/i', $userText)) {
+            $reply = preg_replace(
+                '/[^。！？\n]*(远程订阅|远程配置)[^。！？\n]*(普通节点|本地配置)[^。！？\n]*[。！？]?/u',
+                '请在 Loon 里删除旧订阅，然后点右上角 +，选择用链接或 URL 添加订阅，把面板里复制的完整订阅链接粘贴进去；添加后手动刷新一次，看节点是否出现。',
+                $reply
+            );
+            $reply = preg_replace(
+                '/[^。！？\n]*(远程订阅|远程配置)[^。！？\n]*[。！？]?/u',
+                '如果还是没有节点，请把 Loon 添加订阅页面和报错提示截图发给我们，不要发送完整订阅链接。',
+                $reply
+            );
+            $reply = preg_replace(
+                '/[^。！？\n]*(客户端解析|订阅格式兼容)[^。！？\n]*[。！？]?/u',
+                '如果刷新后还是没有节点，请把 Loon 添加订阅页面和报错提示截图发给我们，不要发送完整订阅链接。',
+                $reply
+            );
+            if ($this->ticketUserAlreadyDeletedOldSubscription($userText)) {
+                $reply = preg_replace(
+                    '/建议先删除旧订阅，然后在 Loon 里/u',
+                    '既然已经删过旧订阅，下一步请在 Loon 里',
+                    $reply
+                );
+                $reply = preg_replace(
+                    '/建议先删除旧订阅，然后在/u',
+                    '既然已经删过旧订阅，下一步请在',
+                    $reply
+                );
+                $reply = preg_replace(
+                    '/建议先在 Loon 里删除旧订阅，然后/u',
+                    '既然已经删过旧订阅，下一步请在 Loon 里',
+                    $reply
+                );
+                $reply = preg_replace(
+                    '/请在 Loon 里删除旧订阅，然后/u',
+                    '既然已经删过旧订阅，下一步请在 Loon 里',
+                    $reply
+                );
+                $reply = $this->removeTicketLinesWithAny($reply, ['如果已经尝试过删除旧订阅和刷新']);
+            }
+        }
 
-        $subscriptionChanged = preg_match('/订阅.*(换新|更新|调整|变更|改动)|入口.*(调整|换新|更新)|旧订阅/u', $recentChanges);
+        $subscriptionChanged = $this->ticketRecentChangesHasSubscriptionEntryChange($recentChanges);
         $subscriptionQuestion = preg_match('/导入|链接|不显示节点|节点.*不显示|旧链接|旧订阅|之前.*链接|重新添加|重新导入|Loon|Surge|订阅(入口|地址|链接|换新|更新失败|不显示|没有节点|为空|空白)/u', $userText);
         if ($subscriptionChanged && $subscriptionQuestion) {
             if (!preg_match('/hy2|Hysteria2/i', $userText)) {
@@ -301,6 +628,8 @@ class AiRiskService
             }
             $reply = preg_replace('/(您|你)的订阅(已|已经)?(换新|更新|调整|变更|更换)/u', '网站订阅入口已换新', $reply);
             $reply = preg_replace('/(您|你|我)的订阅[^。！？!?\n]*(确实|可能|应该)?被(换新|更新|调整|变更|更换)了?/u', '网站订阅入口已换新', $reply);
+            $reply = preg_replace('/最近订阅(已|已经)?(换新|更新|调整|变更|更换)/u', '网站订阅入口已换新', $reply);
+            $reply = preg_replace('/订阅(已|已经)(换新|更新|调整|变更|更换)/u', '网站订阅入口已换新', $reply);
             $reply = preg_replace('/是不是因为订阅(换新|更新)/u', '是不是和网站订阅入口$1有关', $reply);
             $reply = preg_replace('/因为订阅(换新|更新)/u', '因为网站订阅入口$1', $reply);
             $reply = preg_replace('/根据我们的记录，?网站订阅入口已换新/u', '网站订阅入口已换新', $reply);
@@ -317,6 +646,13 @@ class AiRiskService
                 $reply .= "\n请先删除旧订阅，从面板重新复制最新订阅链接导入客户端。";
             }
             $reply = preg_replace('/。了哦/u', '。', $reply);
+        }
+        if (!$subscriptionChanged) {
+            $reply = $this->removeTicketSubscriptionEntryChangeClaims($reply);
+            $reply = preg_replace('/[^。！？!?\\n]*(您|你|你的|您的)?订阅(已|已经)?(换新|更新|调整|变更|更换)[^。！？!?\\n]*[。！？!?]?/u', '', $reply);
+        }
+        if (!$this->ticketQuestionNeedsHy2Context($userText)) {
+            $reply = preg_replace('/[^。！？!?\\n]*(HY2|hy2|Hysteria2|新协议|协议最近|协议有些阻断|阻断)[^。！？!?\\n]*[。！？!?]?/u', '', $reply);
         }
 
         if (preg_match('/hy2|Hysteria2/i', $recentChanges) && preg_match('/阻断|不稳定|连不上|超时/u', $recentChanges)
@@ -338,23 +674,35 @@ class AiRiskService
             }
         }
 
-        if (preg_match('/付款|支付|订单|充值|购买|扣款|套餐没开通|未到账|余额/u', $userText)) {
+        if ($paymentQuestion) {
             $reply = preg_replace('/.*(订阅|节点|客户端|代理|VPN|链接|HY2|Hysteria2).*?[。！？!?][\\r\\n]*/u', '', $reply);
-            $userProvidedPaymentDetail = preg_match('/订单号|支付时间|付款时间|支付截图|付款截图|订单截图|流水号|交易号|[0-9]{6,}/u', $userText);
             if (!$userProvidedPaymentDetail) {
+                if (preg_match('/订单状态.*已完成|已完成.*处理中|支付.*已完成|付款.*已完成/u', $reply)) {
+                    $reply = "亲亲，我是 AI 小助手。\n付款状态有时会有几分钟同步延迟，请先刷新订单页和仪表盘看看套餐是否生效；如果还是未到账，请把订单号和付款时间写到工单里，客服会继续核对。不要重复支付同一订单哦。";
+                }
                 $reply = preg_replace('/我们已经确认您的支付信息正在处理中[。！？!?]?/u', '付款状态可能还在同步中。', $reply);
                 $reply = preg_replace('/我们会尽快为您处理好[。！？!?]?/u', '收到订单信息后客服会继续核对。', $reply);
                 $reply = preg_replace('/我们也会尽快为您处理的?[。！？!?]?/u', '收到订单信息后客服会继续核对。', $reply);
                 $reply = preg_replace('/我会及时通知您的?/u', '客服会继续跟进', $reply);
+                $reply = preg_replace('/[^。！？!?\n]*(已经|已)(收到|看到|确认)[^。！？!?\n]*(付款信息|支付信息)[^。！？!?\n]*[。！？!?]?/u', '看到你说已经付款但套餐还没到账啦。', $reply);
+                $reply = preg_replace('/请问一下您这次付款的具体订单号是多少呢[？?]?/u', '请把这次付款的订单号和付款时间写到工单里，客服会继续核对。', $reply);
                 $reply = preg_replace(
                     '/.*?(之前|已经|已).*?(订单号|支付时间|付款时间).*?(查看|收到|知道|核对).*?[。！？!?]\\s*/u',
-                    '如果已经有订单号、支付时间或支付截图，可以一起发来，我会帮您继续核对。' . "\n",
+                    '如果已经有订单号或支付时间，可以一起写到工单里，我会帮您继续核对。' . "\n",
                     $reply
                 );
             }
         }
         $userConfirmedOriginalSubscription = preg_match('/已经.*原始订阅|原始订阅.*(试过|测试过|测过|用过)/u', $userText);
         $reply = $this->guardTicketClientName($reply, $userText);
+        if ($this->ticketUserAlreadyDeletedOldSubscription($userText)) {
+            $reply = preg_replace('/[^。！？!?\\n]*(请|先|建议|需要|可以|麻烦)?[^。！？!?\\n]*(删除|删掉|移除).*?旧订阅[^。！？!?\\n]*[。！？!?]?/u', '', $reply);
+            $reply = preg_replace('/[^。！？!?\\n]*(确认|检查|看看).*?(是否)?(已经)?(删除|删掉|移除).*?旧订阅[^。！？!?\\n]*[。！？!?]?/u', '', $reply);
+        }
+        if ($this->ticketUserAlreadyRefreshedSubscription($userText)) {
+            $reply = preg_replace('/[^。！？!?\\n]*(是否|有没有|请|先|建议|可以|麻烦)?[^。！？!?\\n]*(尝试|进行|手动)?刷新(订阅)?[^。！？!?\\n]*(确认|查看|显示)?[^。！？!?\\n]*(更新时间|更新成功)?[^。！？!?\\n]*[？?。！？!]?/u', '', $reply);
+            $reply = preg_replace('/[^。！？!?\\n]*(确认|检查|查看).*?更新时间[^。！？!?\\n]*[？?。！？!]?/u', '', $reply);
+        }
         $reply = preg_replace('/提供一下Loon的版本/u', '提供一下客户端名称和版本', $reply);
         $reply = preg_replace('/Mihomo\s*内核/u', '支持 HY2 的客户端', $reply);
         $reply = preg_replace('/Mihomo/u', '支持 HY2 的客户端', $reply);
@@ -366,6 +714,8 @@ class AiRiskService
         $reply = preg_replace('/内核版本/u', '客户端版本', $reply);
         $reply = preg_replace('/内核/u', '客户端', $reply);
         $reply = preg_replace('/核心/u', '客户端', $reply);
+        $reply = preg_replace('/客户不需要管客户端，只看客户端名称和版本即可/u', '不用管复杂参数，只看客户端名称和版本即可', $reply);
+        $reply = preg_replace('/不需要管客户端，只看客户端名称和版本即可/u', '不用管复杂参数，只看客户端名称和版本即可', $reply);
         $reply = preg_replace('/重启客户端客户端/u', '重启客户端', $reply);
         $reply = preg_replace('/支持支持\s*HY2\s*的客户端的新版本客户端/u', '支持 HY2 的客户端版本', $reply);
         $reply = preg_replace('/支持\s*HY2\s*的客户端的新版本客户端/u', '支持 HY2 的客户端版本', $reply);
@@ -384,6 +734,14 @@ class AiRiskService
             $reply = preg_replace(
                 '/.*?(已经|尝试过|确认您).*?原始订阅.*?[。！？!?]\\s*/u',
                 '建议您先用面板里的原始订阅测试一下，确认问题是转换工具造成的，还是原订阅本身导入异常。',
+                $reply,
+                1
+            );
+        }
+        if (!$userConfirmedOriginalSubscription && !preg_match('/原始订阅|转换站|转换工具|第三方转换/u', $userText)) {
+            $reply = preg_replace(
+                '/[^。！？!?\\n]*(原始订阅|转换站|转换工具|第三方转换)[^。！？!?\\n]*[。！？!?]?/u',
+                '如果重新导入后还是没有节点，请把客户端名称、版本和具体报错截图发来，我再帮你判断。',
                 $reply,
                 1
             );
@@ -420,6 +778,9 @@ class AiRiskService
                 $reply .= "\n这个提示更像是 Clash 客户端版本偏旧，对 HY2 支持不完整。建议换成支持 HY2 的客户端版本后，再从面板复制最新订阅重新导入。";
             }
         }
+        if ($shadowrocketCertIssue) {
+            $reply = "小火箭这边证书或 URL 提示还不稳定，先别继续在小火箭里反复确认啦。\n请先去教程页换用 iOS 推荐客户端，比如 Loon、Surge 或 Stash，再从面板复制完整订阅重新导入。";
+        }
 
         if (preg_match('/手机流量|移动数据|4G|5G|飞行模式/u', $userText)) {
             $reply = preg_replace(
@@ -441,11 +802,227 @@ class AiRiskService
             $reply = preg_replace('/.*光猫.*重新拨号.*[。！？!?][\\r\\n]*/u', '', $reply);
             $reply = preg_replace('/.*光猫.*运营商出口IP.*[。！？!?][\\r\\n]*/u', '', $reply);
         }
+        if (preg_match('/家里宽带|家庭宽带|宽带/u', $userText) && !preg_match('/手机|移动数据|手机流量|4G|5G|飞行模式/u', $userText)) {
+            $reply = preg_replace('/[，,；;]?\s*(也可以尝试)?切换手机流量[^。！？!?]*[。！？!?]?/u', '。', $reply);
+            $reply = preg_replace('/手机流量[^。！？!?]*飞行模式[^。！？!?]*[。！？!?]?/u', '', $reply);
+        }
+        $reply = preg_replace('/宽带光猫\/ONT是否断电，?或者尝试重新拨号\s*PPPoE\s*3-5分钟/u', '断电重启光猫/ONT，或重新拨号 PPPoE 3-5 分钟', $reply);
+        $reply = preg_replace('/光猫\/ONT是否断电/u', '断电重启光猫/ONT', $reply);
 
         $reply = $this->normalizeTicketReplyStyle($reply, $userText);
         $reply = $this->ensureTicketAiIdentity($reply);
+        $reply = $this->guardTicketNoImageUpload($reply, $userText);
+        if (!$subscriptionChanged) {
+            $reply = $this->removeTicketLinesWithAnyEncoded($reply, [
+                '6K6i6ZiF5bey5o2i5paw',
+                '6K6i6ZiF5YWl5Y+jL+ivoumsgOWcsOWdgOaNouaWsA==',
+                '6LSm5Y+36K6i6ZiF6KKr5Y2V54us5o2i5paw',
+                '572R56uZ6K6i6ZiF5YWl5Y+j5bey5o2i5paw',
+                '572R56uZ6K6i6ZiF5Zyw5Z2A5o2i5paw'
+            ]);
+        }
+        if (!$this->ticketQuestionNeedsHy2Context($userText)) {
+            $reply = $this->removeTicketLinesWithAny($reply, ['HY2', 'Hysteria2']);
+            $reply = $this->removeTicketLinesWithAnyEncoded($reply, [
+                '5paw5Y2P6K6u',
+                '6Zi75pat'
+            ]);
+        }
+        if ($this->ticketUserAlreadyRefreshedSubscription($userText)) {
+            $reply = $this->removeTicketLinesWithAnyEncoded($reply, [
+                '5omL5Yqo5Yi35paw',
+                '5Yi35paw6K6i6ZiF',
+                '5pu05paw5pe26Ze05ZKM6IqC54K55pWw6YeP',
+                '5piv5ZCm5pi+56S65pu05paw5pe26Ze0'
+            ]);
+        }
+        if (preg_match('/Loon/i', $userText)
+            && $this->ticketUserAlreadyDeletedOldSubscription($userText)
+            && $this->ticketUserAlreadyRefreshedSubscription($userText)
+            && !preg_match('/远程订阅|远程配置|普通节点|本地配置|右上角|链接或 URL|完整订阅链接/u', $reply)) {
+            $reply .= "\n下一步请在 Loon 里点右上角 +，选择用链接或 URL 添加订阅，粘贴面板复制的完整订阅链接；添加完成后手动刷新一次。如果还是没有节点，请发 Loon 添加订阅页面和报错提示截图。";
+        }
+        if (preg_match('/Loon/i', $userText) && substr_count($reply, '右上角') > 1) {
+            $lines = preg_split('/\r\n|\r|\n/', $reply);
+            $kept = [];
+            $seenLoonAddStep = false;
+            foreach ($lines as $line) {
+                $isLoonAddStep = strpos($line, '右上角') !== false
+                    && (strpos($line, 'URL') !== false || strpos($line, '链接') !== false);
+                if ($isLoonAddStep && $seenLoonAddStep) {
+                    continue;
+                }
+                if ($isLoonAddStep) {
+                    $seenLoonAddStep = true;
+                }
+                $kept[] = $line;
+            }
+            $reply = implode("\n", $kept);
+        }
+        $reply = $this->removeTicketLinesWithAnyEncoded($reply, [
+            '5aaC5pyJ5YW25LuW6Zeu6aKY',
+            '5qyi6L+O57un57ut5Y+N6aaI',
+            '6ZqP5pe25ZGK6K+J5oiR',
+            '6ZqP5pe26IGU57O7'
+        ]);
+        $reply = preg_replace('/(^|\\n)\\s*[～~]\\s*/u', '$1', $reply);
+        $reply = preg_replace('/\n\s*[。！？!?]\s*/u', "\n", $reply);
+        $reply = preg_replace('/AI\s*小助手。\s*[。！？!?]/u', 'AI 小助手。', $reply);
+        if ($this->primaryTicketClient($userText) === '') {
+            $reply = preg_replace('/代理客户端\s+不显示节点/u', '代理客户端不显示节点', $reply);
+            $reply = preg_replace(
+                '/点右上角\s*\+\s*，选择用链接或\s*URL\s*添加订阅/u',
+                '在使用的代理客户端里选择“添加订阅”或“URL 导入”',
+                $reply
+            );
+        }
+
+        if ($paymentQuestion
+            && !$userProvidedPaymentDetail
+            && (!preg_match('/订单号.*付款时间|付款时间.*订单号/u', $reply)
+                || preg_match('/订阅|节点|客户端|代理|VPN|链接/u', $reply))) {
+            return "亲亲，我是 AI 小助手。\n看到你说已经付款但套餐还没到账啦。付款状态有时会有几分钟同步延迟，请先刷新订单页和仪表盘看看套餐是否生效；如果还是没有到账，请把这次付款的订单号和付款时间写到工单里，客服会继续核对。不要重复支付同一订单哦。";
+        }
+        if ($paymentQuestion
+            && $userProvidedPaymentDetail
+            && (preg_match('/已经收到.*订单信息|已收到.*订单信息|正在.*核实|正在核对中|尽快为您处理|第一时间(给您)?回复|第一时间通知|请您稍等|正在处理中|我们这边正在/u', $reply)
+                || preg_match('/订阅|节点|客户端|代理|VPN|链接/u', $reply))) {
+            return "亲亲，我是 AI 小助手。\n看到你已经提供了订单信息。请先刷新订单页和仪表盘看看套餐是否生效；如果还是未到账，客服会按你提供的订单信息继续核对。不要重复支付同一订单哦。";
+        }
+
+        if (preg_match('/Loon/i', $userText)
+            && $this->ticketUserAlreadyDeletedOldSubscription($userText)
+            && $this->ticketUserAlreadyRefreshedSubscription($userText)) {
+            return "亲亲，我是 AI 小助手。既然你已经删过旧订阅并刷新成功了，先不用重复删除。\n下一步请在 Loon 里点右上角 +，选择用链接或 URL 添加订阅，粘贴面板复制的完整订阅链接；添加后手动刷新一次。如果还是没有节点，请把 Loon 添加订阅页面里的提示文字发来，不要发送完整订阅链接。";
+        }
+
+        if (preg_match('/Loon/i', $userText)
+            && preg_match('/不显示节点|没有节点|节点为空|空的|导入.*空/u', $userText)
+            && (!preg_match('/右上角/u', $reply)
+                || !preg_match('/完整订阅/u', $reply)
+                || !preg_match('/提示文字/u', $reply))) {
+            if ($this->ticketUserAlreadyDeletedOldSubscription($userText)) {
+                return "亲亲，我是 AI 小助手。既然你已经删过旧订阅，先不用重复删啦。\n请在 Loon 里点右上角 +，选择用链接或 URL 添加订阅，粘贴面板复制的完整订阅链接；添加后手动刷新一次。如果还是没有节点，请把 Loon 添加订阅页面里的提示文字发来，不要发送完整订阅链接。";
+            }
+            return "亲亲，我是 AI 小助手。\nLoon 不显示节点时，请先在 Loon 里删除旧订阅，点右上角 +，选择用链接或 URL 添加订阅，粘贴面板复制的完整订阅链接；添加后手动刷新一次。如果还是没有节点，请把 Loon 添加订阅页面里的提示文字发来，不要发送完整订阅链接。";
+        }
+
+        if (preg_match('/Loon/i', $userText)
+            && (mb_strlen(trim($reply)) < 32 || !preg_match('/右上角|链接|URL|完整订阅|手动刷新|提示文字/u', $reply))) {
+            if ($this->ticketUserAlreadyDeletedOldSubscription($userText)) {
+                return "亲亲，我是 AI 小助手。既然你已经删过旧订阅，先不用重复删啦。\n请在 Loon 里点右上角 +，选择用链接或 URL 添加订阅，粘贴面板复制的完整订阅链接；添加后手动刷新一次。如果还是没有节点，请把 Loon 添加订阅页面里的提示文字发来，不要发送完整订阅链接。";
+            }
+            return "亲亲，我是 AI 小助手。\nLoon 不显示节点时，请先在 Loon 里删除旧订阅，点右上角 +，选择用链接或 URL 添加订阅，粘贴面板复制的完整订阅链接；添加后手动刷新一次。";
+        }
 
         return trim($reply);
+    }
+
+    private function guardTicketNoImageUpload($reply, $userText)
+    {
+        if (preg_match('/截图.*(已发|发了)|已发.*截图|图片.*(已发|发了)|售后群.*(截图|图片)/u', (string)$userText)) {
+            return $reply;
+        }
+
+        return strtr((string)$reply, [
+            '支付截图' => '付款时间',
+            '付款截图' => '付款时间',
+            '订单截图' => '订单号和付款时间',
+            '报错截图' => '报错文字',
+            '提示截图' => '提示文字',
+            '错误截图' => '错误文字',
+            '截图发来' => '文字发来',
+            '截图发给我们' => '文字发给我们',
+            '截图' => '文字说明',
+            '图片' => '文字说明'
+        ]);
+    }
+
+    private function ticketRecentChangesHasSubscriptionEntryChange($recentChanges)
+    {
+        $recentChanges = (string)$recentChanges;
+        if ($recentChanges === '') {
+            return false;
+        }
+
+        return (bool)preg_match('/(网站|本站|面板|发布页)?\\s*(订阅)?\\s*(入口|地址|链接|域名|URL)\\s*(已|已经)?\\s*(换新|更新|调整|变更|更换|改动)|发布页.*(入口|地址|链接|域名).*(换新|更新|调整|变更|更换|改动)/u', $recentChanges);
+    }
+
+    private function removeTicketSubscriptionEntryChangeClaims($reply)
+    {
+        $reply = preg_replace('/[^。！？!?\\n]*(网站|本站|面板)?订阅(入口|地址|链接|域名)[^。！？!?\\n]*(换新|更新|调整|变更|更换|改动)[^。！？!?\\n]*[。！？!?]?/u', '', (string)$reply);
+        $reply = preg_replace('/[^。！？!?\\n]*订阅入口\\/订阅地址换新[^。！？!?\\n]*[。！？!?]?/u', '', $reply);
+        $reply = preg_replace('/[^。！？!?\\n]*(不是你的账号订阅被单独换新|不是您的账号订阅被单独换新)[^。！？!?\\n]*[。！？!?]?/u', '', $reply);
+        return trim($reply);
+    }
+
+    private function ticketUserAlreadyDeletedOldSubscription($text)
+    {
+        $text = (string)$text;
+        foreach (['已经删除旧订阅', '已经删掉旧订阅', '已经删了旧订阅', '删除过旧订阅', '删过旧订阅', '删了旧订阅', '旧订阅删了', '旧订阅删除了'] as $needle) {
+            if (strpos($text, $needle) !== false) {
+                return true;
+            }
+        }
+        return (bool)preg_match('/(已经|已|刚刚|刚才|之前|我).*?(删除|删掉|删了|移除).*?旧订阅|旧订阅.*?(已经|已|删掉|删了|删除|移除)/u', $text);
+    }
+
+    private function ticketUserAlreadyRefreshedSubscription($text)
+    {
+        $text = (string)$text;
+        foreach ($this->decodeTicketNeedles([
+            '5pu05paw5pi+56S65oiQ5Yqf',
+            '5Yi35paw5oiQ5Yqf',
+            '5pu05paw5oiQ5Yqf',
+            '5bey57uP5Yi35paw',
+            '5bey57uP5pu05paw',
+            '5omL5Yqo5Yi35paw6L+H',
+            '5omL5Yqo5Yi35paw5LqG',
+            '6K6i6ZiF6K+m5oOF5pyJ5pu05paw5pe26Ze0'
+        ]) as $needle) {
+            if (strpos($text, $needle) !== false) {
+                return true;
+            }
+        }
+        return (bool)preg_match('/(已经|已|刚刚|刚才|之前|我).*?(刷新过|更新过|刷新了|更新了|手动刷新|重新刷新|重新更新)/u', $text);
+    }
+
+    private function ticketQuestionNeedsHy2Context($text)
+    {
+        return (bool)preg_match('/hy2|hysteria2|协议|阻断|全部.*超时|全.*超时|所有.*超时|全红|全部.*红|timeout|连不上|不可用/i', (string)$text);
+    }
+
+    private function removeTicketLinesWithAny($reply, array $needles)
+    {
+        $lines = preg_split('/\r\n|\r|\n/', (string)$reply);
+        $kept = [];
+        foreach ($lines as $line) {
+            $drop = false;
+            foreach ($needles as $needle) {
+                if ($needle !== '' && strpos($line, $needle) !== false) {
+                    $drop = true;
+                    break;
+                }
+            }
+            if (!$drop) {
+                $kept[] = $line;
+            }
+        }
+        return trim(implode("\n", $kept));
+    }
+
+    private function removeTicketLinesWithAnyEncoded($reply, array $encodedNeedles)
+    {
+        return $this->removeTicketLinesWithAny($reply, $this->decodeTicketNeedles($encodedNeedles));
+    }
+
+    private function decodeTicketNeedles(array $encodedNeedles)
+    {
+        return array_values(array_filter(array_map(function ($needle) {
+            return base64_decode((string)$needle, true) ?: '';
+        }, $encodedNeedles), function ($needle) {
+            return $needle !== '';
+        }));
     }
 
     private function ensureTicketAiIdentity($reply)
@@ -464,8 +1041,8 @@ class AiRiskService
     {
         $reply = trim((string)$reply);
         $reply = preg_replace('/\r\n|\r/u', "\n", $reply);
-        if (preg_match('/如何.*截图|怎么.*截图|截图.*怎么|发送截图|发截图/u', (string)$userText)) {
-            return '截图可以直接在工单回复里上传或粘贴；如果页面没有上传按钮，就把客户端测速结果、报错文字复制到工单里。';
+        if (preg_match('/如何.*截图|怎么.*截图|截图.*怎么|发送截图|发截图|不能发图片|发不了图片|图片上传不了/u', (string)$userText)) {
+            return '亲亲，工单这里暂时只能发文字，不能直接传图片哦。你可以把报错弹窗里的文字复制到工单里，再写上使用的客户端名称、版本和大概操作时间；如果只能截图，请先到售后群发图，然后回到这个工单说一声已发截图，我这边会按工单对应账号继续核对。';
         }
 
         $reply = preg_replace('/支持\s*HY2\s*的支持\s*HY2\s*的客户端\s*Party/iu', 'Mihomo Party', $reply);
@@ -490,15 +1067,61 @@ class AiRiskService
 
         $reply = preg_replace('/请检查一下本地网络设置和DNS配置是否正常。/u', '先关闭代理刷新订阅，再换个网络或重启光猫后测试。', $reply);
         if (preg_match('/全部.*超时|全.*红|所有.*节点.*(超时|不可用|红)|timeout/i', (string)$userText . "\n" . $reply)
+            && !preg_match('/proxy group|自动选择 not found|domain_resolver|unknown field|x509|certificate|unmarshal|导入失败|配置.*失败|添加配置文件失败|not found/i', (string)$userText)
             && !preg_match('/光猫|飞行模式|刷新订阅|重新导入|换个网络|网络出口/u', $reply)) {
             $reply .= "\n先关闭代理刷新订阅；如果仍然全部超时，家里宽带请断电重启光猫 3-5 分钟，手机流量请开关一次飞行模式。";
         }
 
-        $reply = preg_replace('/[^。！？!?\n]*(我们来一起看看|接下来可以怎么排查|如果有任何疑问|如有任何疑问|需要更多帮助|随时告诉我|随时联系|希望.*帮到|这样应该能帮到|这样应该能帮助)[^。！？!?\n]*[。！？!?]?/u', '', $reply);
+        $reply = preg_replace('/[^。！？!?\n]*(我们来一起看看|接下来可以怎么排查|如果有任何疑问|如果.*其他问题|如需进一步帮助|如有任何疑问|需要更多帮助|提供更多细节|随时告诉我|随时联系|欢迎.*随时|希望.*帮到|这样应该能帮到|这样应该能帮助)[^。！？!?\n]*[。！？!?]?/u', '', $reply);
+        $reply = preg_replace('/(^|\n)\s*[。！？!?]\s*(?=\n|$)/u', '$1', $reply);
         $reply = preg_replace('/\s+/u', ' ', $reply);
         $reply = trim($reply);
+        $reply = $this->ensureVagueSubscriptionErrorFollowup($reply, $userText);
+        $reply = $this->ensureSubscriptionNoNodesAction($reply, $userText);
 
         return $this->compactTicketReply($reply);
+    }
+
+    private function ensureSubscriptionNoNodesAction($reply, $userText)
+    {
+        $text = (string)$userText;
+        $isNoNodesAfterSubscription = (bool)preg_match('/订阅后[^。！？\n]*(无法使用|不能用|用不了)|购买[^。！？\n]*(订阅|套餐)[^。！？\n]*(没有节点|无节点|节点不可用)|没有节点可用|无节点/u', $text);
+        if (!$isNoNodesAfterSubscription || $this->ticketPaymentOrderQuestion(['question' => $text])) {
+            return $reply;
+        }
+
+        $hasClientStep = preg_match('/客户端|代理软件/u', (string)$reply);
+        $hasImportStep = preg_match('/重新(添加|导入)|添加订阅|导入订阅|完整订阅链接|订阅链接|URL/u', (string)$reply);
+        if (!$hasClientStep || !$hasImportStep) {
+            $reply = $this->ensureTicketAiIdentity($reply);
+            $reply .= "\n请先删除客户端里的旧订阅，再回到面板复制最新的完整订阅链接，到代理客户端里选择添加订阅或 URL 导入后重新添加一次。";
+        }
+
+        return $reply;
+    }
+
+    private function ensureVagueSubscriptionErrorFollowup($reply, $userText)
+    {
+        $text = (string)$userText;
+        $isVagueSubscriptionError = (bool)preg_match('/订阅(?:链接|地址)?[^。！？\n]*(报错|错误|失败)|(?:新|新的)[^。！？\n]*订阅[^。！？\n]*(报错|错误|失败)/u', $text);
+        if (!$isVagueSubscriptionError) {
+            return $reply;
+        }
+        if ($this->ticketUserProvidedClientInfo($text)) {
+            return $reply;
+        }
+        if (preg_match('/x509|certificate|domain_resolver|unknown field|proxy group|timeout|not found|Hiddify|Loon|Clash|Meta|Mihomo|Shadowrocket|Surge|Stash/i', $text)) {
+            return $reply;
+        }
+
+        $needsClient = !preg_match('/客户端|代理软件/u', (string)$reply);
+        $needsError = !preg_match('/报错文字|具体提示|提示文字|文字提示|弹出|什么内容/u', (string)$reply);
+        if ($needsClient || $needsError) {
+            $reply = $this->ensureTicketAiIdentity($reply);
+            $reply .= "\n请把代理客户端名称、版本和弹出的具体报错文字发给我哦，这样我能更快判断是客户端版本、订阅导入还是网络问题。";
+        }
+
+        return $reply;
     }
 
     private function ticketUserProvidedClientInfo($text)
@@ -561,7 +1184,7 @@ class AiRiskService
         return implode("\n", [
             '你发的这个更像是面板页面地址，不一定适合当作长期入口保存。',
             '如果网站打不开，请先打开发布页，发布页里有海外站和国内站入口：海外网络可以试海外站，国内网络优先试国内站。换入口后再登录面板即可。',
-            '如果发布页里的入口也打不开，请把打不开的入口和报错截图发来，我再继续帮你看。'
+            '如果发布页里的入口也打不开，请把打不开的是国内站、海外站还是发布页本身，以及页面上的具体报错文字发来，我再继续帮你看。'
         ]);
     }
 
@@ -646,8 +1269,11 @@ class AiRiskService
 
     private function ticketReplyPolicy(array $context)
     {
-        $text = mb_strtolower(json_encode($context, JSON_UNESCAPED_UNICODE));
-        $hasPayment = preg_match('/付款|支付|订单|充值|购买|扣款|套餐没开通|未到账|余额/u', $text);
+        $text = mb_strtolower(trim((string)($context['question'] ?? '') . "\n" . $this->ticketRoleText($context, 'user') . "\n" . (string)($context['ticket']['subject'] ?? '')));
+        $hasPayment = $this->ticketPaymentOrderQuestion($context);
+        if (preg_match('/购买了?.*(订阅|套餐).*?(无法使用|不能用|没有节点|无节点|节点不可用|节点)|订阅后无法使用/u', $text)) {
+            $hasPayment = false;
+        }
         $hasClient = preg_match('/loon|surge|shadowrocket|小火箭|clash|stash|sing-box|singbox|v2rayn|hiddify|openclash|passwall|订阅|导入|节点|客户端|测速|延迟/u', $text);
         $hasAccount = preg_match('/登录|密码|验证码|邮箱|账号|找回/u', $text);
 
@@ -657,7 +1283,7 @@ class AiRiskService
                 'must_do' => [
                     'Only discuss order status, payment status, recharge, package activation, and missing payment evidence.',
                     'If order number or payment time is already provided, acknowledge it and do not ask for it again.',
-                    'If more information is needed, ask only for a payment screenshot or order screenshot.'
+                    'If more information is needed, ask only for order number and payment time. Do not ask for screenshots because tickets are text-only.'
                 ],
                 'forbidden_topics' => ['proxy clients', 'client versions', 'nodes', 'subscription import', 'subscription URL', 'proxy or VPN settings', 'reset subscription']
             ];
@@ -696,14 +1322,30 @@ class AiRiskService
         ];
     }
 
-    private function selectTicketKnowledge(array $context, $limit = 6)
+    private function ticketPaymentOrderQuestion(array $context)
     {
+        $text = mb_strtolower(trim((string)($context['question'] ?? '') . "\n" . $this->ticketRoleText($context, 'user') . "\n" . (string)($context['ticket']['subject'] ?? '')));
+        $isPayment = (bool)preg_match('/付款|支付|订单|充值|扣款|套餐没开通|未到账|没到账|未到帐|没到帐|余额/u', $text);
+        if (preg_match('/购买了?.*(订阅|套餐).*?(无法使用|不能用|没有节点|无节点|节点不可用|节点)|订阅后无法使用/u', $text)) {
+            $isPayment = false;
+        }
+        return $isPayment;
+    }
+
+    private function selectTicketKnowledge(array $context, array $config = [], $limit = 6)
+    {
+        $text = $this->ticketKnowledgeSearchText($context);
+        $remote = $this->selectRemoteTicketKnowledge($text, $config, $limit);
+        if (!empty($remote)) {
+            return $this->prioritizeTicketExactErrorKnowledgeItems($remote);
+        }
+
         $knowledge = $this->ticketKnowledgeBase();
         if (!$knowledge) {
             return [];
         }
 
-        $text = mb_strtolower(json_encode($context, JSON_UNESCAPED_UNICODE));
+        $text = mb_strtolower($text);
         $scored = [];
         foreach ($knowledge as $item) {
             $score = 0;
@@ -722,7 +1364,9 @@ class AiRiskService
                     'item' => [
                         'id' => $item['id'] ?? '',
                         'title' => $item['title'] ?? '',
-                        'answer_points' => array_slice((array)($item['answer_points'] ?? []), 0, 5)
+                        'answer_points' => array_map(function ($point) {
+                            return $this->trimText((string)$point, 120);
+                        }, array_slice((array)($item['answer_points'] ?? []), 0, 3))
                     ]
                 ];
             }
@@ -732,9 +1376,212 @@ class AiRiskService
             return $b['score'] <=> $a['score'];
         });
 
+        $scored = $this->prioritizeTicketExactErrorKnowledgeRows($scored);
+
         return array_map(function ($row) {
             return $row['item'];
         }, array_slice($scored, 0, $limit));
+    }
+
+    private function selectTicketReplyExamples(array $context, $limit = 3)
+    {
+        $examples = $this->ticketReplyExampleBase();
+        if (!$examples) {
+            return [];
+        }
+
+        $text = mb_strtolower($this->ticketKnowledgeSearchText($context));
+        $scored = [];
+        $genericKeywords = [
+            '节点', '订阅', '更新', '报错', '导入', '支付', '登录', '购买', '充值',
+            '流量', '超时', '小火箭', 'Clash', 'Shadowrocket', 'Loon'
+        ];
+        foreach ($examples as $item) {
+            $score = 0;
+            $specificHits = 0;
+            foreach ((array)($item['keywords'] ?? []) as $keyword) {
+                $keyword = trim((string)$keyword);
+                if ($keyword === '') {
+                    continue;
+                }
+                if (in_array($keyword, $genericKeywords, true) || mb_strlen($keyword) < 3) {
+                    continue;
+                }
+                if (mb_stripos($text, mb_strtolower($keyword)) !== false) {
+                    $score += max(2, mb_strlen($keyword));
+                    $specificHits++;
+                }
+            }
+            if ($score > 0 && $specificHits > 0) {
+                $scored[] = [
+                    'score' => $score,
+                    'item' => $item
+                ];
+            }
+        }
+
+        usort($scored, function ($a, $b) {
+            return $b['score'] <=> $a['score'];
+        });
+
+        $items = [];
+        foreach (array_slice($scored, 0, max(1, (int)$limit)) as $row) {
+            $item = $row['item'];
+            $items[] = [
+                'title' => (string)($item['title'] ?? ''),
+                'tags' => array_slice((array)($item['tags'] ?? []), 0, 6),
+                'user_message' => $this->sanitizeTicketContextText($this->trimText((string)($item['user_message'] ?? ''), 220)),
+                'staff_reply' => $this->sanitizeTicketContextText($this->trimText((string)($item['staff_reply'] ?? ''), 420)),
+                'usage_note' => (string)($item['usage_note'] ?? '')
+            ];
+        }
+
+        return $items;
+    }
+
+    private function prioritizeTicketExactErrorKnowledgeRows(array $scored)
+    {
+        $blocked = $this->ticketKnowledgeBlockedIdsForTop($scored[0]['item']['id'] ?? '');
+        if (!$blocked) {
+            return $scored;
+        }
+
+        return array_values(array_filter($scored, function ($row) use ($blocked) {
+            return !in_array($row['item']['id'] ?? '', $blocked, true);
+        }));
+    }
+
+    private function prioritizeTicketExactErrorKnowledgeItems(array $items)
+    {
+        $blocked = $this->ticketKnowledgeBlockedIdsForTop($items[0]['id'] ?? '');
+        if (!$blocked) {
+            return $items;
+        }
+
+        return array_values(array_filter($items, function ($item) use ($blocked) {
+            return !in_array($item['id'] ?? '', $blocked, true);
+        }));
+    }
+
+    private function ticketKnowledgeBlockedIdsForTop($id)
+    {
+        switch ($id) {
+            case 'ticket_exact_error_first':
+                return [
+                    'subscription_import_general_order',
+                    'subscription_import_empty_generic',
+                    'router_import_proxy_on'
+                ];
+            case 'proxy_ip_certificate_warning':
+                return [
+                    'cert_domain_mismatch_user',
+                    'openclash_core_mismatch',
+                    'router_import_proxy_on',
+                    'subscription_import_general_order',
+                    'subscription_import_empty_generic',
+                    'model_category_guard_client'
+                ];
+            case 'all_nodes_timeout_local_network':
+            case 'node_all_timeout_after_minutes':
+                return [
+                    'clash_update_after_minutes_timeout',
+                    'subscription_import_general_order',
+                    'subscription_import_empty_generic',
+                    'model_category_guard_client'
+                ];
+            case 'hiddify_singbox_parser_domain_resolver':
+                return [
+                    'hiddify_empty_profile',
+                    'subscription_proxy_connection_reset',
+                    'proxy_ip_certificate_warning'
+                ];
+            case 'clash_party_proxy_group_not_found':
+                return [
+                    'clash_update_after_minutes_timeout',
+                    'v2rayng_import_zero_config',
+                    'model_category_guard_client'
+                ];
+            default:
+                return [];
+        }
+    }
+
+    private function selectRemoteTicketKnowledge($text, array $config, $limit)
+    {
+        $baseUrl = rtrim((string)($config['ticket_ai_knowledge_base_url'] ?? ''), '/');
+        if ($baseUrl === '') {
+            return [];
+        }
+
+        try {
+            $headers = [
+                'Content-Type' => 'application/json'
+            ];
+            $apiKey = trim((string)($config['ticket_ai_knowledge_api_key'] ?? ''));
+            if ($apiKey !== '') {
+                $headers['X-Knowledge-Key'] = $apiKey;
+            }
+
+            $client = new Client([
+                'timeout' => 4,
+                'connect_timeout' => 2,
+                'http_errors' => false
+            ]);
+            $response = $client->post($baseUrl . '/api/search', [
+                'headers' => $headers,
+                'json' => [
+                    'query' => $this->trimText((string)$text, 5000),
+                    'limit' => max(1, min(10, (int)$limit))
+                ]
+            ]);
+
+            if ($response->getStatusCode() >= 400) {
+                return [];
+            }
+
+            $data = json_decode((string)$response->getBody(), true);
+            if (!is_array($data) || empty($data['items']) || !is_array($data['items'])) {
+                return [];
+            }
+
+            $items = [];
+            foreach ($data['items'] as $item) {
+                if (!is_array($item) || empty($item['answer_points'])) {
+                    continue;
+                }
+                $items[] = [
+                    'id' => (string)($item['id'] ?? ''),
+                    'title' => (string)($item['title'] ?? ''),
+                    'answer_points' => array_map(function ($point) {
+                        return $this->trimText((string)$point, 120);
+                    }, array_slice((array)$item['answer_points'], 0, 3))
+                ];
+                if (count($items) >= $limit) {
+                    break;
+                }
+            }
+
+            return $items;
+        } catch (\Throwable $exception) {
+            return [];
+        }
+    }
+
+    private function ticketKnowledgeSearchText(array $context)
+    {
+        $ticket = (array)($context['ticket'] ?? []);
+        $parts = [
+            (string)($context['question'] ?? ''),
+            (string)($ticket['subject'] ?? ''),
+            (string)($context['read_only_context_summary'] ?? ''),
+            (string)($context['ops_context']['recent_changes'] ?? '')
+        ];
+
+        foreach ((array)($ticket['messages'] ?? []) as $message) {
+            $parts[] = (string)($message['message'] ?? '');
+        }
+
+        return $this->sanitizeTicketContextText($this->trimText(implode("\n", array_filter($parts)), 5000));
     }
 
     private function ticketKnowledgeBase()
@@ -760,10 +1607,36 @@ class AiRiskService
         }));
     }
 
+    private function ticketReplyExampleBase()
+    {
+        static $examples = null;
+        if ($examples !== null) {
+            return $examples;
+        }
+
+        $data = [];
+        foreach (glob(resource_path('ai/ticket_reply_examples*.json')) ?: [] as $path) {
+            if (!is_file($path)) {
+                continue;
+            }
+            $items = json_decode((string)file_get_contents($path), true);
+            if (is_array($items)) {
+                $data = array_merge($data, $items);
+            }
+        }
+
+        return $examples = array_values(array_filter($data, function ($item) {
+            return is_array($item)
+                && !empty($item['keywords'])
+                && !empty($item['user_message'])
+                && !empty($item['staff_reply']);
+        }));
+    }
+
     private function callTicketModel(array $config, array $messages)
     {
         $baseUrl = rtrim((string)($config['ticket_ai_base_url'] ?? 'http://152.53.36.230:11434'), '/');
-        $model = trim((string)($config['ticket_ai_model'] ?? 'qwen2.5:7b-instruct'));
+        $model = trim((string)($config['ticket_ai_model'] ?? 'qwen3:14b'));
         if ($baseUrl === '') {
             throw new RuntimeException('ticket AI base URL is empty');
         }
@@ -772,7 +1645,7 @@ class AiRiskService
         }
 
         $client = new Client([
-            'timeout' => 90,
+            'timeout' => 240,
             'connect_timeout' => 8,
             'http_errors' => false
         ]);
@@ -784,6 +1657,8 @@ class AiRiskService
             'json' => [
                 'model' => $model,
                 'stream' => false,
+                'think' => false,
+                'keep_alive' => '0',
                 'messages' => $messages,
                 'options' => [
                     'temperature' => 0.15,

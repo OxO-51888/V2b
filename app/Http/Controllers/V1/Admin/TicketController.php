@@ -136,13 +136,37 @@ class TicketController extends Controller
             ];
         }
 
+        $aiRiskService = new AiRiskService();
+        $skipReason = $aiRiskService->ticketAutoReplySkipReason($ticketContext);
+        if ($skipReason === 'payment_order') {
+            if ($sendReply) {
+                abort(500, '订单付款类工单不由 AI 自动回复，请人工核对后处理');
+            }
+            return response([
+                'data' => [
+                    'draft' => '订单付款类工单不建议由 AI 自动回复，请人工核对订单状态后处理。',
+                    'replied' => false,
+                    'ticket_id' => $ticket ? $ticket->id : null,
+                    'tools' => [],
+                    'generated_at' => time(),
+                    'skipped' => true,
+                    'skip_reason' => $skipReason
+                ]
+            ]);
+        }
+
         try {
-            $draft = (new AiRiskService())->generateTicketReplyDraft($ticketContext, $config);
+            $draft = $aiRiskService->generateTicketReplyDraft($ticketContext, $config);
+            $toolUsage = $aiRiskService->lastTicketToolUsage();
+            $autoPublishBlockReason = $aiRiskService->ticketAutoPublishBlockReason($draft, $ticketContext);
         } catch (Throwable $e) {
             abort(500, 'AI 生成失败：' . $e->getMessage());
         }
 
         if ($sendReply && $ticket) {
+            if (!empty($autoPublishBlockReason)) {
+                abort(500, 'AI 回复未通过自动发送检查：' . $autoPublishBlockReason);
+            }
             $ticketService = new TicketService();
             $ticketService->replyByAdmin(
                 $ticket->id,
@@ -156,6 +180,8 @@ class TicketController extends Controller
                 'draft' => $draft,
                 'replied' => $sendReply,
                 'ticket_id' => $ticket ? $ticket->id : null,
+                'tools' => $toolUsage ?? [],
+                'auto_publish_block_reason' => $autoPublishBlockReason ?? '',
                 'generated_at' => time()
             ]
         ]);

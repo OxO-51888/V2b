@@ -92,10 +92,30 @@ class TicketService {
             return false;
         }
 
+        $lastUserMessageId = $lastUserMessage->id;
+        $context = $this->buildAiTicketContext($ticket, $question ?: $lastUserMessage->message, $source);
+
+        $aiRiskService = new AiRiskService();
+        $skipReason = $aiRiskService->ticketAutoReplySkipReason($context);
+        if ($skipReason) {
+            Log::info('ticket AI auto reply skipped by policy', [
+                'ticket_id' => $ticket->id,
+                'reason' => $skipReason
+            ]);
+            return false;
+        }
+
         try {
-            $context = $this->buildAiTicketContext($ticket, $question ?: $lastUserMessage->message, $source);
-            $draft = (new AiRiskService())->generateTicketReplyDraft($context, (array)config('v2board', []));
-            $this->replyByAdmin($ticket->id, $draft, $adminId);
+            $draft = $aiRiskService->generateTicketReplyDraft($context, (array)config('v2board', []));
+            $blockReason = $aiRiskService->ticketAutoPublishBlockReason($draft, $context);
+            if ($blockReason) {
+                Log::warning('ticket AI auto reply blocked by publish gate', [
+                    'ticket_id' => $ticket->id,
+                    'reason' => $blockReason
+                ]);
+                return false;
+            }
+            $this->createAiReplyMessage($ticket, $lastUserMessageId, $adminId, $draft);
             return true;
         } catch (Throwable $exception) {
             Log::warning('ticket AI auto reply failed', [
@@ -104,6 +124,41 @@ class TicketService {
             ]);
             return false;
         }
+    }
+
+    private function createAiReplyMessage(Ticket $ticket, $lastUserMessageId, $adminId, $message): void
+    {
+        DB::beginTransaction();
+        $freshTicket = Ticket::where('id', $ticket->id)->first();
+        if (!$freshTicket) {
+            DB::rollback();
+            return;
+        }
+
+        $hasNewerUserMessage = TicketMessage::where('ticket_id', $freshTicket->id)
+            ->where('user_id', $freshTicket->user_id)
+            ->where('id', '>', $lastUserMessageId)
+            ->exists();
+        if ($hasNewerUserMessage) {
+            DB::rollback();
+            return;
+        }
+
+        $ticketMessage = TicketMessage::create([
+            'user_id' => $adminId,
+            'ticket_id' => $freshTicket->id,
+            'message' => $message
+        ]);
+        $freshTicket->status = 0;
+        $freshTicket->reply_status = 1;
+        $freshTicket->touch();
+
+        if (!$ticketMessage || !$freshTicket->save()) {
+            DB::rollback();
+            return;
+        }
+        DB::commit();
+        $this->sendEmailNotify($freshTicket, $ticketMessage);
     }
 
     private function buildAiTicketContext(Ticket $ticket, $question, $source)
