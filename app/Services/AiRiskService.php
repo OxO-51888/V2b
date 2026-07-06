@@ -1341,7 +1341,7 @@ class AiRiskService
             return $this->prioritizeTicketExactErrorKnowledgeItems($remote);
         }
 
-        $knowledge = $this->ticketKnowledgeBase();
+        $knowledge = $this->ticketKnowledgeBase($config);
         if (!$knowledge) {
             return [];
         }
@@ -1585,15 +1585,18 @@ class AiRiskService
         return $this->sanitizeTicketContextText($this->trimText(implode("\n", array_filter($parts)), 5000));
     }
 
-    private function ticketKnowledgeBase()
+    private function ticketKnowledgeBase(array $config = [])
     {
-        static $knowledge = null;
-        if ($knowledge !== null) {
-            return $knowledge;
+        static $cache = [];
+
+        $paths = $this->ticketKnowledgePaths($config);
+        $cacheKey = implode('|', $paths);
+        if (array_key_exists($cacheKey, $cache)) {
+            return $cache[$cacheKey];
         }
 
         $data = [];
-        foreach (glob(resource_path('ai/ticket_knowledge*.json')) ?: [] as $path) {
+        foreach ($paths as $path) {
             if (!is_file($path)) {
                 continue;
             }
@@ -1603,9 +1606,35 @@ class AiRiskService
             }
         }
 
-        return $knowledge = array_values(array_filter($data, function ($item) {
+        return $cache[$cacheKey] = array_values(array_filter($data, function ($item) {
             return is_array($item) && !empty($item['keywords']) && !empty($item['answer_points']);
         }));
+    }
+
+    private function ticketKnowledgePaths(array $config = [])
+    {
+        $configured = trim((string)($config['ticket_ai_knowledge_path'] ?? ''));
+        $paths = [];
+
+        foreach (preg_split('/[\r\n,;]+/', $configured) ?: [] as $path) {
+            $path = trim($path);
+            if ($path === '') {
+                continue;
+            }
+            if (is_dir($path)) {
+                foreach (glob(rtrim($path, '/\\') . DIRECTORY_SEPARATOR . 'ticket_knowledge*.json') ?: [] as $item) {
+                    $paths[] = $item;
+                }
+                continue;
+            }
+            $paths[] = $path;
+        }
+
+        if ($paths) {
+            return array_values(array_unique($paths));
+        }
+
+        return glob(resource_path('ai/ticket_knowledge*.json')) ?: [];
     }
 
     private function ticketReplyExampleBase()
