@@ -18,6 +18,7 @@ class ConfigSave extends FormRequest
         'ticket_ai_auto_reply_enable' => 'in:0,1',
         'ticket_ai_base_url' => 'nullable|string|max:255',
         'ticket_ai_model' => 'nullable|string|max:100',
+        'ticket_ai_api_key' => 'nullable|string|max:255',
         'ticket_ai_knowledge_base_url' => 'nullable|string|max:255',
         'ticket_ai_knowledge_api_key' => 'nullable|string|max:120',
         'ticket_ai_recent_context' => 'nullable|string|max:3000',

@@ -103,6 +103,7 @@ class AiRiskService
                         '如果 Meta、Clash Meta、Mihomo、Hiddify 这类客户端导入订阅时出现 x509、certificate signed by unknown authority 或 tls failed to verify certificate，优先按客户端 Meta 版本太低或组件太旧处理：让用户去教程页下载新版/推荐客户端后重新导入，不要说服务器证书危险。',
                         '如果 Shadowrocket/小火箭仍然提示证书无效、服务器 URL 遇到问题、伪装服务器或连接到不可信服务器，先让用户暂时换用教程页里的 iOS 推荐客户端，例如 Loon、Surge 或 Stash；不要推荐安卓或电脑端客户端，也不要继续让用户在小火箭里反复导入或确认提示。',
                         '如果是全部节点超时且订阅可更新，优先判断本地网络出口 IP 问题：宽带断电光猫/ONT 或重新拨号 PPPoE 3-5 分钟；手机流量开关飞行模式 10-20 秒。',
+                        '如果用户说国内站打不开、国内入口打不开，必须明确让用户先关闭代理或 VPN，使用本地网络，并用 Google Chrome 浏览器直接访问国内站入口；不要只说打开发布页。',
                         '只有 recent_changes 明确写到“网站订阅入口、订阅地址、订阅链接、订阅域名、发布页入口”这类入口变更时，才允许说“网站订阅入口/订阅地址换新”；如果只是写“订阅已换新”，不要主动提订阅入口换新。',
                         '如果提到 HY2/Hysteria2，只能说 HY2 协议最近有些阻断；不要说新协议，不要说内核，客户只看客户端/客户端版本。',
                         '如果命中记录显示订阅被重置，提醒用户删除旧订阅，并从面板复制最新订阅重新导入。',
@@ -1325,7 +1326,7 @@ class AiRiskService
     private function ticketPaymentOrderQuestion(array $context)
     {
         $text = mb_strtolower(trim((string)($context['question'] ?? '') . "\n" . $this->ticketRoleText($context, 'user') . "\n" . (string)($context['ticket']['subject'] ?? '')));
-        $isPayment = (bool)preg_match('/付款|支付|订单|充值|扣款|套餐没开通|未到账|没到账|未到帐|没到帐|余额/u', $text);
+        $isPayment = (bool)preg_match('/付款|支付|订单|充值|扣款|套餐没开通|未到账|没到账|未到帐|没到帐|余额|退款|退费|退钱|退订/u', $text);
         if (preg_match('/购买了?.*(订阅|套餐).*?(无法使用|不能用|没有节点|无节点|节点不可用|节点)|订阅后无法使用/u', $text)) {
             $isPayment = false;
         }
@@ -1650,6 +1651,57 @@ class AiRiskService
             'http_errors' => false
         ]);
 
+        if ($this->ticketModelUsesOpenAi($baseUrl, $model, $config)) {
+            $apiKey = trim((string)($config['ticket_ai_api_key'] ?? ''));
+            if ($apiKey === '' || $apiKey === '********') {
+                $apiKey = trim((string)($config['ai_risk_api_key'] ?? ''));
+            }
+            if ($apiKey === '') {
+                throw new RuntimeException('ticket OpenAI API key is empty');
+            }
+
+            $json = [
+                'model' => $model,
+                'messages' => $messages,
+                'max_completion_tokens' => 420
+            ];
+
+            $response = $client->post($baseUrl . '/chat/completions', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Content-Type' => 'application/json'
+                ],
+                'json' => $json
+            ]);
+
+            $body = (string)$response->getBody();
+            $data = json_decode($body, true);
+            if ($response->getStatusCode() >= 400 && $this->shouldRetryWithLegacyMaxTokens($data)) {
+                unset($json['max_completion_tokens']);
+                $json['max_tokens'] = 420;
+                $response = $client->post($baseUrl . '/chat/completions', [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $apiKey,
+                        'Content-Type' => 'application/json'
+                    ],
+                    'json' => $json
+                ]);
+                $body = (string)$response->getBody();
+                $data = json_decode($body, true);
+            }
+            if ($response->getStatusCode() >= 400) {
+                $message = $data['error']['message'] ?? ('HTTP ' . $response->getStatusCode());
+                throw new RuntimeException('ticket OpenAI request failed: ' . $message);
+            }
+
+            $content = $data['choices'][0]['message']['content'] ?? '';
+            if (!$content) {
+                throw new RuntimeException('ticket OpenAI returned empty response');
+            }
+
+            return $content;
+        }
+
         $response = $client->post($baseUrl . '/api/chat', [
             'headers' => [
                 'Content-Type' => 'application/json'
@@ -1680,6 +1732,19 @@ class AiRiskService
         }
 
         return $content;
+    }
+
+    private function ticketModelUsesOpenAi($baseUrl, $model, array $config)
+    {
+        $provider = strtolower((string)($config['ticket_ai_provider'] ?? ''));
+        $base = strtolower((string)$baseUrl);
+        $modelName = strtolower((string)$model);
+
+        return $provider === 'openai'
+            || strpos($base, 'api.openai.com') !== false
+            || strpos($modelName, 'gpt-') === 0
+            || strpos($modelName, 'o3') === 0
+            || strpos($modelName, 'o4') === 0;
     }
 
     public function reviewSubscriptionRequest(Request $request, User $user, SubscriptionRule $rule, $reason, $matchedValue = '')

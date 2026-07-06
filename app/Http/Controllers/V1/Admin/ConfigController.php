@@ -75,6 +75,8 @@ class ConfigController extends Controller
                 'ticket_ai_auto_reply_enable' => (int)config('v2board.ticket_ai_auto_reply_enable', 0),
                 'ticket_ai_base_url' => config('v2board.ticket_ai_base_url', 'http://152.53.36.230:11434'),
                 'ticket_ai_model' => config('v2board.ticket_ai_model', 'qwen3:14b'),
+                'ticket_ai_api_key' => '',
+                'has_ticket_ai_api_key' => (config('v2board.ticket_ai_api_key') || config('v2board.ai_risk_api_key')) ? 1 : 0,
                 'ticket_ai_knowledge_base_url' => config('v2board.ticket_ai_knowledge_base_url', ''),
                 'ticket_ai_knowledge_api_key' => config('v2board.ticket_ai_knowledge_api_key') ? '********' : '',
                 'ticket_ai_recent_context' => config('v2board.ticket_ai_recent_context', ''),
@@ -201,6 +203,9 @@ class ConfigController extends Controller
     public function save(ConfigSave $request)
     {
         $data = $request->validated();
+        if (array_key_exists('ticket_ai_api_key', $data) && trim((string)$data['ticket_ai_api_key']) === '') {
+            unset($data['ticket_ai_api_key']);
+        }
         if (($data['ticket_ai_knowledge_api_key'] ?? '') === '********') {
             unset($data['ticket_ai_knowledge_api_key']);
         }
