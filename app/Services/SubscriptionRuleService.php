@@ -14,6 +14,11 @@ class SubscriptionRuleService
 {
     private const NODE_ALIVE_AI_REVIEW_LIMIT = 8;
     private const NODE_ALIVE_RESET_LIMIT = 15;
+    private const NODE_ALIVE_MIN_NETWORK_GROUPS = 3;
+    private const NODE_ALIVE_WINDOW_SECONDS = 120;
+    private const NODE_ALIVE_REQUIRED_WINDOWS = 3;
+    private const NODE_ALIVE_STATE_TTL = 900;
+    private const NODE_ALIVE_RESET_COOLDOWN = 86400;
 
     private const GOOD_UA = [
         'clash',
@@ -255,8 +260,29 @@ class SubscriptionRuleService
             return null;
         }
 
-        $aliveIpCount = (int)$aliveIpCount;
+        $evidence = $this->buildNodeAliveEvidence($aliveData);
+        $aliveIpCount = $evidence['ip_count'] > 0
+            ? $evidence['ip_count']
+            : (int)$aliveIpCount;
         if ($aliveIpCount <= self::NODE_ALIVE_AI_REVIEW_LIMIT) {
+            return null;
+        }
+
+        // A mobile carrier can assign a different public address to each UDP flow.
+        // Treat a small number of broad network groups as address churn, not devices.
+        if ($evidence['network_group_count'] < self::NODE_ALIVE_MIN_NETWORK_GROUPS) {
+            return null;
+        }
+
+        $state = $this->advanceNodeAliveState(
+            (int)$rule->id,
+            (int)$userId,
+            $evidence['network_groups']
+        );
+        if (
+            $state['consecutive_windows'] < self::NODE_ALIVE_REQUIRED_WINDOWS
+            || $state['stable_network_group_count'] < self::NODE_ALIVE_MIN_NETWORK_GROUPS
+        ) {
             return null;
         }
 
@@ -277,7 +303,9 @@ class SubscriptionRuleService
             (string)$nodeType,
             (string)$nodeId,
             self::NODE_ALIVE_AI_REVIEW_LIMIT,
-            self::NODE_ALIVE_RESET_LIMIT
+            self::NODE_ALIVE_RESET_LIMIT,
+            $evidence,
+            $state
         );
         return $this->applyNodeAction($rule, $request, $user, 'node_alive_ip_over_limit', $matchedValue, $action);
     }
@@ -567,19 +595,26 @@ class SubscriptionRuleService
     private function applyNodeAction(SubscriptionRule $rule, Request $request, User $user, $reason, $matchedValue = '', $forcedAction = null)
     {
         $action = $this->normalizeAction($forcedAction ?: $rule->action);
+        if (
+            in_array($action, ['reset_subscribe', 'no_nodes'], true)
+            && $this->isNodeAliveResetCoolingDown($user->id)
+        ) {
+            return null;
+        }
+
         $log = $this->logHit($rule, $request, $user, $reason, $matchedValue, $action);
 
         if ($action === 'ai_review') {
             $decision = (new AiRiskService())->reviewSubscriptionRequest($request, $user, $rule, $reason, $matchedValue);
             $this->updateAiDecisionLog($log, $decision);
             if (!empty($decision['block'])) {
-                $this->resetUserSecret($user);
+                $this->resetNodeAliveSecret($user);
             }
             return null;
         }
 
         if (in_array($action, ['reset_subscribe', 'no_nodes'], true)) {
-            $this->resetUserSecret($user);
+            $this->resetNodeAliveSecret($user);
         }
 
         return null;
@@ -639,28 +674,179 @@ class SubscriptionRuleService
     {
         $user->uuid = Helper::guid(true);
         $user->token = Helper::guid();
-        $user->save();
+        return (bool)$user->save();
     }
 
-    private function summarizeAliveIps(array $aliveData, $aliveIpCount, $nodeType, $nodeId, $aiLimit, $resetLimit)
+    private function buildNodeAliveEvidence(array $aliveData)
     {
         $ips = [];
+        $networkGroups = [];
+        $nodeCount = 0;
         foreach ($aliveData as $nodeData) {
             if (!is_array($nodeData) || empty($nodeData['aliveips']) || !is_array($nodeData['aliveips'])) {
                 continue;
             }
+            $nodeCount++;
             foreach ($nodeData['aliveips'] as $ipNode) {
                 $ip = explode('_', (string)$ipNode)[0];
                 if (filter_var($ip, FILTER_VALIDATE_IP)) {
                     $ips[$ip] = true;
+                    $networkGroup = $this->networkGroup($ip);
+                    if ($networkGroup) {
+                        $networkGroups[$networkGroup] = true;
+                    }
                 }
             }
         }
 
-        $samples = array_slice(array_keys($ips), 0, 8);
+        return [
+            'ips' => array_keys($ips),
+            'ip_count' => count($ips),
+            'network_groups' => array_keys($networkGroups),
+            'network_group_count' => count($networkGroups),
+            'node_count' => $nodeCount
+        ];
+    }
+
+    private function networkGroup($ip)
+    {
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            $parts = explode('.', $ip);
+            return $parts[0] . '.' . $parts[1] . '.0.0/16';
+        }
+
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            $packed = @inet_pton($ip);
+            if ($packed !== false) {
+                return bin2hex(substr($packed, 0, 8)) . '/64';
+            }
+        }
+
+        return null;
+    }
+
+    private function advanceNodeAliveState($ruleId, $userId, array $networkGroups, $now = null)
+    {
+        $now = $now === null ? time() : (int)$now;
+        $bucket = (int)floor($now / self::NODE_ALIVE_WINDOW_SECONDS);
+        $key = $this->nodeAliveStateKey($ruleId, $userId);
+        $state = Cache::get($key, []);
+        $buckets = isset($state['buckets']) && is_array($state['buckets'])
+            ? $state['buckets']
+            : [];
+
+        $bucketKey = (string)$bucket;
+        $currentGroups = isset($buckets[$bucketKey]) && is_array($buckets[$bucketKey])
+            ? $buckets[$bucketKey]
+            : [];
+        $buckets[$bucketKey] = array_values(array_unique(array_merge(
+            $currentGroups,
+            array_values(array_filter($networkGroups, 'is_string'))
+        )));
+
+        foreach (array_keys($buckets) as $existingBucket) {
+            if ((int)$existingBucket < $bucket - (self::NODE_ALIVE_REQUIRED_WINDOWS - 1)) {
+                unset($buckets[$existingBucket]);
+            }
+        }
+
+        $windowGroups = [];
+        for ($offset = 0; $offset < self::NODE_ALIVE_REQUIRED_WINDOWS; $offset++) {
+            $candidate = (string)($bucket - $offset);
+            if (!isset($buckets[$candidate])) {
+                break;
+            }
+            $windowGroups[] = $buckets[$candidate];
+        }
+
+        $consecutiveWindows = count($windowGroups);
+        $stableGroups = [];
+        if (!empty($windowGroups)) {
+            $stableGroups = array_shift($windowGroups);
+            foreach ($windowGroups as $groups) {
+                $stableGroups = array_values(array_intersect($stableGroups, $groups));
+            }
+        }
+
+        $state = [
+            'buckets' => $buckets,
+            'consecutive_windows' => $consecutiveWindows,
+            'stable_network_groups' => array_values(array_unique($stableGroups))
+        ];
+        Cache::put($key, $state, self::NODE_ALIVE_STATE_TTL);
+
+        return [
+            'consecutive_windows' => $state['consecutive_windows'],
+            'stable_network_groups' => $state['stable_network_groups'],
+            'stable_network_group_count' => count($state['stable_network_groups'])
+        ];
+    }
+
+    private function nodeAliveStateKey($ruleId, $userId)
+    {
+        return 'SUB_RULE_NODE_ALIVE_STATE_' . (int)$ruleId . '_' . (int)$userId;
+    }
+
+    private function nodeAliveResetCooldownKey($userId)
+    {
+        return 'SUB_RULE_NODE_ALIVE_RESET_COOLDOWN_' . (int)$userId;
+    }
+
+    private function isNodeAliveResetCoolingDown($userId)
+    {
+        return Cache::has($this->nodeAliveResetCooldownKey($userId));
+    }
+
+    private function acquireNodeAliveResetCooldown($userId)
+    {
+        return Cache::add(
+            $this->nodeAliveResetCooldownKey($userId),
+            time(),
+            self::NODE_ALIVE_RESET_COOLDOWN
+        );
+    }
+
+    private function resetNodeAliveSecret(User $user)
+    {
+        $key = $this->nodeAliveResetCooldownKey($user->id);
+        if (!$this->acquireNodeAliveResetCooldown($user->id)) {
+            return false;
+        }
+
+        try {
+            if (!$this->resetUserSecret($user)) {
+                Cache::forget($key);
+                return false;
+            }
+        } catch (Throwable $exception) {
+            Cache::forget($key);
+            throw $exception;
+        }
+
+        return true;
+    }
+
+    private function summarizeAliveIps(
+        array $aliveData,
+        $aliveIpCount,
+        $nodeType,
+        $nodeId,
+        $aiLimit,
+        $resetLimit,
+        array $evidence = [],
+        array $state = []
+    )
+    {
+        if (empty($evidence)) {
+            $evidence = $this->buildNodeAliveEvidence($aliveData);
+        }
+        $samples = array_slice($evidence['network_groups'] ?? [], 0, 5);
         return substr(sprintf(
-            'alive_ip=%d ai_limit=%d reset_limit=%d node=%s%s sample=%s',
+            'alive_ip=%d network_groups=%d stable_groups=%d windows=%d ai_limit=%d reset_limit=%d node=%s%s sample_groups=%s',
             (int)$aliveIpCount,
+            (int)($evidence['network_group_count'] ?? 0),
+            (int)($state['stable_network_group_count'] ?? 0),
+            (int)($state['consecutive_windows'] ?? 0),
             (int)$aiLimit,
             (int)$resetLimit,
             $nodeType,

@@ -1807,7 +1807,7 @@ class AiRiskService
             $content = $this->callModel($config, [
                 [
                     'role' => 'system',
-                    'content' => 'You are a realtime subscription risk engine. Return compact JSON only: {"decision":"allow|block","risk_score":0-100,"reason":"short Chinese reason"}. decision must be exactly allow or block. Use 0-100 scale. The query flag is user-controlled and can be forged; never treat flag=clash, flag=shadowrocket, or similar as proof of a normal client. Trust request_context.known_proxy_user_agent and the actual User-Agent more than flag. Known proxy clients include Shadowrocket, Clash, Mihomo, Sing-box, V2RayN, V2RayNG, Surge, Loon, Stash, Quantumult, FlowZ, Hiddify, and Karing. If current_hit.rule_type is pull_frequency and request_context.known_proxy_user_agent is true, this is usually a proxy app refresh/retry; allow unless recent_same_user_hits show clear credential sharing, many unrelated IP ranges, scanner/client mismatch, or repeated hard blocks. If actual User-Agent is browser Chrome/Safari/Firefox/Edge or social/webview and request_context.known_proxy_user_agent is false, block when current_hit.rule_type is ua_browser, ua_social, or header_browser_context, even if flag claims a proxy client. If the actual User-Agent is curl, wget, httpie, PowerShell, python-requests, Go-http-client, Postman, browser Chrome/Safari/Firefox/Edge, Telegram/Wechat/QQ webview, scanner Censys/Shodan/zgrab/nmap, or empty, block when current_hit.rule_type confirms that evidence. If current_hit.rule_type is ua_cli_fetch and User-Agent is curl/wget/httpie/PowerShell, score 90-100 and block. If rule_type is ua_api_fetch and User-Agent is python-requests/Go-http-client/Postman/axios, score 90-100 and block. If rule_type is ua_scanner, score 95-100 and block. If rule_type is node_alive_ip_over_limit, treat the over-limit count as a review signal, not automatic proof. Block only when matched_value and recent_same_user_hits indicate credential sharing, many unrelated network ranges, repeated over-limit hits, or clearly non-household use. Allow when the evidence can reasonably fit a small household, router, mobile network switch, or normal multi-device use. If rule_type is direct_ip_host or head_method_probe, trust the current_hit evidence and block when it indicates direct-IP access or probing. If evidence is weak or AI is unsure, allow with score below 80. For block decisions, the reason must describe why the subscription was refused; do not use suggestion or recommendation wording such as 建议. Never include full IPs, emails, tokens, or node data.'
+                    'content' => 'You are a realtime subscription risk engine. Return compact JSON only: {"decision":"allow|block","risk_score":0-100,"reason":"short Chinese reason"}. decision must be exactly allow or block. Use 0-100 scale. The query flag is user-controlled and can be forged; never treat flag=clash, flag=shadowrocket, or similar as proof of a normal client. Trust request_context.known_proxy_user_agent and the actual User-Agent more than flag. Known proxy clients include Shadowrocket, Clash, Mihomo, Sing-box, V2RayN, V2RayNG, Surge, Loon, Stash, Quantumult, FlowZ, Hiddify, and Karing. If current_hit.rule_type is pull_frequency and request_context.known_proxy_user_agent is true, this is usually a proxy app refresh/retry; allow unless recent_same_user_hits show clear credential sharing, many unrelated IP ranges, scanner/client mismatch, or repeated hard blocks. If actual User-Agent is browser Chrome/Safari/Firefox/Edge or social/webview and request_context.known_proxy_user_agent is false, block when current_hit.rule_type is ua_browser, ua_social, or header_browser_context, even if flag claims a proxy client. If the actual User-Agent is curl, wget, httpie, PowerShell, python-requests, Go-http-client, Postman, browser Chrome/Safari/Firefox/Edge, Telegram/Wechat/QQ webview, scanner Censys/Shodan/zgrab/nmap, or empty, block when current_hit.rule_type confirms that evidence. If current_hit.rule_type is ua_cli_fetch and User-Agent is curl/wget/httpie/PowerShell, score 90-100 and block. If rule_type is ua_api_fetch and User-Agent is python-requests/Go-http-client/Postman/axios, score 90-100 and block. If rule_type is ua_scanner, score 95-100 and block. If rule_type is node_alive_ip_over_limit, this event comes from a trusted node backend report. request.reporter_user_agent and request.reporter_ip_range identify the reporting server, never the customer or customer app, and must not increase risk. The rule reaches AI only after three consecutive two-minute windows with at least three stable broad network groups. Block with score 90-100 only when the aggregate evidence and recent_same_user_hits strongly indicate credential sharing or clearly non-household use. Mobile carrier address churn inside one broad network group, a small household, router, network switching, and normal multi-device use must be allowed. If rule_type is direct_ip_host or head_method_probe, trust the current_hit evidence and block when it indicates direct-IP access or probing. If evidence is weak or AI is unsure, allow with score below 80. For block decisions, the reason must describe why the subscription was refused; do not use suggestion or recommendation wording such as 建议. Never include full IPs, emails, tokens, or node data.'
                 ],
                 [
                     'role' => 'user',
@@ -1815,7 +1815,7 @@ class AiRiskService
                 ]
             ], 12, 2048);
             $this->markRuntimeStatus(true, 'review_success');
-            $decision = $this->parseDecision($content, (int)($config['ai_risk_block_score'] ?? 80));
+            $decision = $this->parseDecision($content, $this->blockScoreForRule($config, $rule));
             $decision = $this->enforceRuleFloor($decision, $request, $rule);
         } catch (\Throwable $exception) {
             $this->markRuntimeStatus(false, 'review_failed: ' . $exception->getMessage());
@@ -1883,18 +1883,21 @@ class AiRiskService
     {
         $ua = (string)$request->header('User-Agent', '');
         $flag = (string)$request->input('flag', '');
+        $isNodeAliveReport = $rule->type === 'node_alive_ip_over_limit';
         $history = SubscriptionRuleLog::where('user_id', $user->id)
             ->orderBy('id', 'DESC')
             ->limit(12)
             ->get()
             ->map(function ($log) {
+                $isNodeAliveReport = $log->rule_type === 'node_alive_ip_over_limit';
                 return [
                     'rule_type' => $log->rule_type,
                     'action' => $log->action,
                     'reason' => $log->reason,
                     'matched_value' => $this->trimText((string)$log->matched_value, 90),
-                    'client_ip_range' => $this->maskIp($log->client_ip),
-                    'user_agent' => $this->trimText((string)$log->user_agent, 120),
+                    'client_ip_range' => $isNodeAliveReport ? '' : $this->maskIp($log->client_ip),
+                    'user_agent' => $isNodeAliveReport ? '' : $this->trimText((string)$log->user_agent, 120),
+                    'event_source' => $isNodeAliveReport ? 'node_backend_report' : 'subscription_request',
                     'created_at' => $log->created_at
                 ];
             })
@@ -1910,22 +1913,27 @@ class AiRiskService
                 'rule_threshold' => $rule->condition_value
             ],
             'request' => [
-                'client_ip_range' => $this->maskIp($this->clientIp($request)),
-                'proxy_ip_range' => $this->maskIp((string)$request->ip()),
-                'x_forwarded_for_ranges' => $this->maskIpList((string)$request->header('X-Forwarded-For', '')),
-                'user_agent' => $this->trimText($ua, 180),
-                'flag' => $this->trimText($flag, 80),
+                'client_ip_range' => $isNodeAliveReport ? '' : $this->maskIp($this->clientIp($request)),
+                'proxy_ip_range' => $isNodeAliveReport ? '' : $this->maskIp((string)$request->ip()),
+                'x_forwarded_for_ranges' => $isNodeAliveReport ? [] : $this->maskIpList((string)$request->header('X-Forwarded-For', '')),
+                'user_agent' => $isNodeAliveReport ? '' : $this->trimText($ua, 180),
+                'flag' => $isNodeAliveReport ? '' : $this->trimText($flag, 80),
+                'reporter_ip_range' => $isNodeAliveReport ? $this->maskIp((string)$request->ip()) : '',
+                'reporter_user_agent' => $isNodeAliveReport ? $this->trimText($ua, 180) : '',
                 'path' => '/' . ltrim($request->path(), '/'),
                 'method' => $request->method(),
-                'referer_present' => $request->header('referer') ? true : false,
-                'accept' => $this->trimText((string)$request->header('accept', ''), 120)
+                'referer_present' => $isNodeAliveReport ? false : ($request->header('referer') ? true : false),
+                'accept' => $isNodeAliveReport ? '' : $this->trimText((string)$request->header('accept', ''), 120)
             ],
             'request_context' => [
-                'known_proxy_user_agent' => $this->hasProxyClientUa(strtolower($ua)),
-                'flag_claims_proxy_client' => $this->flagClaimsProxyClient($flag),
-                'has_browser_context_header' => $this->hasBrowserContextHeader($request),
-                'browser_context_header' => $this->browserContextHeader($request),
-                'flag_user_agent_mismatch' => $this->flagClaimsProxyClient($flag) && !$this->hasProxyClientUa(strtolower($ua)),
+                'event_source' => $isNodeAliveReport ? 'node_backend_report' : 'subscription_request',
+                'known_proxy_user_agent' => $isNodeAliveReport ? false : $this->hasProxyClientUa(strtolower($ua)),
+                'flag_claims_proxy_client' => $isNodeAliveReport ? false : $this->flagClaimsProxyClient($flag),
+                'has_browser_context_header' => $isNodeAliveReport ? false : $this->hasBrowserContextHeader($request),
+                'browser_context_header' => $isNodeAliveReport ? '' : $this->browserContextHeader($request),
+                'flag_user_agent_mismatch' => $isNodeAliveReport
+                    ? false
+                    : ($this->flagClaimsProxyClient($flag) && !$this->hasProxyClientUa(strtolower($ua))),
             ],
             'user_snapshot' => [
                 'traffic_status' => $this->trafficStatus($user),
@@ -1933,6 +1941,15 @@ class AiRiskService
             ],
             'recent_same_user_hits' => $history
         ];
+    }
+
+    private function blockScoreForRule(array $config, SubscriptionRule $rule)
+    {
+        $blockScore = max(50, min((int)($config['ai_risk_block_score'] ?? 80), 100));
+        if ($rule->type === 'node_alive_ip_over_limit') {
+            return max(90, $blockScore);
+        }
+        return $blockScore;
     }
 
     private function callModel(array $config, array $messages, $timeout, $maxTokens)
@@ -2010,9 +2027,7 @@ class AiRiskService
         if (!in_array($decision, ['allow', 'block'], true)) {
             $decision = 'allow';
         }
-        if ($score >= $blockScore) {
-            $decision = 'block';
-        }
+        $decision = $score >= $blockScore ? 'block' : 'allow';
 
         $reason = $this->trimText((string)($data['reason'] ?? ''), 240);
         if ($decision === 'block') {
