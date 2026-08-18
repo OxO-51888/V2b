@@ -118,49 +118,7 @@ Website -> Add site
 
 记下数据库名、数据库用户名、数据库密码，安装 V2Board 时要用。
 
-## 5. 配置私有仓库授权
-
-私有仓库不能在新服务器上直接匿名拉取。每台新服务器只需配置一次只读 Deploy Key。
-
-SSH 执行：
-
-```bash
-mkdir -p /root/.ssh
-chmod 700 /root/.ssh
-ssh-keygen -t ed25519 -f /root/.ssh/panel_deploy -C "panel deploy" -N ""
-cat /root/.ssh/panel_deploy.pub
-```
-
-复制输出的公钥，在 GitHub 进入：
-
-```text
-V2b 仓库 -> Settings -> Deploy keys -> Add deploy key
-```
-
-只需要读取代码，不要勾选 `Allow write access`。
-
-回到服务器配置这个密钥：
-
-```bash
-cat >> /root/.ssh/config <<'EOF'
-Host github-panel
-    HostName github.com
-    User git
-    IdentityFile /root/.ssh/panel_deploy
-    IdentitiesOnly yes
-EOF
-chmod 600 /root/.ssh/config
-```
-
-测试授权：
-
-```bash
-ssh -T git@github-panel
-```
-
-看到 GitHub 授权成功提示后继续下一步。
-
-## 6. 一条命令拉取并安装
+## 5. 一条命令拉取并安装
 
 先进入 aaPanel 创建的站点目录：
 
@@ -178,7 +136,7 @@ rm -f .htaccess 404.html index.html .user.ini
 执行下面这一条命令。它会拉取当前正式服代码并立即启动 V2Board 安装向导：
 
 ```bash
-git clone --branch codex/push-subscription-fixes git@github-panel:OxO-51888/V2b.git . && chmod +x init.sh update.sh && ./init.sh
+git clone --branch codex/push-subscription-fixes https://github.com/OxO-51888/V2b.git . && chmod +x init.sh update.sh && ./init.sh
 ```
 
 安装向导按提示填写：
@@ -204,7 +162,7 @@ ls -la .env
 ./init.sh
 ```
 
-## 7. 设置运行目录和伪静态
+## 6. 设置运行目录和伪静态
 
 进入：
 
@@ -244,7 +202,7 @@ location ~ .*\.(js|css)?$
 
 保存后 Reload Nginx。
 
-## 8. 配置 SSL
+## 7. 配置 SSL
 
 进入：
 
@@ -256,7 +214,7 @@ Website -> 你的站点 -> SSL
 
 如果域名走 Cloudflare，建议先临时关闭代理，证书签发成功后再打开代理。
 
-## 9. 配置 Cron
+## 8. 配置 Cron
 
 进入：
 
@@ -277,7 +235,7 @@ php /www/wwwroot/你的域名/artisan schedule:run
 
 保存后确保任务每分钟执行。
 
-## 10. 启动队列
+## 9. 启动队列
 
 进入：
 
@@ -295,13 +253,13 @@ App Store -> Supervisor Manager -> Add Daemon
 
 保存并启动。V2Board 必须启动队列，否则订单、邮件、统计等功能会异常。
 
-## 11. 恢复旧数据库
+## 10. 恢复旧数据库
 
 如果是重新搭建后恢复旧数据，在 aaPanel 数据库里导入旧 SQL 备份即可。
 
 导入后如果后台密码不是新装时的密码，说明管理员账号已经被旧数据库覆盖，请使用旧数据库里的管理员账号登录。
 
-## 12. 更新面板
+## 11. 更新面板
 
 以后更新代码时执行：
 
@@ -317,7 +275,7 @@ php artisan horizon:terminate
 
 `update.sh` 会更新当前部署分支，不会自动切换到其他分支。
 
-## 13. 常见问题
+## 12. 常见问题
 
 ### 访问 500
 
@@ -332,10 +290,10 @@ php artisan horizon:terminate
 
 ### GitHub 拉取失败
 
-检查 Deploy Key 是否添加到 GitHub，并测试 SSH 是否可用：
+仓库已经公开，不需要 GitHub 登录或 Deploy Key。检查服务器是否能访问仓库：
 
 ```bash
-ssh -T git@github-panel
+git ls-remote https://github.com/OxO-51888/V2b.git
 ```
 
 ### 队列没运行
