@@ -14,25 +14,7 @@
 
 不要使用 PHP 7.4 新装。PHP 7.4 版本较低，部分组件和依赖已经不再支持；本仓库使用 PHP 8.1。
 
-## 1. 安装纯净 aaPanel
-
-SSH 登录服务器后执行：
-
-```bash
-URL=https://www.aapanel.com/script/install_panel_en.sh && if [ -f /usr/bin/curl ]; then curl -ksSO "$URL"; else wget --no-check-certificate -O install_panel_en.sh "$URL"; fi; bash install_panel_en.sh
-```
-
-安装时提示是否安装到 `/www`，输入：
-
-```text
-y
-```
-
-安装完成后保存面板地址、账号、密码和面板端口。
-
-不要使用 `aaClaw.sh`，它会额外安装 OpenClaw（Docker），V2Board 不需要。
-
-## 2. 安装环境
+## 1. 安装环境
 
 登录 aaPanel，安装 LNMP：
 
@@ -57,7 +39,7 @@ apt update && apt install -y git
 git --version
 ```
 
-## 3. 配置 PHP 8.1
+## 2. 配置 PHP 8.1
 
 进入：
 
@@ -102,7 +84,7 @@ php -m | grep -E 'redis|fileinfo|pcntl'
 Website -> PHP CLI version -> PHP-8.1
 ```
 
-## 4. 添加站点和数据库
+## 3. 添加站点和数据库
 
 进入：
 
@@ -118,7 +100,7 @@ Website -> Add site
 
 记下数据库名、数据库用户名、数据库密码，安装 V2Board 时要用。
 
-## 5. 一条命令拉取并安装
+## 4. 一条命令拉取并安装
 
 先进入 aaPanel 创建的站点目录：
 
@@ -162,7 +144,7 @@ ls -la .env
 ./init.sh
 ```
 
-## 6. 设置运行目录和伪静态
+## 5. 设置运行目录和伪静态
 
 进入：
 
@@ -202,7 +184,7 @@ location ~ .*\.(js|css)?$
 
 保存后 Reload Nginx。
 
-## 7. 配置 SSL
+## 6. 配置 SSL
 
 进入：
 
@@ -214,7 +196,7 @@ Website -> 你的站点 -> SSL
 
 如果域名走 Cloudflare，建议先临时关闭代理，证书签发成功后再打开代理。
 
-## 8. 配置 Cron
+## 7. 配置 Cron
 
 进入：
 
@@ -235,7 +217,7 @@ php /www/wwwroot/你的域名/artisan schedule:run
 
 保存后确保任务每分钟执行。
 
-## 9. 启动队列
+## 8. 启动队列
 
 进入：
 
@@ -253,13 +235,13 @@ App Store -> Supervisor Manager -> Add Daemon
 
 保存并启动。V2Board 必须启动队列，否则订单、邮件、统计等功能会异常。
 
-## 10. 恢复旧数据库
+## 9. 恢复旧数据库
 
 如果是重新搭建后恢复旧数据，在 aaPanel 数据库里导入旧 SQL 备份即可。
 
 导入后如果后台密码不是新装时的密码，说明管理员账号已经被旧数据库覆盖，请使用旧数据库里的管理员账号登录。
 
-## 11. 更新面板
+## 10. 更新面板
 
 以后更新代码时执行：
 
@@ -275,7 +257,7 @@ php artisan horizon:terminate
 
 `update.sh` 会更新当前部署分支，不会自动切换到其他分支。
 
-## 12. 常见问题
+## 11. 常见问题
 
 ### 访问 500
 
