@@ -1,0 +1,19 @@
+[Unit]
+Description=V2B AI local knowledge search
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/v2b-ai-knowledge
+Environment=V2B_KNOWLEDGE_HOST=0.0.0.0
+Environment=V2B_KNOWLEDGE_PORT=11435
+Environment=V2B_KNOWLEDGE_DIR=/opt/v2b-ai-knowledge/data
+Environment=V2B_KNOWLEDGE_API_KEY=change-this-key
+ExecStart=/usr/bin/python3 /opt/v2b-ai-knowledge/v2b_ai_knowledge_server.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

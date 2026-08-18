@@ -27,9 +27,12 @@ class ClientController extends Controller
 
     private function buildSubscribeResponse(Request $request)
     {
-        $flag = $request->input('flag')
-            ?? ($_SERVER['HTTP_USER_AGENT'] ?? '');
-        $flag = strtolower($flag);
+        $flag = strtolower(trim((string)$request->input('flag', '')));
+        $userAgent = strtolower((string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
+        if ($flag === '') {
+            $flag = $userAgent;
+        }
+        $flag = $this->normalizeClientFlag($flag, $userAgent);
         $user = $request->user;
 
         // account not expired and is not banned.
@@ -56,7 +59,7 @@ class ClientController extends Controller
                 if (preg_match('/sing-box\s+([0-9.]+)/i', $flag, $matches)) {
                     $version = $matches[1];
                 }
-                if (!is_null($version) && $version >= '1.12.0') {
+                if (!is_null($version) && version_compare($version, '1.12.0', '>=')) {
                     $class = new Singbox($user, $servers);
                 } else {
                     $class = new SingboxOld($user, $servers);
@@ -66,6 +69,57 @@ class ClientController extends Controller
         }
         $class = new General($user, $servers);
         return $class->handle();
+    }
+
+    private function normalizeClientFlag($flag, $userAgent = '')
+    {
+        $detected = $this->detectClientFlag($userAgent);
+        if ($detected) return $detected;
+
+        $detected = $this->detectClientFlag($flag);
+        if ($detected) return $detected;
+
+        if (strpos($flag, 'go-http-client') !== false) {
+            return 'meta';
+        }
+        return $flag;
+    }
+
+    private function detectClientFlag($text)
+    {
+        $text = strtolower((string)$text);
+        if ($text === '') return null;
+
+        if (strpos($text, 'v2rayng') !== false) return 'v2rayng';
+        if (strpos($text, 'v2rayn') !== false) return 'v2rayn';
+        if (strpos($text, 'shadowrocket') !== false) return 'shadowrocket';
+        if (strpos($text, 'quantumult%20x') !== false || strpos($text, 'quantumult x') !== false || strpos($text, 'quantumultx') !== false) return 'quantumult%20x';
+        if (strpos($text, 'hiddify') !== false) return 'sing-box 1.11.0';
+        if (preg_match('/\b(?:sfa|sfi)\/?([0-9.]+)?\b/i', $text, $matches)) {
+            return !empty($matches[1]) ? 'sing-box ' . $matches[1] : 'sing-box 1.12.0';
+        }
+        if (preg_match('/sing[- ]?box[\/\s]+([0-9.]+)/i', $text, $matches)) return 'sing-box ' . $matches[1];
+        if (strpos($text, 'sing-box') !== false || strpos($text, 'singbox') !== false) return 'sing-box 1.12.0';
+        if (strpos($text, 'stash') !== false) return 'stash';
+        if (strpos($text, 'surge') !== false) return 'surge';
+        if (strpos($text, 'loon') !== false) return 'loon';
+        if (strpos($text, 'surfboard') !== false) return 'surfboard';
+        if (strpos($text, 'v2raytun') !== false) return 'v2raytun';
+        if (strpos($text, 'passwall') !== false) return 'passwall';
+        if (strpos($text, 'ssrplus') !== false) return 'ssrplus';
+        if (strpos($text, 'sagernet') !== false) return 'sagernet';
+        if (strpos($text, 'nekobox') !== false || strpos($text, 'nekoray') !== false) return 'meta';
+        if (strpos($text, 'flclash') !== false
+            || strpos($text, 'clashmeta') !== false
+            || strpos($text, 'clash meta') !== false
+            || strpos($text, 'clash.meta') !== false
+            || strpos($text, 'clash-meta') !== false
+            || strpos($text, 'mihomo') !== false) return 'meta';
+        if (strpos($text, 'nyanpasu') !== false) return 'nyanpasu';
+        if (strpos($text, 'clash-verge') !== false || strpos($text, 'clash verge') !== false || strpos($text, 'verge') !== false) return 'verge';
+        if (strpos($text, 'clash') !== false) return 'clash';
+
+        return null;
     }
 
     private function setSubscribeInfoToServers(&$servers, $user)

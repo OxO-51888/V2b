@@ -1036,50 +1036,44 @@
             }
             renderSubscribeBox() {
                 var e = this.props.subscribeUrl
-                  , t = [];
-                return t.push({
-                    title: "Hiddify",
-                    href: "hiddify://import/" + e + "&flag=sing" + "#" + window.settings.title
-                }), t.push({
-                    title: "Sing-box",
-                    href: "sing-box://import-remote-profile?url=" + encodeURIComponent(e) + "#" + window.settings.title
-                }), (Object(u["i"])() || Object(u["j"])()) && (t.push({
-                    title: "Shadowrocket",
-                    href: "shadowrocket://add/sub://" + window.btoa(e + "&flag=shadowrocket").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "") + "?remark=" + window.settings.title
-                }),
-                t.push({
-                    title: "QuantumultX",
-                    href: "quantumult-x:///update-configuration?remote-resource=" + encodeURI(JSON.stringify({
-                        server_remote: [e + ", tag=" + window.settings.title]
-                    }))
-                }),
-                t.push({
-                    title: "Surge",
-                    href: "surge:///install-config?url=" + encodeURIComponent(e) + "&name=" + window.settings.title
-                }),
-                t.push({
-                    title: "Stash",
-                    href: "stash://install-config?url=" + encodeURIComponent(e) + "&name=" + window.settings.title
-                })),
-                Object(u["k"])() && t.push({
-                    title: "ClashX",
-                    href: "clash://install-config?url=" + encodeURIComponent(e) + "&name=" + window.settings.title
-                }),
-                Object(u["n"])() && (t.push({
-                    title: "ClashMeta",
-                    href: "clash://install-config?url=" + encodeURIComponent(e + "&flag=meta") + "&name=" + window.settings.title
-                })),
-                Object(u["g"])() && (t.push({
-                    title: "NekoBox For Android",
-                    href: "clash://install-config?url=" + encodeURIComponent(e + "&flag=meta") + "&name=" + window.settings.title
-                }) && t.push({
-                    title: "ClashMeta For Android",
-                    href: "clash://install-config?url=" + encodeURIComponent(e + "&flag=meta") + "&name=" + window.settings.title
-                }),
-                t.push({
-                    title: "Surfboard",
-                    href: "surge:///install-config?url=" + encodeURIComponent(e) + "&name=" + window.settings.title
-                })),
+                  , t = []
+                  , S = window.settings.title
+                  , P = e=>encodeURIComponent(e)
+                  , C = t=>e + "&flag=" + t
+                  , A = (e,n,r)=>t.push({
+                    title: e,
+                    href: n,
+                    icon: r || e
+                })
+                  , T = e=>window.btoa(e).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+                return Object(u["i"])() || Object(u["j"])() ? (A("Hiddify", "hiddify://import/" + C("sing") + "#" + S),
+                A("Sing-box", "sing-box://import-remote-profile?url=" + P(C("sing")) + "#" + S),
+                A("Shadowrocket", "shadowrocket://add/sub://" + T(C("shadowrocket")) + "?remark=" + S),
+                A("QuantumultX", "quantumult-x:///update-configuration?remote-resource=" + encodeURI(JSON.stringify({
+                    server_remote: [C("quantumult%20x") + ", tag=" + S]
+                }))),
+                A("Surge", "surge:///install-config?url=" + P(C("surge")) + "&name=" + S),
+                A("Stash", "stash://install-config?url=" + P(C("stash")) + "&name=" + S),
+                A("Loon", "loon://import?nodelist=" + P(C("loon")), "Stash")) : Object(u["g"])() ? (A("Hiddify", "hiddify://import/" + C("sing") + "#" + S),
+                A("Sing-box", "sing-box://import-remote-profile?url=" + P(C("sing")) + "#" + S),
+                A("v2rayNG", "v2rayng://install-sub?url=" + P(C("v2rayng")) + "&name=" + P(S), "NekoBox For Android"),
+                A("NekoBox For Android", "clash://install-config?url=" + P(C("meta")) + "&name=" + S),
+                A("ClashMeta For Android", "clash://install-config?url=" + P(C("meta")) + "&name=" + S),
+                A("Surfboard", "surge:///install-config?url=" + P(C("surfboard")) + "&name=" + S)) : Object(u["k"])() ? (A("Hiddify", "hiddify://import/" + C("sing") + "#" + S),
+                A("Sing-box", "sing-box://import-remote-profile?url=" + P(C("sing")) + "#" + S),
+                A("Clash Party", "mihomo://install-config?url=" + P(C("meta")) + "&name=" + P(S), "ClashMeta"),
+                A("Clash Verge", "clash://install-config?url=" + P(C("verge")) + "&name=" + S, "ClashMeta"),
+                A("Clash Nyanpasu", "clash://install-config?url=" + P(C("nyanpasu")) + "&name=" + S, "ClashMeta"),
+                A("ClashX", "clash://install-config?url=" + P(C("meta")) + "&name=" + S),
+                A("Surge", "surge:///install-config?url=" + P(C("surge")) + "&name=" + S),
+                A("Stash", "stash://install-config?url=" + P(C("stash")) + "&name=" + S)) : Object(u["n"])() ? (A("Hiddify", "hiddify://import/" + C("sing") + "#" + S),
+                A("Sing-box", "sing-box://import-remote-profile?url=" + P(C("sing")) + "#" + S),
+                A("Clash Party", "mihomo://install-config?url=" + P(C("meta")) + "&name=" + P(S), "ClashMeta"),
+                A("Clash Verge", "clash://install-config?url=" + P(C("verge")) + "&name=" + S, "ClashMeta"),
+                A("Clash Nyanpasu", "clash://install-config?url=" + P(C("nyanpasu")) + "&name=" + S, "ClashMeta"),
+                A("Clash Meta", "clash://install-config?url=" + P(C("meta")) + "&name=" + S, "ClashMeta")) : (A("Hiddify", "hiddify://import/" + C("sing") + "#" + S),
+                A("Sing-box", "sing-box://import-remote-profile?url=" + P(C("sing")) + "#" + S),
+                A("Clash/Mihomo", "clash://install-config?url=" + P(C("meta")) + "&name=" + S)),
                 c.a.createElement("div", {
                     className: v.a.oneClickSubscribe,
                     ref: "subscribeBox"
@@ -1115,7 +1109,7 @@
                             window.location.href = e.href
                         }
                     }, c.a.createElement("div", null, c.a.createElement("img", {
-                        src: "".concat((null === (t = window.settings) || void 0 === t ? void 0 : t.assets_path) || "", "/./images/icon/").concat(e.title, ".png")
+                        src: "".concat((null === (t = window.settings) || void 0 === t ? void 0 : t.assets_path) || "", "/./images/icon/").concat(e.icon || e.title, ".png")
                     })), c.a.createElement("div", null, Object(p["formatMessage"])({
                         id: "\u5bfc\u5165\u5230"
                     }), " ", e.title))

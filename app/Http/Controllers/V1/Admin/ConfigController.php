@@ -70,7 +70,21 @@ class ConfigController extends Controller
         $key = $request->input('key');
         $data = [
             'ticket' => [
-                'ticket_status' => config('v2board.ticket_status', 0)
+                'ticket_status' => config('v2board.ticket_status', 0),
+                'ticket_ai_enable' => (int)config('v2board.ticket_ai_enable', 1),
+                'ticket_ai_auto_reply_enable' => (int)config('v2board.ticket_ai_auto_reply_enable', 0),
+                'ticket_ai_base_url' => config('v2board.ticket_ai_base_url', 'http://152.53.36.230:11434'),
+                'ticket_ai_model' => config('v2board.ticket_ai_model', 'qwen3:14b'),
+                'ticket_ai_api_key' => '',
+                'has_ticket_ai_api_key' => (config('v2board.ticket_ai_api_key') || config('v2board.ai_risk_api_key')) ? 1 : 0,
+                'ticket_ai_knowledge_base_url' => config('v2board.ticket_ai_knowledge_base_url', ''),
+                'ticket_ai_knowledge_api_key' => config('v2board.ticket_ai_knowledge_api_key') ? '********' : '',
+                'ticket_ai_recent_context' => config('v2board.ticket_ai_recent_context', ''),
+                'ticket_ai_tool_user_status_enable' => (int)config('v2board.ticket_ai_tool_user_status_enable', 1),
+                'ticket_ai_tool_order_enable' => (int)config('v2board.ticket_ai_tool_order_enable', 1),
+                'ticket_ai_tool_subscription_hit_enable' => (int)config('v2board.ticket_ai_tool_subscription_hit_enable', 1),
+                'ticket_ai_tool_ops_context_enable' => (int)config('v2board.ticket_ai_tool_ops_context_enable', 1),
+                'ticket_ai_tool_knowledge_enable' => (int)config('v2board.ticket_ai_tool_knowledge_enable', 1)
             ],
             'deposit' => [
                 'deposit_bounus' => config('v2board.deposit_bounus', [])
@@ -189,6 +203,12 @@ class ConfigController extends Controller
     public function save(ConfigSave $request)
     {
         $data = $request->validated();
+        if (array_key_exists('ticket_ai_api_key', $data) && trim((string)$data['ticket_ai_api_key']) === '') {
+            unset($data['ticket_ai_api_key']);
+        }
+        if (($data['ticket_ai_knowledge_api_key'] ?? '') === '********') {
+            unset($data['ticket_ai_knowledge_api_key']);
+        }
         $config = config('v2board');
         foreach (ConfigSave::RULES as $k => $v) {
             if (!in_array($k, array_keys(ConfigSave::RULES))) {

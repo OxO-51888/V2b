@@ -11,7 +11,12 @@ if ! command -v git &> /dev/null; then
 fi
 
 git config --global --add safe.directory $(pwd)
-git fetch --all && git reset --hard origin/master && git pull origin master
+current_branch=$(git branch --show-current)
+if [ -z "$current_branch" ]; then
+    echo "Unable to determine the current Git branch."
+    exit 1
+fi
+git fetch origin "$current_branch" && git reset --hard "origin/$current_branch"
 rm -rf composer.lock composer.phar
 wget https://github.com/composer/composer/releases/latest/download/composer.phar -O composer.phar
 php composer.phar update -vvv

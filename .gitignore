@@ -1,20 +1,12 @@
 /node_modules
-/clients/**/node_modules/
-/clients/**/dist/
-/clients/**/build/
-/clients/**/.tools/
-/clients/**/.cache/
-/clients/**/web-previews/
 /config/v2board.php
 /public/hot
 /public/storage
 /public/env.example.js
 /public/favicon.ico
 /public/assets/admin/custom.css
-/public/v2b-client/downloads/**/*.exe
 /storage/*.key
 /vendor
-/tmp/
 .env
 .env.backup
 .phpunit.result.cache
@@ -32,4 +24,3 @@ docker-compose.yml
 public/clients/*
 workerman.webman.php.pid
 workerman.log
-*.log

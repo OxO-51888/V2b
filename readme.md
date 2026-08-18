@@ -2,36 +2,19 @@
 
 这是自用 V2Board / xiao 分支整合版仓库。以后重新搭建时，直接拉取自己的 GitHub 仓库，不用再从官方仓库迁移。
 
-本教程跟着 V2Board 官方 aaPanel 手动部署流程写，只把版本改成当前更稳的组合：
+本教程按照 V2Board 的 aaPanel 手动部署流程整理，使用当前正式服对应的环境：
 
 - aaPanel：纯净版
 - Nginx：面板推荐版本
 - MySQL：5.7
 - PHP：8.1，选择 Fast install
 - Redis：必须安装
-- Supervisor：必须安装，用来守护队列
+- Supervisor Manager：必须安装，用来守护队列
+- Git：必须安装，用来拉取和更新仓库
 
-不要用 PHP 7.4 新装。官方老教程写的是 PHP 7.4 / MySQL 5.6，但现在 PHP 7.4 版本太低，部分组件和依赖已经不支持或不稳定支持。本仓库使用 PHP 8.1。
+不要使用 PHP 7.4 新装。PHP 7.4 版本较低，部分组件和依赖已经不再支持；本仓库使用 PHP 8.1。
 
-## 1. 安装纯净 aaPanel
-
-SSH 登录服务器后执行：
-
-```bash
-URL=https://www.aapanel.com/script/install_panel_en.sh && if [ -f /usr/bin/curl ]; then curl -ksSO "$URL"; else wget --no-check-certificate -O install_panel_en.sh "$URL"; fi; bash install_panel_en.sh
-```
-
-安装时提示是否安装到 `/www`，输入：
-
-```text
-y
-```
-
-安装完成后保存面板地址、账号、密码和面板端口。
-
-不要使用 `aaClaw.sh`，它会额外安装 OpenClaw(Docker)，V2Board 不需要。
-
-## 2. 安装环境
+## 1. 安装环境
 
 登录 aaPanel，安装 LNMP：
 
@@ -47,9 +30,16 @@ Supervisor Manager
 
 - PHP 8.1 选择 `Fast install`
 - 不选 `Compile install`
-- Supervisor Manager 是 App Store 里的独立插件，要单独点 `Install`
+- Supervisor Manager 是 App Store 里的独立插件，需要单独安装
 
-## 3. 配置 PHP 8.1
+SSH 安装并检查 Git：
+
+```bash
+apt update && apt install -y git
+git --version
+```
+
+## 2. 配置 PHP 8.1
 
 进入：
 
@@ -94,7 +84,7 @@ php -m | grep -E 'redis|fileinfo|pcntl'
 Website -> PHP CLI version -> PHP-8.1
 ```
 
-## 4. 添加站点和数据库
+## 3. 添加站点和数据库
 
 进入：
 
@@ -110,72 +100,28 @@ Website -> Add site
 
 记下数据库名、数据库用户名、数据库密码，安装 V2Board 时要用。
 
-## 5. 拉取代码
+## 4. 一条命令拉取并安装
 
-进入站点目录：
+先进入 aaPanel 创建的站点目录：
 
 ```bash
 cd /www/wwwroot/你的域名
 ```
 
-删除 aaPanel 默认文件：
+确认当前目录是新建的空站点后，删除 aaPanel 默认文件：
 
 ```bash
 chattr -i .user.ini 2>/dev/null || true
-rm -rf .htaccess 404.html index.html .user.ini
+rm -f .htaccess 404.html index.html .user.ini
 ```
 
-私有仓库不能像公开仓库一样无授权拉取。新服务器先配置一次只读 Deploy Key：
+执行下面这一条命令。它会拉取当前正式服代码并立即启动 V2Board 安装向导：
 
 ```bash
-mkdir -p /root/.ssh
-chmod 700 /root/.ssh
-ssh-keygen -t ed25519 -f /root/.ssh/panel_deploy -C "panel deploy" -N ""
-cat /root/.ssh/panel_deploy.pub
+git clone --branch codex/push-subscription-fixes https://github.com/OxO-51888/V2b.git . && chmod +x init.sh update.sh && ./init.sh
 ```
 
-把输出的公钥添加到 GitHub：
-
-```text
-panel 仓库 -> Settings -> Deploy keys -> Add deploy key
-```
-
-只需要读代码，不要勾选 `Allow write access`。
-
-服务器配置这个 key：
-
-```bash
-cat >> /root/.ssh/config <<'EOF'
-Host github-panel
-    HostName github.com
-    User git
-    IdentityFile /root/.ssh/panel_deploy
-    IdentitiesOnly yes
-EOF
-chmod 600 /root/.ssh/config
-```
-
-测试：
-
-```bash
-ssh -T git@github-panel
-```
-
-然后拉取自己的仓库：
-
-```bash
-git clone git@github-panel:OxO-51888/V2b.git ./
-```
-
-## 6. 安装 V2Board
-
-在站点目录执行：
-
-```bash
-sh init.sh
-```
-
-按提示填写：
+安装向导按提示填写：
 
 - 数据库地址：`localhost`
 - 数据库端口：`3306`
@@ -192,7 +138,13 @@ sh init.sh
 ls -la .env
 ```
 
-## 7. 设置运行目录和伪静态
+如果安装中断，进入站点目录后重新执行：
+
+```bash
+./init.sh
+```
+
+## 5. 设置运行目录和伪静态
 
 进入：
 
@@ -232,7 +184,7 @@ location ~ .*\.(js|css)?$
 
 保存后 Reload Nginx。
 
-## 8. 配置 SSL
+## 6. 配置 SSL
 
 进入：
 
@@ -244,7 +196,7 @@ Website -> 你的站点 -> SSL
 
 如果域名走 Cloudflare，建议先临时关闭代理，证书签发成功后再打开代理。
 
-## 9. 配置 Cron
+## 7. 配置 Cron
 
 进入：
 
@@ -255,7 +207,7 @@ Cron -> Add Task
 填写：
 
 - Type of Task：Shell Script
-- Name of Task：v2board
+- Name of Task：V2Board
 - Period：N Minutes / 1 Minute
 - Script content：
 
@@ -265,7 +217,7 @@ php /www/wwwroot/你的域名/artisan schedule:run
 
 保存后确保任务每分钟执行。
 
-## 10. 启动队列
+## 8. 启动队列
 
 进入：
 
@@ -283,27 +235,29 @@ App Store -> Supervisor Manager -> Add Daemon
 
 保存并启动。V2Board 必须启动队列，否则订单、邮件、统计等功能会异常。
 
-## 11. 恢复旧数据库
+## 9. 恢复旧数据库
 
 如果是重新搭建后恢复旧数据，在 aaPanel 数据库里导入旧 SQL 备份即可。
 
-导入后如果后台密码不是新装时的密码，说明管理员账号已经被旧数据库覆盖，使用旧数据库里的管理员账号登录。
+导入后如果后台密码不是新装时的密码，说明管理员账号已经被旧数据库覆盖，请使用旧数据库里的管理员账号登录。
 
-## 12. 更新面板
+## 10. 更新面板
 
-以后更新代码：
+以后更新代码时执行：
 
 ```bash
 cd /www/wwwroot/你的域名
-sh update.sh
+./update.sh
 php artisan config:clear
 php artisan config:cache
 php artisan horizon:terminate
 ```
 
-然后在 Supervisor Manager 里重启 `V2Board` 队列。
+然后在 Supervisor Manager 里确认 `V2Board` 队列处于 Running 状态。
 
-## 13. 常见问题
+`update.sh` 会更新当前部署分支，不会自动切换到其他分支。
+
+## 11. 常见问题
 
 ### 访问 500
 
@@ -318,10 +272,10 @@ php artisan horizon:terminate
 
 ### GitHub 拉取失败
 
-检查 Deploy Key 是否添加到 GitHub，并测试 SSH 是否可用：
+仓库已经公开，不需要 GitHub 登录或 Deploy Key。检查服务器是否能访问仓库：
 
 ```bash
-ssh -T git@github-panel
+git ls-remote https://github.com/OxO-51888/V2b.git
 ```
 
 ### 队列没运行

@@ -24,6 +24,7 @@ class SubscriptionRuleController extends Controller
     private const CLOUDFLARE_SYNC_INTERVAL = 86400;
     private const CLOUDFLARE_SYNC_FAILURE_CACHE_KEY = 'SUBSCRIPTION_RULE_CLOUDFLARE_SYNC_FAILURE_AT';
     private const CLOUDFLARE_SYNC_FAILURE_RETRY = 3600;
+    private const NODE_ALIVE_REMARK = '连续3个两分钟窗口出现至少3组稳定网络时，超过8个真实在线IP交给AI审查，超过15个自动重置订阅；同一运营商网段会合并判断，重置后24小时内不重复重置。';
     private const RULE_DEFAULTS = [
         'pull_frequency' => ['condition' => 30, 'name' => '5分钟同订阅超过%d次'],
         'ip_spread' => ['condition' => 8, 'name' => '10分钟同订阅超过%d个真实IP'],
@@ -48,14 +49,13 @@ class SubscriptionRuleController extends Controller
 
     public function fetch(Request $request)
     {
-        return response([
-            'data' => SubscriptionRule::orderByRaw("
+        $rules = SubscriptionRule::orderByRaw("
                     CASE
                         WHEN `enabled` = 1 THEN 0
                         ELSE 1
                     END ASC
                 ")
-                ->orderByRaw("
+            ->orderByRaw("
                     CASE
                         WHEN `action` IN ('no_nodes', 'block', 'empty_subscription', 'rate_limit') THEN 10
                         WHEN `action` = 'reset_subscribe' THEN 20
@@ -64,9 +64,17 @@ class SubscriptionRuleController extends Controller
                         ELSE 50
                     END ASC
                 ")
-                ->orderBy('sort', 'ASC')
-                ->orderBy('id', 'DESC')
-                ->get()
+            ->orderBy('sort', 'ASC')
+            ->orderBy('id', 'DESC')
+            ->get();
+        $rules->each(function (SubscriptionRule $rule) {
+            if ($rule->type === 'node_alive_ip_over_limit') {
+                $rule->remark = self::NODE_ALIVE_REMARK;
+            }
+        });
+
+        return response([
+            'data' => $rules
         ]);
     }
 
@@ -285,9 +293,7 @@ class SubscriptionRuleController extends Controller
             $params['condition_value'] = 8;
             $params['name'] = sprintf($defaults['name'], 8);
             $params['action'] = 'ai_review';
-            if (empty($params['remark'])) {
-                $params['remark'] = '超过8个真实在线IP交给AI审查，AI判断异常会重置订阅；超过15个真实在线IP直接重置订阅。';
-            }
+            $params['remark'] = self::NODE_ALIVE_REMARK;
         } else {
             $condition = $params['condition_value'];
             $condition = $condition === '' || $condition === null ? $defaults['condition'] : (int)$condition;

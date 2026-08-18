@@ -381,6 +381,7 @@ class ClashMeta
         $array = [
             'name' => $server['name'],
             'type' => 'tuic',
+            'version' => 5,
             'server' => $server['host'],
             'port' => $server['port'],
             'uuid' => $password,
@@ -443,7 +444,7 @@ class ClashMeta
 
         if (isset($server['server_name'])) $array['sni'] = $server['server_name'];
 
-        if ($server['version'] === 2) {
+        if ((int)($server['version'] ?? 0) === 2) {
             $array['type'] = 'hysteria2';
             $array['password'] = $password;
             if (isset($server['obfs'])){
