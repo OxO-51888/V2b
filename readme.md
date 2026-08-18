@@ -196,26 +196,28 @@ Website -> 你的站点 -> SSL
 
 如果域名走 Cloudflare，建议先临时关闭代理，证书签发成功后再打开代理。
 
-## 7. 配置 Cron
+## 7. 配置计划任务
 
-进入：
+进入左侧菜单：
 
 ```text
-Cron -> Add Task
+计划任务
 ```
 
-填写：
+在“添加任务”中填写：
 
-- Type of Task：Shell Script
-- Name of Task：V2Board
-- Period：N Minutes / 1 Minute
-- Script content：
+- 任务类型：`Shell脚本`
+- 任务名称：`V2Board`
+- 执行周期：`N 分钟`
+- 分钟：`1`
+- 执行用户：`root`
+- 脚本内容：
 
 ```bash
 php /www/wwwroot/你的域名/artisan schedule:run
 ```
 
-保存后确保任务每分钟执行。
+点击“添加任务”。添加后在任务列表中确认任务状态为“运行中”，并且每 1 分钟执行一次。
 
 ## 8. 启动队列
 
@@ -241,23 +243,7 @@ App Store -> Supervisor Manager -> Add Daemon
 
 导入后如果后台密码不是新装时的密码，说明管理员账号已经被旧数据库覆盖，请使用旧数据库里的管理员账号登录。
 
-## 10. 更新面板
-
-以后更新代码时执行：
-
-```bash
-cd /www/wwwroot/你的域名
-./update.sh
-php artisan config:clear
-php artisan config:cache
-php artisan horizon:terminate
-```
-
-然后在 Supervisor Manager 里确认 `V2Board` 队列处于 Running 状态。
-
-`update.sh` 会更新当前部署分支，不会自动切换到其他分支。
-
-## 11. 常见问题
+## 10. 常见问题
 
 ### 访问 500
 
