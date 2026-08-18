@@ -256,14 +256,6 @@ App Store -> Supervisor Manager -> Add Daemon
 - 禁用函数是否删除
 - `storage/logs` 下的错误日志
 
-### GitHub 拉取失败
-
-仓库已经公开，不需要 GitHub 登录或 Deploy Key。检查服务器是否能访问仓库：
-
-```bash
-git ls-remote https://github.com/OxO-51888/V2b.git
-```
-
 ### 队列没运行
 
 检查 Supervisor Manager 里 `V2Board` 是否为 Running。
