@@ -8,6 +8,7 @@ use App\Http\Requests\User\UserRedeemGiftCard;
 use App\Http\Requests\User\UserTransfer;
 use App\Http\Requests\User\UserUpdate;
 use App\Models\Giftcard;
+use App\Models\GiftcardRedemption;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\Ticket;
@@ -19,6 +20,7 @@ use App\Services\UserService;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -160,12 +162,12 @@ class UserController extends Controller
         DB::beginTransaction();
 
         try {
-            $user = User::find($request->user['id']);
+            $user = User::where('id', $request->user['id'])->lockForUpdate()->first();
             if (!$user) {
                 abort(500, __('The user does not exist'));
             }
             $giftcard_input = $request->giftcard;
-            $giftcard = Giftcard::where('code', $giftcard_input)->first();
+            $giftcard = Giftcard::where('code', $giftcard_input)->lockForUpdate()->first();
 
             if (!$giftcard) {
                 abort(500, __('The gift card does not exist'));
@@ -186,17 +188,39 @@ class UserController extends Controller
                 }
             }
 
-            $usedUserIds = $giftcard->used_user_ids ? json_decode($giftcard->used_user_ids, true) : [];
-            if (!is_array($usedUserIds)) {
-                $usedUserIds = [];
+            $redeemLimit = (int)($giftcard->redeem_limit ?? Giftcard::REDEEM_LIMIT_MONTHLY);
+            if (!in_array($redeemLimit, [
+                Giftcard::REDEEM_LIMIT_UNLIMITED,
+                Giftcard::REDEEM_LIMIT_MONTHLY,
+                Giftcard::REDEEM_LIMIT_ONCE
+            ], true)) {
+                $redeemLimit = Giftcard::REDEEM_LIMIT_MONTHLY;
             }
 
-            if (in_array($user->id, $usedUserIds)) {
-                abort(500, __('The gift card has already been used by this user'));
+            $redeemPeriod = null;
+            $redeemLimitMessage = null;
+            $redemptionQuery = GiftcardRedemption::where('giftcard_id', $giftcard->id)
+                ->where('user_id', $user->id);
+
+            if ($redeemLimit === Giftcard::REDEEM_LIMIT_MONTHLY) {
+                $redeemPeriod = date('Y-m', $currentTime);
+                $redeemLimitMessage = 'This gift card can only be redeemed once per month';
+                $alreadyRedeemed = (clone $redemptionQuery)
+                    ->where('redeem_month', $redeemPeriod)
+                    ->exists();
+            } elseif ($redeemLimit === Giftcard::REDEEM_LIMIT_ONCE) {
+                $redeemPeriod = Giftcard::REDEEM_PERIOD_ONCE;
+                $redeemLimitMessage = 'This gift card can only be redeemed once per user';
+                $legacyUsedUserIds = is_array($giftcard->used_user_ids) ? $giftcard->used_user_ids : [];
+                $alreadyRedeemed = (clone $redemptionQuery)->exists()
+                    || in_array($user->id, $legacyUsedUserIds);
+            } else {
+                $alreadyRedeemed = false;
             }
 
-            $usedUserIds[] = $user->id;
-            $giftcard->used_user_ids = json_encode($usedUserIds);
+            if ($alreadyRedeemed) {
+                abort(500, __($redeemLimitMessage));
+            }
 
             switch ($giftcard->type) {
                 case 1:
@@ -240,6 +264,20 @@ class UserController extends Controller
                     break;
                 default:
                     abort(500, __('Unknown gift card type'));
+            }
+
+            try {
+                GiftcardRedemption::create([
+                    'giftcard_id' => $giftcard->id,
+                    'user_id' => $user->id,
+                    'redeem_month' => $redeemPeriod,
+                    'created_at' => $currentTime
+                ]);
+            } catch (QueryException $e) {
+                if ($redeemPeriod !== null && isset($e->errorInfo[1]) && (int)$e->errorInfo[1] === 1062) {
+                    abort(500, __($redeemLimitMessage));
+                }
+                throw $e;
             }
 
             if ($giftcard->limit_use !== null) {

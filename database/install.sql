@@ -62,6 +62,7 @@ CREATE TABLE `v2_giftcard` (
                              `value` int(11) DEFAULT NULL,
                              `plan_id` int(11) DEFAULT NULL,
                              `limit_use` int(11) DEFAULT NULL,
+                             `redeem_limit` tinyint(1) NOT NULL DEFAULT '1',
                              `used_user_ids` varchar(16384) DEFAULT NULL,
                              `started_at` int(11) NOT NULL,
                              `ended_at` int(11) NOT NULL,
@@ -69,6 +70,20 @@ CREATE TABLE `v2_giftcard` (
                              `updated_at` int(11) NOT NULL,
                              PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+DROP TABLE IF EXISTS `v2_giftcard_redemption`;
+CREATE TABLE `v2_giftcard_redemption` (
+                                        `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                                        `giftcard_id` int(11) NOT NULL,
+                                        `user_id` int(11) NOT NULL,
+                                        `redeem_month` char(7) DEFAULT NULL,
+                                        `created_at` int(11) NOT NULL,
+                                        PRIMARY KEY (`id`),
+                                        UNIQUE KEY `uniq_giftcard_user_month` (`giftcard_id`,`user_id`,`redeem_month`),
+                                        KEY `idx_user_created` (`user_id`,`created_at`),
+                                        KEY `idx_giftcard_created` (`giftcard_id`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
 DROP TABLE IF EXISTS `v2_invite_code`;

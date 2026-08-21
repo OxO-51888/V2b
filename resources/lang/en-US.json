@@ -87,6 +87,8 @@
     "The traffic usage in :app_name has reached 95%": "The traffic usage in :app_name has reached 95%",
     "The service in :app_name is about to expire": "The service in :app_name is about to expire",
     "The coupon can only be used :limit_use_with_user per person": "The coupon can only be used :limit_use_with_user per person",
+    "This gift card can only be redeemed once per month": "This gift card can only be redeemed once per month",
+    "This gift card can only be redeemed once per user": "This gift card can only be redeemed once per user",
     "The coupon code cannot be used for this period": "The coupon code cannot be used for this period",
     "Request failed, please try again later": "Request failed, please try again later",
     "Register frequently, please try again after :minute minute": "Register frequently, please try again after :minute minute",

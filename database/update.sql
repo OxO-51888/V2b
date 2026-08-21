@@ -743,6 +743,7 @@ CREATE TABLE `v2_giftcard` (
                              `type` tinyint(1) NOT NULL,
                              `value` int(11) DEFAULT NULL,
                              `limit_use` int(11) DEFAULT NULL,
+                             `redeem_limit` tinyint(1) NOT NULL DEFAULT '1',
                              `used_user_ids` varchar(255) DEFAULT NULL,
                              `started_at` int(11) NOT NULL,
                              `ended_at` int(11) NOT NULL,
@@ -856,3 +857,18 @@ CREATE TABLE `v2_server_v2node` (
 
 ALTER TABLE `v2_server_route`
 CHANGE `action_value` `action_value` text NULL AFTER `action`;
+
+ALTER TABLE `v2_giftcard`
+ADD `redeem_limit` tinyint(1) NOT NULL DEFAULT '1' AFTER `limit_use`;
+
+CREATE TABLE IF NOT EXISTS `v2_giftcard_redemption` (
+                                        `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                                        `giftcard_id` int(11) NOT NULL,
+                                        `user_id` int(11) NOT NULL,
+                                        `redeem_month` char(7) DEFAULT NULL,
+                                        `created_at` int(11) NOT NULL,
+                                        PRIMARY KEY (`id`),
+                                        UNIQUE KEY `uniq_giftcard_user_month` (`giftcard_id`,`user_id`,`redeem_month`),
+                                        KEY `idx_user_created` (`user_id`,`created_at`),
+                                        KEY `idx_giftcard_created` (`giftcard_id`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

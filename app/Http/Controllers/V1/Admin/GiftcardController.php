@@ -37,6 +37,7 @@ class GiftcardController extends Controller
 
         $params = $request->validated();
         if (!$request->input('id')) {
+            $params['redeem_limit'] = $params['redeem_limit'] ?? Giftcard::REDEEM_LIMIT_MONTHLY;
             if (!isset($params['code'])) {
                 $params['code'] = Helper::randomChar(16);
             }
@@ -64,6 +65,7 @@ class GiftcardController extends Controller
     {
         $giftcards = [];
         $giftcard = $request->validated();
+        $giftcard['redeem_limit'] = $giftcard['redeem_limit'] ?? Giftcard::REDEEM_LIMIT_MONTHLY;
         $giftcard['created_at'] = $giftcard['updated_at'] = time();
         unset($giftcard['generate_count']);
         
@@ -84,15 +86,22 @@ class GiftcardController extends Controller
             abort(500, $e->getMessage());
         }
         $giftcardvalue = $giftcard['value'] ?? 0;
-        $data = "名称,类型,数值,开始时间,结束时间,可用次数,礼品卡卡密,生成时间\r\n";
+        $redeemLimitLabels = [
+            Giftcard::REDEEM_LIMIT_UNLIMITED => '不限制',
+            Giftcard::REDEEM_LIMIT_MONTHLY => '每月一次',
+            Giftcard::REDEEM_LIMIT_ONCE => '每人一次'
+        ];
+        $data = "名称,类型,数值,开始时间,结束时间,可用次数,用户兑换限制,礼品卡卡密,生成时间\r\n";
         foreach ($giftcards as $giftcard) {
             $type = ['', '金额', '时长', '流量', '重置', '套餐'][$giftcard['type']];
             $value = ['', round($giftcardvalue/100, 2), $giftcardvalue . '天', $giftcardvalue . 'GB', '-', $giftcardvalue . '天'][$giftcard['type']];
             $startTime = date('Y-m-d H:i:s', $giftcard['started_at']);
             $endTime = date('Y-m-d H:i:s', $giftcard['ended_at']);
             $limitUse = $giftcard['limit_use'] ?? '不限制';
+            $redeemLimitValue = (int)($giftcard['redeem_limit'] ?? Giftcard::REDEEM_LIMIT_MONTHLY);
+            $redeemLimit = $redeemLimitLabels[$redeemLimitValue] ?? $redeemLimitLabels[Giftcard::REDEEM_LIMIT_MONTHLY];
             $createTime = date('Y-m-d H:i:s', $giftcard['created_at']);
-            $data .= "{$giftcard['name']},{$type},{$value},{$startTime},{$endTime},{$limitUse},{$giftcard['code']},{$createTime}\r\n";
+            $data .= "{$giftcard['name']},{$type},{$value},{$startTime},{$endTime},{$limitUse},{$redeemLimit},{$giftcard['code']},{$createTime}\r\n";
         }
 
         // Return the CSV data as a response

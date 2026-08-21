@@ -22,6 +22,7 @@ class GiftcardGenerate extends FormRequest
             'started_at' => 'required|integer',
             'ended_at' => 'required|integer',
             'limit_use' => 'nullable|integer',
+            'redeem_limit' => 'nullable|integer|in:0,1,2',
             'code' => ''
         ];
     }
@@ -41,7 +42,8 @@ class GiftcardGenerate extends FormRequest
             'started_at.integer' => '开始时间格式有误',
             'ended_at.required' => '结束时间不能为空',
             'ended_at.integer' => '结束时间格式有误',
-            'limit_use.integer' => '最大使用次数格式有误'
+            'limit_use.integer' => '最大使用次数格式有误',
+            'redeem_limit.in' => '用户兑换限制格式有误'
         ];
     }
 }
