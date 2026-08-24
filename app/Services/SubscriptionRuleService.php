@@ -19,6 +19,14 @@ class SubscriptionRuleService
     private const NODE_ALIVE_REQUIRED_WINDOWS = 3;
     private const NODE_ALIVE_STATE_TTL = 900;
     private const NODE_ALIVE_RESET_COOLDOWN = 86400;
+    private const PULL_FREQUENCY_BLOCK_SECONDS = 300;
+    private const PULL_FREQUENCY_MAX_BLOCK_SECONDS = 86400;
+    private const PULL_FREQUENCY_STRIKE_TTL = 86400;
+    private const PULL_FREQUENCY_ESCALATE_ATTEMPTS_PER_MINUTE = 60;
+    private const PULL_FREQUENCY_BLOCK_KEY = 'SUB_RULE_PULL_TOKEN_BLOCK_';
+    private const PULL_FREQUENCY_STRIKE_KEY = 'SUB_RULE_PULL_TOKEN_STRIKES_';
+    private const PULL_FREQUENCY_ATTEMPT_KEY = 'SUB_RULE_PULL_TOKEN_ATTEMPTS_';
+    private const PULL_FREQUENCY_ESCALATE_KEY = 'SUB_RULE_PULL_TOKEN_ESCALATE_';
 
     private const GOOD_UA = [
         'clash',
@@ -253,6 +261,25 @@ class SubscriptionRuleService
         return $this->guardUserAgent($request, $user);
     }
 
+    public static function blockedPullResponseForToken($token)
+    {
+        $token = (string)$token;
+        if ($token === '') {
+            return null;
+        }
+
+        $state = self::pullFrequencyBlockState($token);
+        if (!$state) {
+            return null;
+        }
+
+        self::recordBlockedPullAttempt($token, $state);
+        $state = self::pullFrequencyBlockState($token) ?: $state;
+        $retryAfter = max(1, (int)$state['blocked_until'] - time());
+
+        return self::pullFrequencyBlockedResponse($retryAfter);
+    }
+
     public function guardNodeAliveIp(Request $request, $userId, array $aliveData, $aliveIpCount, $nodeType, $nodeId)
     {
         $rule = $this->firstEnabledRule(['node_alive_ip_over_limit']);
@@ -317,16 +344,139 @@ class SubscriptionRuleService
             return null;
         }
 
+        $blockedResponse = self::blockedPullResponseForToken($user->token);
+        if ($blockedResponse) {
+            return $blockedResponse;
+        }
+
         $limit = (int)($rule->condition_value ?: 30);
-        $key = 'SUB_RULE_PULL_COUNT_' . $user->id . '_' . $user->token;
+        $identity = self::pullFrequencyTokenHash($user->token);
+        $key = 'SUB_RULE_PULL_COUNT_' . $user->id . '_' . $identity;
         Cache::add($key, 0, 300);
         $count = Cache::increment($key);
 
-        if ($count > $limit) {
-            return $this->applyAction($rule, $request, $user, 'pull_frequency');
+        if (self::pullFrequencyThresholdExceeded($count, $limit)) {
+            $state = self::startPullFrequencyBlock($user->token);
+            $matchedValue = sprintf(
+                'count_5m=%d;limit_5m=%d;strike=%d;block_seconds=%d',
+                $count,
+                $limit,
+                $state['strike'],
+                $state['block_seconds']
+            );
+            $this->logHit($rule, $request, $user, 'pull_frequency', $matchedValue, 'no_nodes');
+
+            return self::pullFrequencyBlockedResponse($state['block_seconds']);
         }
 
         return null;
+    }
+
+    private static function pullFrequencyThresholdExceeded($count, $limit)
+    {
+        return (int)$count > max(1, (int)$limit);
+    }
+
+    private static function startPullFrequencyBlock($token)
+    {
+        $tokenHash = self::pullFrequencyTokenHash($token);
+        $strikeKey = self::PULL_FREQUENCY_STRIKE_KEY . $tokenHash;
+        $strike = max(1, (int)Cache::get($strikeKey, 1));
+        Cache::put($strikeKey, $strike, self::PULL_FREQUENCY_STRIKE_TTL);
+
+        $blockSeconds = self::pullFrequencyBlockSeconds($strike);
+        $state = [
+            'blocked_until' => time() + $blockSeconds,
+            'strike' => $strike,
+            'block_seconds' => $blockSeconds,
+        ];
+        Cache::put(self::PULL_FREQUENCY_BLOCK_KEY . $tokenHash, $state, $blockSeconds);
+
+        return $state;
+    }
+
+    private static function pullFrequencyBlockState($token)
+    {
+        $key = self::PULL_FREQUENCY_BLOCK_KEY . self::pullFrequencyTokenHash($token);
+        $state = Cache::get($key);
+
+        if ($state === null || $state === false) {
+            return null;
+        }
+
+        if (is_numeric($state)) {
+            $state = [
+                'blocked_until' => (int)$state,
+                'strike' => 1,
+                'block_seconds' => max(1, (int)$state - time()),
+            ];
+        }
+
+        if (!is_array($state)) {
+            Cache::forget($key);
+            return null;
+        }
+
+        if ((int)($state['blocked_until'] ?? 0) <= time()) {
+            Cache::forget($key);
+            return null;
+        }
+
+        return $state;
+    }
+
+    private static function recordBlockedPullAttempt($token, array $state)
+    {
+        $tokenHash = self::pullFrequencyTokenHash($token);
+        $minute = intdiv(time(), 60);
+        $attemptKey = self::PULL_FREQUENCY_ATTEMPT_KEY . $tokenHash . '_' . $minute;
+        Cache::add($attemptKey, 0, 120);
+        $attempts = (int)Cache::increment($attemptKey);
+        if ($attempts <= self::PULL_FREQUENCY_ESCALATE_ATTEMPTS_PER_MINUTE) {
+            return;
+        }
+
+        $escalateKey = self::PULL_FREQUENCY_ESCALATE_KEY . $tokenHash . '_' . $minute;
+        if (!Cache::add($escalateKey, true, 120)) {
+            return;
+        }
+
+        $strikeKey = self::PULL_FREQUENCY_STRIKE_KEY . $tokenHash;
+        Cache::add($strikeKey, max(1, (int)($state['strike'] ?? 1)), self::PULL_FREQUENCY_STRIKE_TTL);
+        $strike = max(2, (int)Cache::increment($strikeKey));
+        Cache::put($strikeKey, $strike, self::PULL_FREQUENCY_STRIKE_TTL);
+
+        $blockSeconds = self::pullFrequencyBlockSeconds($strike);
+        $blockedUntil = max((int)$state['blocked_until'], time() + $blockSeconds);
+        Cache::put(self::PULL_FREQUENCY_BLOCK_KEY . $tokenHash, [
+            'blocked_until' => $blockedUntil,
+            'strike' => $strike,
+            'block_seconds' => $blockSeconds,
+        ], max(1, $blockedUntil - time()));
+    }
+
+    private static function pullFrequencyBlockSeconds($strike)
+    {
+        $power = max(0, min(20, (int)$strike - 1));
+
+        return min(
+            self::PULL_FREQUENCY_MAX_BLOCK_SECONDS,
+            self::PULL_FREQUENCY_BLOCK_SECONDS * (2 ** $power)
+        );
+    }
+
+    private static function pullFrequencyTokenHash($token)
+    {
+        return hash('sha256', (string)$token);
+    }
+
+    private static function pullFrequencyBlockedResponse($retryAfter)
+    {
+        return response('Too Many Requests', 429, [
+            'Content-Type' => 'text/plain; charset=UTF-8',
+            'Cache-Control' => 'no-store',
+            'Retry-After' => (string)max(1, (int)$retryAfter),
+        ]);
     }
 
     private function guardIpSpread(Request $request, User $user)
@@ -635,10 +785,6 @@ class SubscriptionRuleService
     {
         $type = (string)$rule->type;
         $flagClient = $this->detectClient((string)$request->input('flag', ''));
-
-        if ($type === 'pull_frequency' && $this->isKnownProxyClient($request)) {
-            return true;
-        }
 
         if (in_array($type, ['header_browser_context', 'ua_browser', 'ua_social'], true) && $flagClient) {
             return true;

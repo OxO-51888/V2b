@@ -1802,8 +1802,27 @@ class AiRiskService
             return $cached;
         }
 
-        $payload = $this->buildRealtimePayload($request, $user, $rule, $reason, $matchedValue);
+        $lockKey = $cacheKey . '_INFLIGHT';
+        $lockOwner = hash('sha256', uniqid('', true) . mt_rand());
+        if (!Cache::add($lockKey, $lockOwner, 20)) {
+            $cached = $this->waitForCachedReviewDecision($cacheKey, 1500);
+            if (is_array($cached)) {
+                $cached['cached'] = true;
+                return $cached;
+            }
+
+            $decision = $this->decision('allow', 0, 'AI review is already in progress', false);
+            return $this->enforceRuleFloor($decision, $request, $rule);
+        }
+
         try {
+            $cached = Cache::get($cacheKey);
+            if (is_array($cached)) {
+                $cached['cached'] = true;
+                return $cached;
+            }
+
+            $payload = $this->buildRealtimePayload($request, $user, $rule, $reason, $matchedValue);
             $content = $this->callModel($config, [
                 [
                     'role' => 'system',
@@ -1824,10 +1843,36 @@ class AiRiskService
             if (!empty($decision['block'])) {
                 $decision['reason'] = 'AI不可用，按高危规则拦截';
             }
+        } finally {
+            if (isset($decision) && is_array($decision)) {
+                Cache::put($cacheKey, $decision, 300);
+            }
+            $this->releaseReviewLock($lockKey, $lockOwner);
         }
 
-        Cache::put($cacheKey, $decision, 300);
         return $decision;
+    }
+
+    private function waitForCachedReviewDecision($cacheKey, $waitMilliseconds)
+    {
+        $deadline = microtime(true) + (max(0, (int)$waitMilliseconds) / 1000);
+        do {
+            usleep(100000);
+            $cached = Cache::get($cacheKey);
+            if (is_array($cached)) {
+                return $cached;
+            }
+        } while (microtime(true) < $deadline);
+
+        return null;
+    }
+
+    private function releaseReviewLock($lockKey, $lockOwner)
+    {
+        $currentOwner = Cache::get($lockKey);
+        if (is_string($currentOwner) && hash_equals($currentOwner, (string)$lockOwner)) {
+            Cache::forget($lockKey);
+        }
     }
 
     private function buildLogPayload($logs)

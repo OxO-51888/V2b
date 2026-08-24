@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use App\Models\User;
+use App\Services\SubscriptionRuleService;
 use App\Utils\Helper;
 use Illuminate\Support\Facades\Cache;
 
@@ -65,6 +66,12 @@ class Client
             default:
                 break;
         }
+
+        $blockedResponse = SubscriptionRuleService::blockedPullResponseForToken($token);
+        if ($blockedResponse) {
+            return $blockedResponse;
+        }
+
         $user = User::where('token', $token)->first();
         if (!$user) {
             abort(403, 'token is error');
