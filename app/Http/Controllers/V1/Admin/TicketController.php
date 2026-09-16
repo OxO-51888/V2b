@@ -110,41 +110,23 @@ class TicketController extends Controller
                 abort(500, '工单已关闭，不能自动回复');
             }
 
-            $user = User::where('id', $ticket->user_id)->first();
-            $messages = TicketMessage::where('ticket_id', $ticket->id)
-                ->orderBy('id', 'DESC')
-                ->limit(8)
-                ->get()
-                ->reverse()
-                ->map(function ($message) use ($ticket) {
-                    return [
-                        'from' => (int)$message->user_id === (int)$ticket->user_id ? 'user' : 'staff',
-                        'message' => mb_substr((string)$message->message, 0, 800),
-                        'created_at' => $message->created_at
-                    ];
-                })
-                ->values()
-                ->all();
-
-            $ticketContext['ticket'] = [
-                'id' => $ticket->id,
-                'subject' => $ticket->subject,
-                'level' => $ticket->level,
-                'status' => $ticket->status,
-                'user_email' => $user ? $user->email : '',
-                'messages' => $messages
-            ];
+            $ticketContext = array_merge($ticketContext, (new TicketService())->buildAiTicketContext(
+                $ticket, $question, 'admin_preview'
+            ));
         }
 
         $aiRiskService = new AiRiskService();
         $skipReason = $aiRiskService->ticketAutoReplySkipReason($ticketContext);
-        if ($skipReason === 'payment_order') {
+        if ($skipReason) {
+            $notice = $skipReason === 'human_requested'
+                ? '用户已要求人工处理，AI 不再自动回复此工单。'
+                : '订单付款及提现类工单由人工核对，AI 不自动回复。';
             if ($sendReply) {
-                abort(500, '订单付款类工单不由 AI 自动回复，请人工核对后处理');
+                abort(500, $notice);
             }
             return response([
                 'data' => [
-                    'draft' => '订单付款类工单不建议由 AI 自动回复，请人工核对订单状态后处理。',
+                    'draft' => $notice,
                     'replied' => false,
                     'ticket_id' => $ticket ? $ticket->id : null,
                     'tools' => [],

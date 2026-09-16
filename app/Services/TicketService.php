@@ -15,6 +15,11 @@ class TicketService {
     public function reply($ticket, $message, $userId)
     {
         DB::beginTransaction();
+        $ticket = Ticket::where('id', $ticket->id)->lockForUpdate()->first();
+        if (!$ticket || (int)$ticket->status !== 0) {
+            DB::rollback();
+            return false;
+        }
         $ticketMessage = TicketMessage::create([
             'user_id' => $userId,
             'ticket_id' => $ticket->id,
@@ -35,13 +40,12 @@ class TicketService {
 
     public function replyByAdmin($ticketId, $message, $userId):void
     {
-        $ticket = Ticket::where('id', $ticketId)
-            ->first();
+        DB::beginTransaction();
+        $ticket = Ticket::where('id', $ticketId)->lockForUpdate()->first();
         if (!$ticket) {
+            DB::rollback();
             abort(500, '工单不存在');
         }
-        
-        DB::beginTransaction();
         $ticketMessage = TicketMessage::create([
             'user_id' => $userId,
             'ticket_id' => $ticket->id,
@@ -78,6 +82,9 @@ class TicketService {
         if (!$lastUserMessage) {
             return false;
         }
+        if (TicketMessage::where('ticket_id', $ticket->id)->where('id', '>', $lastUserMessage->id)->exists()) {
+            return false;
+        }
 
         $cacheKey = 'TICKET_AI_AUTO_REPLY_' . $ticket->id . '_' . $lastUserMessage->id;
         if (!Cache::add($cacheKey, 1, 600)) {
@@ -93,7 +100,7 @@ class TicketService {
         }
 
         $lastUserMessageId = $lastUserMessage->id;
-        $context = $this->buildAiTicketContext($ticket, $question ?: $lastUserMessage->message, $source);
+        $context = $this->buildAiTicketContext($ticket, $lastUserMessage->message, $source);
 
         $aiRiskService = new AiRiskService();
         $skipReason = $aiRiskService->ticketAutoReplySkipReason($context);
@@ -115,8 +122,7 @@ class TicketService {
                 ]);
                 return false;
             }
-            $this->createAiReplyMessage($ticket, $lastUserMessageId, $adminId, $draft);
-            return true;
+            return $this->createAiReplyMessage($ticket, $lastUserMessageId, $adminId, $draft);
         } catch (Throwable $exception) {
             Log::warning('ticket AI auto reply failed', [
                 'ticket_id' => $ticket->id,
@@ -126,58 +132,64 @@ class TicketService {
         }
     }
 
-    private function createAiReplyMessage(Ticket $ticket, $lastUserMessageId, $adminId, $message): void
+    private function createAiReplyMessage(Ticket $ticket, $lastUserMessageId, $adminId, $message): bool
     {
-        DB::beginTransaction();
-        $freshTicket = Ticket::where('id', $ticket->id)->first();
-        if (!$freshTicket) {
-            DB::rollback();
-            return;
-        }
+        $created = DB::transaction(function () use ($ticket, $lastUserMessageId, $adminId, $message) {
+            $freshTicket = Ticket::where('id', $ticket->id)->lockForUpdate()->first();
+            if (!$freshTicket || (int)$freshTicket->status !== 0 || !(int)config('v2board.ticket_ai_auto_reply_enable', 0)) {
+                return null;
+            }
 
-        $hasNewerUserMessage = TicketMessage::where('ticket_id', $freshTicket->id)
-            ->where('user_id', $freshTicket->user_id)
-            ->where('id', '>', $lastUserMessageId)
-            ->exists();
-        if ($hasNewerUserMessage) {
-            DB::rollback();
-            return;
-        }
+            // Serialize AI, user, and staff replies on the same ticket.
+            if (TicketMessage::where('ticket_id', $freshTicket->id)->where('id', '>', $lastUserMessageId)->exists()) {
+                return null;
+            }
+            $ticketMessage = TicketMessage::create([
+                'user_id' => $adminId,
+                'ticket_id' => $freshTicket->id,
+                'message' => $message
+            ]);
+            $freshTicket->reply_status = 1;
+            if (!$ticketMessage || !$freshTicket->save()) {
+                throw new \RuntimeException('Ticket reply could not be saved');
+            }
+            return [$freshTicket, $ticketMessage];
+        });
 
-        $ticketMessage = TicketMessage::create([
-            'user_id' => $adminId,
-            'ticket_id' => $freshTicket->id,
-            'message' => $message
-        ]);
-        $freshTicket->status = 0;
-        $freshTicket->reply_status = 1;
-        $freshTicket->touch();
-
-        if (!$ticketMessage || !$freshTicket->save()) {
-            DB::rollback();
-            return;
+        if (!$created) {
+            return false;
         }
-        DB::commit();
-        $this->sendEmailNotify($freshTicket, $ticketMessage);
+        $this->sendEmailNotify($created[0], $created[1]);
+        return true;
     }
 
-    private function buildAiTicketContext(Ticket $ticket, $question, $source)
+    public function buildAiTicketContext(Ticket $ticket, $question, $source)
     {
         $user = User::where('id', $ticket->user_id)->first();
         $messages = TicketMessage::where('ticket_id', $ticket->id)
             ->orderBy('id', 'DESC')
-            ->limit(8)
+            ->limit(120)
             ->get()
             ->reverse()
             ->map(function ($message) use ($ticket) {
                 return [
                     'from' => (int)$message->user_id === (int)$ticket->user_id ? 'user' : 'staff',
-                    'message' => mb_substr((string)$message->message, 0, 800),
+                    'message' => mb_substr((string)$message->message, 0, 1200),
+                    'is_ai' => (int)$message->user_id !== (int)$ticket->user_id && (bool)preg_match('/AI\s*小助手/u', (string)$message->message),
                     'created_at' => $message->created_at
                 ];
             })
             ->values()
             ->all();
+
+        if (trim((string)$question) === '') {
+            foreach (array_reverse($messages) as $message) {
+                if ($message['from'] === 'user') {
+                    $question = $message['message'];
+                    break;
+                }
+            }
+        }
 
         return [
             'question' => mb_substr((string)$question, 0, 1200),

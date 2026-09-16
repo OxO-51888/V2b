@@ -115,10 +115,10 @@ chattr -i .user.ini 2>/dev/null || true
 rm -f .htaccess 404.html index.html .user.ini
 ```
 
-执行下面这一条命令。它会拉取当前正式服代码并立即启动 V2Board 安装向导：
+执行下面这一条命令。它会拉取已推送到 `master` 分支的面板代码（包含知识库），并立即启动 V2Board 安装向导：
 
 ```bash
-git clone --branch codex/push-subscription-fixes https://github.com/OxO-51888/V2b.git . && chmod +x init.sh update.sh && ./init.sh
+git clone --branch master https://github.com/OxO-51888/V2b.git . && chmod +x init.sh update.sh && ./init.sh
 ```
 
 安装向导按提示填写：
