@@ -121,6 +121,8 @@ rm -f .htaccess 404.html index.html .user.ini
 git clone --branch master https://github.com/OxO-51888/V2b.git . && chmod +x init.sh update.sh && ./init.sh
 ```
 
+此命令包含本次工单回复修复、`GPT-5.6 Luna` 模型选项和 120 条扩展知识库（`resources/ai/ticket_knowledge_extra.json`）。新装不会复制正式服的 API Key、模型选择或自动回复开关；请在后台自行配置。未指定知识库路径时读取仓库内置知识库；多站共用知识库需另行设置共享路径。
+
 安装向导按提示填写：
 
 - 数据库地址：`localhost`

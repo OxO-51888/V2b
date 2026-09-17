@@ -112,7 +112,7 @@ class TicketAiReplyTest extends TestCase
     {
         $reply = '亲亲，我是 AI 小助手。这个问题需要人工核对当前周期。';
         $this->assertSame($reply, $this->invoke('reviewedTicketReply', [json_encode(['safe_to_send' => true, 'reply' => $reply])]));
-        foreach (['not json', '{}', '{"safe_to_send":"true","reply":"text"}', '{"safe_to_send":false,"reply":"text"}', '{"safe_to_send":true,"reply":[]}'] as $content) {
+        foreach (['not json', '{}', '{"safe_to_send":"true","reply":"text"}', '{"safe_to_send":false,"reply":"text"}', '{"safe_to_send":true,"reply":[]}', '{"safe_to_send":true,"skip_reason":"payment_order","reply":"text"}'] as $content) {
             try {
                 $this->invoke('reviewedTicketReply', [$content]);
                 $this->fail('Unsafe review must not return a publishable reply');
@@ -120,5 +120,108 @@ class TicketAiReplyTest extends TestCase
                 $this->assertStringContainsString('未自动发送', $exception->getMessage());
             }
         }
+    }
+
+    public function test_human_intent_variants_and_latest_cancellation(): void
+    {
+        $service = new AiRiskService();
+        foreach (['人工回复', '麻烦安排真人接手处理，不要AI再答了。', '能帮我联系人工吗', '不要机器人回答', '不用AI，要人工处理'] as $question) {
+            $this->assertSame('human_requested', $service->ticketAutoReplySkipReason(['question' => $question]));
+        }
+        $context = ['question' => '不需要人工了，继续让AI回答。', 'ticket' => ['messages' => [
+            ['from' => 'user', 'message' => '人工回复'],
+            ['from' => 'staff', 'message' => '请说明问题', 'is_ai' => true]
+        ]]];
+        $this->assertSame('', $service->ticketAutoReplySkipReason($context));
+        $context['question'] = '现在只有YouTube不能打开';
+        $context['ticket']['messages'][] = ['from' => 'staff', 'message' => '上个问题处理好了', 'is_ai' => false];
+        $this->assertSame('', $service->ticketAutoReplySkipReason($context));
+        $model = $this->invoke('ticketModelContext', [$context]);
+        $this->assertSame('no_pending_request', $model['handoff_state']);
+        $this->assertTrue($model['ticket']['messages'][1]['is_ai']);
+        $this->assertFalse($model['ticket']['messages'][2]['is_ai']);
+    }
+
+    public function test_payment_followups_use_subject_and_history_regardless_of_length(): void
+    {
+        $service = new AiRiskService();
+        foreach (['还是只有6个月啊，我充了两次6块钱了。', '按你说的我又等了一天了，怎么还是原来那样，一点没变化啊。', '怎么还不行'] as $question) {
+            $this->assertSame('payment_order', $service->ticketAutoReplySkipReason([
+                'question' => $question, 'ticket' => ['subject' => '付款后套餐没到账']
+            ]));
+            $this->assertSame('payment_order', $service->ticketAutoReplySkipReason([
+                'question' => $question, 'ticket' => ['messages' => [['from' => 'user', 'message' => '付款后没到账']]]
+            ]));
+        }
+        foreach (['不是付款或订单的问题，我只想问Clash节点全部超时怎么排查。', '并非订单问题，只是连接超时。'] as $question) {
+            $this->assertSame('', $service->ticketAutoReplySkipReason([
+                'question' => $question, 'ticket' => ['subject' => '订单', 'messages' => [['from' => 'user', 'message' => '以前付款问题']]]
+            ]));
+        }
+        $this->assertSame('payment_order', $service->ticketAutoReplySkipReason(['question' => '不是付款失败，而是订单没到账。']));
+    }
+
+    public function test_negated_image_requests_are_allowed_but_positive_requests_still_block(): void
+    {
+        $service = new AiRiskService();
+        foreach (['工单暂时不能上传图片，请把弹窗里的完整报错文字复制到工单里。', '不要上传图片或截图，只需复制弹窗的报错文字，保留当前订阅即可。'] as $text) {
+            $this->assertSame('', $service->ticketAutoPublishBlockReason('亲亲，我是 AI 小助手。' . $text, ['question' => '工单传不了图']));
+        }
+        foreach (['不能在工单发图，但是请上传图片到其他网站。', '不要在这里上传图片，请到售后群发送截图。', '去售后群发图，我们就可以核对了。'] as $text) {
+            $this->assertSame('asks_for_image', $service->ticketAutoPublishBlockReason('亲亲，我是 AI 小助手。' . $text, ['question' => '工单传不了图']));
+        }
+    }
+
+    public function test_user_recovery_is_not_confused_with_support_actions(): void
+    {
+        $service = new AiRiskService();
+        $reply = '亲亲，我是 AI 小助手。收到，更新后已经恢复正常，感谢你的反馈。';
+        $this->assertSame('', $service->ticketAutoPublishBlockReason($reply, ['question' => '更新后已经好了，谢谢，不需要继续排查。']));
+        foreach (['收到，订阅导入问题已恢复，感谢你的反馈。', '收到，问题已经恢复正常就好，感谢你的反馈。', '已经恢复了，感谢你的反馈，后续有问题再留言。', '太好了，听到订阅导入已经恢复，感谢你的反馈！', '既然问题已经恢复正常，就不用继续排查了。'] as $text) {
+            $this->assertSame('', $service->ticketAutoPublishBlockReason('亲亲，我是 AI 小助手。' . $text, ['question' => '更新后已经好了，谢谢']));
+        }
+        foreach (['所有节点都超时了', '还没恢复正常'] as $question) {
+            $this->assertSame('unsafe_manual_commitment', $service->ticketAutoPublishBlockReason($reply, ['question' => $question]));
+        }
+        foreach (['我已经为你修复并重置了流量。', '不能保证及时回复，但是已经转交人工。', '我已经恢复正常了，请重新导入订阅测试。', '已为你恢复正常，请重新导入订阅测试。', '已恢复订阅，请重新导入订阅测试。', '我已经帮你恢复正常，请重新导入订阅测试。', '后台已恢复正常，请重新导入订阅测试。', '已经替您恢复正常，请重新导入订阅测试。', '我帮你恢复了，请重新导入订阅测试。'] as $text) {
+            $this->assertSame('unsafe_manual_commitment', $service->ticketAutoPublishBlockReason('亲亲，我是 AI 小助手。' . $text, ['question' => '更新后已经好了，谢谢']));
+        }
+    }
+
+    public function test_user_reset_acknowledgment_does_not_claim_support_action(): void
+    {
+        $service = new AiRiskService();
+        $context = ['question' => '所有节点用不了，已经重置过还是不行'];
+        $reply = '亲亲，我是 AI 小助手。你已重置过但仍是所有节点不可用，请提供连接时的具体报错原文。';
+        $this->assertSame('', $service->ticketAutoPublishBlockReason($reply, $context));
+        foreach (['节点用不了', '还没重置过', '没有重置过'] as $question) {
+            $this->assertSame('unsafe_manual_commitment', $service->ticketAutoPublishBlockReason($reply, ['question' => $question]));
+        }
+        foreach (['我已经为你重置了订阅，现在重新导入即可。', '你已重置过，但我已经为你重置了订阅。', '已经重置了你的订阅，请重新导入。'] as $text) {
+            $this->assertSame('unsafe_manual_commitment', $service->ticketAutoPublishBlockReason('亲亲，我是 AI 小助手。' . $text, $context));
+        }
+    }
+
+    public function test_explaining_a_method_is_not_a_promise_to_execute_it(): void
+    {
+        $service = new AiRiskService();
+        $context = ['question' => '工单传不了截图，怎么办'];
+        foreach (['请写出关键报错文字，我会据此判断处理方法。', '我会提供修复建议，请先描述具体报错文字。', '我会根据报错说明恢复步骤，请提供具体报错文字。'] as $text) {
+            $this->assertSame('', $service->ticketAutoPublishBlockReason('亲亲，我是 AI 小助手。' . $text, $context));
+        }
+        foreach (['我会帮你处理这个问题，请等待回复。', '我会按照这个方法帮你修复，请等待回复。', '我会说明处理方法，然后已经为你重置流量。', '我会提出修复建议并修复服务器，请等待回复。'] as $text) {
+            $this->assertSame('unsafe_manual_commitment', $service->ticketAutoPublishBlockReason('亲亲，我是 AI 小助手。' . $text, $context));
+        }
+    }
+
+    public function test_image_and_certificate_knowledge_does_not_require_unavailable_capabilities(): void
+    {
+        $knowledge = json_decode(file_get_contents(dirname(__DIR__, 2) . '/resources/ai/ticket_knowledge_extra.json'), true);
+        $byId = array_column($knowledge, null, 'id');
+        $this->assertCount(120, $byId);
+        foreach (['admin_needs_log_screenshot', 'ticket_image_not_supported'] as $id) {
+            $this->assertStringNotContainsString('先去售后群', implode(' ', $byId[$id]['answer_points']));
+        }
+        $this->assertStringContainsString('更新订阅还是连接节点', implode(' ', $byId['shadowrocket_vpn_cert_warning']['answer_points']));
     }
 }

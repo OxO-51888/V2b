@@ -103,6 +103,7 @@ class AiRiskService
                     'must_follow' => [
                         '事实优先级：用户本次明确描述和已给错误 > 对应的当前只读数据 > 适用知识 > 历史客服说法。客服旧回复可能错误，不当作用户事实；近期公告不是所有故障的原因。',
                         '先看当前阶段：安装应用、订阅下载、配置解析、节点连接、单个网站访问、套餐周期是不同问题。只处理当前问题，不因旧轮次问过图片或提过其他软件而跑题。',
+                        '证书错误没有说明发生阶段时，只问是在更新订阅还是连接节点时出现，不预判订阅入口。明确订阅成功、连接才失败时查节点连接证书；明确下载订阅失败时查订阅HTTPS证书。错误文字不等于原因已经确认。',
                         '软件名称、设备系统、版本、错误原文和试过的步骤在上下文中已给出时必须直接利用；不要让用户重述。用户说已更新、已重导、换不了网络或换不了客户端时，不能重复要求同一步。',
                         '只在缺信息且确实影响下一步判断时问一个问题。知道具体错误就先解释，不再索要相同原文；未提供客户端版本也不代表必须问，解释商店满额、地区限制、周期规则通常不需要版本。',
                         '分类只用于你自己判断，回复不要写“你这个阶段属于某类问题”。输出前核对：有没有把已知信息再次当问题问、把尚未发生的购买当已完成、把一个提问拆成多个字段、或建议用户正常重置日再点提前重置；有就删除或纠正。',
@@ -112,6 +113,8 @@ class AiRiskService
                         '知识条目有适用条件，不能机械拼接。若多个知识建议冲突，选择符合最新事实的部分。只读摘要没包含周期执行、证书或服务端状态时，应说明需人工核对，不能认定已经正常或已经修复。',
                         '只有本站国内站打不开才建议本地网络、Google Chrome和发布页国内站入口；这不是访问Google、Gemini等海外服务的建议。订阅入口变更必须有明确当前证据，历史命中不能证明本次链接失效。',
                         '工单是留言不是即时聊天。用户要求人工则不继续自动排查。不要索要邮箱、密码、完整IP、完整订阅链接或图片；即使说已在群里发图，没有图片内容也不能假装看到了。',
+                        '结合handoff_state和消息中的is_ai判断当前人工请求。真人回复会结束此前的人工等待；最新用户明确取消人工后可以回答新问题，不能引用已结束的旧要求。新提出的人工请求仍必须停止。',
+                        '用户说已经好了，只简短确认，不再排查。用户没有说应用名称时，不把TestFlight等通用商店提示当成某个特定应用，也不编造菜单路径。',
                         '不要说已转交、已安排、已通知、正在检查、等待我处理或保证恢复。需要人工时说明需人工核对哪件事即可；不写“我帮你继续看”“如果方便再发一下版本和报错”等无必要结尾。',
                         'selected_examples仅用于学习简洁表达，旧方案可能过期。不要复制其中诊断、已执行操作、站点、版本、链接或客户信息。付款订单与提现不由AI处理。'
                     ],
@@ -135,7 +138,7 @@ class AiRiskService
         $review = $this->callTicketModel($config, [
             [
                 'role' => 'system',
-                'content' => '你是独立的工单回复复核员，不沿用初稿结论。以用户明确事实和适用知识为准，历史客服和初稿可能错误。检查：诊断是否有证据、是否前后矛盾、是否重复索取已给信息、是否重复用户试过或不能做的操作、是否编造软件支持/后台操作、是否给无关建议。发现问题应修正；知识不足则说明需人工核对什么，不虚构。保留客户端原名，保留事实中的否定和条件；不把流量重置日当套餐到期日，不把剩余有效期不足当等待解锁。只输出JSON对象，格式为{"safe_to_send":true,"reply":"给客户的完整回复"}。只有能形成可靠回复才为true，否则false。reply以“亲亲，我是 AI 小助手。”开头，通常2-3句，不超过220字，最多问一个真正缺失且必要的信息；没有缺项就结束。禁止索要邮箱、密码、完整订阅、截图或无关订单，禁止虚构已转人工或已处理。'
+                'content' => '你是独立的工单回复复核员，不沿用初稿结论。以用户明确事实和适用知识为准，历史客服和初稿可能错误。检查：诊断是否有证据、是否前后矛盾、是否重复索取已给信息、是否重复用户试过或不能做的操作、是否编造软件支持/后台操作、是否给无关建议。发现问题应修正；关键阶段未知时可只问一个澄清问题，不必一律转人工。证书报错阶段未知不能认定订阅入口；订阅成功连接失败不能说是订阅下载证书。付款、订单、提现及仍有效的人工请求一律safe_to_send=false，不生成确认或转交回复；付款判断要结合标题与追问，区分明确否定付款问题。真人回复或用户取消已结束的旧人工请求不能沿用。用户确认恢复后可简短复述，但不能声称你执行了修复。保留客户端原名、事实中的否定和条件；不把流量重置日当到期日。只输出JSON对象，格式为{"safe_to_send":true,"skip_reason":"","reply":"给客户的完整回复"}。skip_reason仅可为空、human_requested或payment_order；只有可靠且允许回复才为true。reply以“亲亲，我是 AI 小助手。”开头，通常2-3句，不超过220字，最多问一个必要信息。禁止索要邮箱、密码、完整订阅或截图，也不让客户转到群里发图；禁止虚构已转人工或已处理。'
             ],
             [
                 'role' => 'user',
@@ -153,7 +156,7 @@ class AiRiskService
     {
         $content = preg_replace('/^\\s*```(?:json)?\\s*|\\s*```\\s*$/iu', '', trim((string)$content));
         $data = json_decode($content, true);
-        if (!is_array($data) || ($data['safe_to_send'] ?? null) !== true
+        if (!is_array($data) || ($data['safe_to_send'] ?? null) !== true || ($data['skip_reason'] ?? '') !== ''
             || !is_string($data['reply'] ?? null) || trim($data['reply']) === '') {
             throw new RuntimeException('工单草稿需要人工复核，未自动发送', 422);
         }
@@ -193,8 +196,19 @@ class AiRiskService
         if ($this->ticketPaymentOrderQuestion($context)) {
             return 'payment_order';
         }
-        $claims = preg_replace('/(?:不能|不要|并未|尚未|没有|无法|不代表|不等于|不保证)[^。！？\n]*/u', '', $reply);
-        if (preg_match('/正在.*核实|正在.*核对|正在处理中|第一时间(给您|给你)?回复|第一时间通知|已经收到.*订单|已收到.*订单|请您稍等|尽快为您处理|已(经)?(为[你您])?(转交|转接|安排|通知|修复|恢复|重置)|我(这边)?(会|来|帮[你您]).{0,8}(核对|检查|处理|修复)/u', $claims)) {
+        $claims = $this->ticketAffirmativeText($reply);
+        $resetFacts = preg_replace('/(?:没有|没|并未|尚未|未|不曾|从未).{0,3}重置(?:过|了)?/u', '', (string)($context['question'] ?? ''));
+        if (preg_match('/(?:已(?:经)?重置(?:过|了)?|重置过|重置了)/u', $resetFacts)) {
+            $claims = preg_replace('/(^|[。！？，,；;\n])(?:你|您)已(?:经)?重置(?:过|了)?/u', '$1', $claims);
+        }
+        if ($this->ticketUserConfirmedRecovery((string)($context['question'] ?? ''))) {
+            // Acknowledging the user's recovery is not claiming an action by support.
+            if (preg_match('/(?:我(?:们|这边)?|我们这边|客服|后台|工作人员|这边)(?:已经|已|刚刚)(?:(?:为|替|帮)[你您])?恢复/u', $claims)) {
+                return 'unsafe_manual_commitment';
+            }
+            $claims = preg_replace('/已(?:经)?恢复(?:正常)?(?=[，,。！!；;\s]|$|就好|了)/u', '', $claims);
+        }
+        if (preg_match('/正在.*核实|正在.*核对|正在处理中|第一时间(给您|给你)?回复|第一时间通知|已经收到.*订单|已收到.*订单|请您稍等|尽快为您处理|已(经)?((?:为|替|帮)[你您])?(转交|转接|安排|通知|修复|恢复|重置)|我(这边)?(会|来|帮[你您]).{0,8}(核对|检查|处理|修复|恢复|重置)(?!方法|建议|方案|思路|步骤|方向)/u', $claims)) {
             return 'unsafe_manual_commitment';
         }
         if (!preg_match('/付款|支付|订单|充值|未到账|没到账|扣款|余额|退款|套餐|续费|购买|月付|年付/u', $userText)
@@ -209,7 +223,7 @@ class AiRiskService
             || $asksForFullSubscription) {
             return 'sensitive_or_internal_term';
         }
-        if (preg_match('/(?:请|麻烦|提供|发送|上传|发一下)[^。！？\n]{0,24}(?:截图|图片)|(?:截图|图片)[^。！？\n]{0,12}(?:发来|发给|上传)/u', $reply)) {
+        if (preg_match('/(?:请|麻烦|提供|发送|上传|发一下)[^。！？\n]{0,24}(?:截图|图片)|(?:截图|图片)[^。！？\n]{0,12}(?:发来|发给|上传)|(?:去|到)[^。！？\n]{0,12}(?:群里|售后群)[^。！？\n]{0,12}发图/u', $this->ticketAffirmativeText($reply))) {
             return 'asks_for_image';
         }
         if (mb_strlen($reply) > 500) {
@@ -227,6 +241,20 @@ class AiRiskService
         return '';
     }
 
+    private function ticketAffirmativeText($text)
+    {
+        $text = preg_replace('/但是|不过|而是/u', '，', (string)$text);
+        return preg_replace('/(?:不能|不要|请勿|无需|不用|不需要|禁止|不支持|并未|尚未|没有|无法|不代表|不等于|不保证)[^。！？，,；;\n]*/u', '', $text);
+    }
+
+    private function ticketUserConfirmedRecovery($question)
+    {
+        if (preg_match('/(?:没|未|不|尚未|还没).{0,4}(?:好|恢复|解决|能用|正常)/u', $question)) {
+            return false;
+        }
+        return (bool)preg_match('/(?:已经好了|恢复正常|问题解决了|可以用了|能用了|现在正常|好了[，,。！!\s]*(?:谢谢|感谢))/u', $question);
+    }
+
     private function ticketModelContext(array $context)
     {
         $ticket = (array)($context['ticket'] ?? []);
@@ -234,6 +262,7 @@ class AiRiskService
         foreach ((array)($ticket['messages'] ?? []) as $message) {
             $messages[] = [
                 'from' => $message['from'] ?? '',
+                'is_ai' => ($message['from'] ?? '') === 'staff' ? $this->ticketMessageIsAi($message) : false,
                 'message' => $this->sanitizeTicketContextText($this->trimText((string)($message['message'] ?? ''), ($message['from'] ?? '') === 'user' ? 1000 : 300)),
                 'created_at' => $message['created_at'] ?? ''
             ];
@@ -264,6 +293,7 @@ class AiRiskService
                 'messages' => array_values($selected),
                 'history_truncated' => count($selected) < count($messages)
             ],
+            'handoff_state' => $this->ticketHumanRequested($context) ? 'pending' : 'no_pending_request',
             'read_only_summary' => $this->sanitizeTicketContextText($this->trimText((string)($context['read_only_context_summary'] ?? ''), 800)),
             'recent_changes' => $this->sanitizeTicketContextText($this->trimText((string)($context['ops_context']['recent_changes'] ?? ''), 500)),
             'capabilities' => $context['ai_capabilities'] ?? []
@@ -619,19 +649,33 @@ class AiRiskService
 
     private function ticketPaymentOrderQuestion(array $context)
     {
-        $text = trim((string)($context['question'] ?? ''));
-        if ($text === '') {
-            $text = (string)($context['ticket']['subject'] ?? '');
-        }
-        if (mb_strlen($text) < 16) {
-            $users = array_filter((array)($context['ticket']['messages'] ?? []), function ($message) {
-                return ($message['from'] ?? '') === 'user';
-            });
-            foreach (array_slice($users, -3) as $message) {
-                $text .= "\n" . (string)($message['message'] ?? '');
+        $money = '付款|支付|订单|充值|扣款|套餐没开通|未到账|没到账|未到帐|没到帐|余额|退款|退费|退钱|退订|提现|取款|佣金提取|充了.{0,12}(?:元|块|钱)';
+        $latest = trim((string)($context['question'] ?? ''));
+        $clauses = preg_split('/[。！？，,；;\n]+|但是|不过|而是/u', $latest);
+        $explicitlyExcluded = false;
+        $remaining = [];
+        foreach ($clauses as $clause) {
+            if (preg_match('/(?:不是|并非|不涉及|不咨询|不问)(?:在问|关于|因为)?(?:' . $money . ')/u', $clause)) {
+                $explicitlyExcluded = true;
+            } else {
+                $remaining[] = $clause;
             }
         }
-        return (bool)preg_match('/付款|支付|订单|充值|扣款|套餐没开通|未到账|没到账|未到帐|没到帐|余额|退款|退费|退钱|退订|提现|取款|佣金提取/u', $text);
+        if (preg_match('/' . $money . '/u', implode("\n", $remaining))) {
+            return true;
+        }
+        if ($explicitlyExcluded) {
+            return false;
+        }
+        // A long follow-up is still part of its payment ticket, not a new topic by length.
+        $text = (string)($context['ticket']['subject'] ?? '') . "\n" . $this->ticketRoleText($context, 'user');
+        $text = preg_replace('/(?:不是|并非|不涉及|不咨询|不问)(?:在问|关于|因为)?(?:' . $money . ')[^。！？，,；;\n]*/u', '', $text);
+        return (bool)preg_match('/' . $money . '/u', $text);
+    }
+
+    private function ticketMessageIsAi(array $message)
+    {
+        return $message['is_ai'] ?? (bool)preg_match('/AI\s*小助手/u', (string)($message['message'] ?? ''));
     }
 
     private function ticketHumanRequested(array $context)
@@ -641,17 +685,18 @@ class AiRiskService
         foreach (array_reverse($messages) as $message) {
             $text = (string)($message['message'] ?? '');
             if (($message['from'] ?? '') === 'staff') {
-                $isAi = $message['is_ai'] ?? (bool)preg_match('/AI\\s*小助手/u', $text);
-                if (!$isAi) {
+                if (!$this->ticketMessageIsAi($message)) {
                     break;
                 }
             }
             if (($message['from'] ?? '') === 'user') {
-                if (preg_match('/不用人工|不需要人工|不要转人工|继续用AI|继续让AI|让机器人继续/iu', $text)) {
-                    return false;
-                }
-                if (preg_match('/转人工|找人工|要人工|人工客服|真人客服|真人来|不要机器人|别再自动回复|不要自动回复|^人工[！!。\\s]*$/u', $text)) {
-                    return true;
+                foreach (array_reverse(preg_split('/[。！？，,；;\n]+|但是|不过|而是/u', $text)) as $clause) {
+                    if (preg_match('/不用人工|不需要人工|不要转人工|取消人工|不必人工|继续用AI|继续让AI|让机器人继续/iu', $clause)) {
+                        return false;
+                    }
+                    if (preg_match('/^(?:人工|人工客服|人工回复|真人客服)[！!。\s]*$|(?:请|麻烦|安排|转|找|要|换|联系|让|叫|由|希望).{0,10}(?:人工|真人)|(?:人工|真人).{0,8}(?:回复|接手|处理|来答|服务)|(?:不要|别再|停止|别用|不想要).{0,6}(?:机器人|自动回复|AI|小助手)/iu', $clause)) {
+                        return true;
+                    }
                 }
             }
         }
@@ -947,10 +992,11 @@ class AiRiskService
                 throw new RuntimeException('ticket OpenAI API key is empty');
             }
 
+            $maxCompletionTokens = preg_match('/^gpt-5\.6-luna(?:-|$)/i', $model) ? 2048 : 420;
             $json = [
                 'model' => $model,
                 'messages' => $messages,
-                'max_completion_tokens' => 420
+                'max_completion_tokens' => $maxCompletionTokens
             ];
 
             $response = $client->post($baseUrl . '/chat/completions', [
@@ -965,7 +1011,7 @@ class AiRiskService
             $data = json_decode($body, true);
             if ($response->getStatusCode() >= 400 && $this->shouldRetryWithLegacyMaxTokens($data)) {
                 unset($json['max_completion_tokens']);
-                $json['max_tokens'] = 420;
+                $json['max_tokens'] = $maxCompletionTokens;
                 $response = $client->post($baseUrl . '/chat/completions', [
                     'headers' => [
                         'Authorization' => 'Bearer ' . $apiKey,
@@ -981,6 +1027,9 @@ class AiRiskService
                 throw new RuntimeException('ticket OpenAI request failed: ' . $message);
             }
 
+            if (($data['choices'][0]['finish_reason'] ?? '') === 'length') {
+                throw new RuntimeException('ticket OpenAI response was truncated; not published');
+            }
             $content = $data['choices'][0]['message']['content'] ?? '';
             if (!$content) {
                 throw new RuntimeException('ticket OpenAI returned empty response');

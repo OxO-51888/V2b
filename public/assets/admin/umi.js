@@ -6395,8 +6395,10 @@
                     value: e.ticket_ai_model || "qwen3:14b",
                     onChange: e=>this.set("ticket", "ticket_ai_model", e.target.value)
                 }, f.a.createElement("option", {
+                    value: "gpt-5.6-luna"
+                }, "GPT-5.6 Luna（工单推荐）"), f.a.createElement("option", {
                     value: "gpt-5.4-mini"
-                }, "GPT-5.4 mini（工单推荐）"), f.a.createElement("option", {
+                }, "GPT-5.4 mini"), f.a.createElement("option", {
                     value: "gpt-5.4"
                 }, "GPT-5.4（更强）"), f.a.createElement("option", {
                     value: "gpt-5-nano"
@@ -6447,8 +6449,10 @@
                     value: e.ticket_ai_model || "qwen3:14b",
                     onChange: e=>this.set("ticket", "ticket_ai_model", e.target.value)
                 }, f.a.createElement("option", {
+                    value: "gpt-5.6-luna"
+                }, "GPT-5.6 Luna（工单推荐）"), f.a.createElement("option", {
                     value: "gpt-5.4-mini"
-                }, "GPT-5.4 mini（工单推荐）"), f.a.createElement("option", {
+                }, "GPT-5.4 mini"), f.a.createElement("option", {
                     value: "gpt-5.4"
                 }, "GPT-5.4（更强）"), f.a.createElement("option", {
                     value: "gpt-5-nano"
