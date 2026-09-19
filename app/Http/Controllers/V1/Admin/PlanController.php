@@ -39,15 +39,20 @@ class PlanController extends Controller
                 abort(500, '该订阅不存在');
             }
             DB::beginTransaction();
-            // update user group id and transfer
             try {
                 if ($request->input('force_update')) {
                     User::where('plan_id', $plan->id)->update([
                         'group_id' => $params['group_id'],
-                        'transfer_enable' => $params['transfer_enable'] * 1073741824,
                         'device_limit' => $params['device_limit'],
                         'speed_limit' => $params['speed_limit']
                     ]);
+                    $savedPlan = array_replace($plan->getAttributes(), $params);
+                    // Preserve accumulated quota, including when changing the plan's prices.
+                    if (!$this->isOneTimePlan($plan->getAttributes()) && !$this->isOneTimePlan($savedPlan)) {
+                        User::where('plan_id', $plan->id)
+                            ->whereNotNull('expired_at')
+                            ->update(['transfer_enable' => $params['transfer_enable'] * 1073741824]);
+                    }
                 }
                 $plan->update($params);
             } catch (\Exception $e) {
@@ -65,6 +70,15 @@ class PlanController extends Controller
         return response([
             'data' => true
         ]);
+    }
+
+    private function isOneTimePlan(array $plan): bool
+    {
+        if (!isset($plan['onetime_price'])) return false;
+        foreach (['month_price', 'quarter_price', 'half_year_price', 'year_price', 'two_year_price', 'three_year_price'] as $period) {
+            if (isset($plan[$period])) return false;
+        }
+        return true;
     }
 
     public function drop(Request $request)
