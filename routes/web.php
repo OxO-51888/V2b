@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\ThemeService;
+use App\Services\FrontendThemeService;
 use Illuminate\Http\Request;
 
 /*
@@ -15,14 +16,16 @@ use Illuminate\Http\Request;
 */
 
 Route::get('/', function (Request $request) {
+    $frontendTheme = new FrontendThemeService();
     if (config('v2board.app_url') && config('v2board.safe_mode_enable', 0)) {
-        if ($request->server('HTTP_HOST') !== parse_url(config('v2board.app_url'))['host']) {
+        if ($request->server('HTTP_HOST') !== parse_url(config('v2board.app_url'))['host']
+            && !$frontendTheme->usesDomesticDefault($request)) {
             abort(403);
         }
     }
     $renderParams = [
         'title' => config('v2board.app_name', 'V2Board'),
-        'theme' => config('v2board.frontend_theme', 'default'),
+        'theme' => $frontendTheme->resolve($request),
         'version' => config('app.version'),
         'description' => config('v2board.app_description', 'V2Board is best'),
         'logo' => config('v2board.logo')
@@ -33,8 +36,8 @@ Route::get('/', function (Request $request) {
         $themeService->init();
     }
 
-    $renderParams['theme_config'] = config('theme.' . config('v2board.frontend_theme', 'default'));
-    return view('theme::' . config('v2board.frontend_theme', 'default') . '.dashboard', $renderParams);
+    $renderParams['theme_config'] = config('theme.' . $renderParams['theme']);
+    return view('theme::' . $renderParams['theme'] . '.dashboard', $renderParams);
 });
 
 //TODO:: 兼容

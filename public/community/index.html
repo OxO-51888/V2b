@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="same-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>售后群聊</title>
+  <link rel="stylesheet" href="chat.css?v=3">
+  <script src="lucide.min.js" defer></script>
+  <script src="chat.js?v=6" defer></script>
+</head>
+<body>
+<main class="chat-app">
+  <header class="chat-header">
+    <a class="icon-button" href="/#/dashboard" target="_top" title="返回面板" aria-label="返回面板"><i data-lucide="arrow-left"></i></a>
+    <div class="heading"><h1>售后群聊</h1><span id="status" role="status">正在连接</span></div>
+    <span id="identity"></span>
+    <button id="refresh" class="icon-button" title="刷新" aria-label="刷新"><i data-lucide="refresh-cw"></i></button>
+  </header>
+  <div id="error" class="error" role="alert" hidden></div>
+  <div id="messages" class="messages" role="log" aria-label="群聊消息" aria-live="polite" aria-relevant="additions">
+    <button id="older" class="older" hidden>查看更早消息</button>
+    <div id="empty" class="empty">暂无消息</div>
+    <div id="list"></div>
+  </div>
+  <button id="unread" class="unread" hidden></button>
+  <section class="composer" aria-label="发送消息">
+    <div id="reply" class="reply" hidden><span id="reply-text"></span><button id="cancel-reply" class="icon-button" title="取消回复" aria-label="取消回复"><i data-lucide="x"></i></button></div>
+    <div id="attachments" class="attachments"></div>
+    <textarea id="message" aria-label="消息" aria-describedby="compose-hint" placeholder="输入消息，也可以粘贴图片" maxlength="2000" rows="3" disabled></textarea>
+    <div class="compose-tools">
+      <button id="attach" class="icon-button" title="添加图片" aria-label="添加图片" disabled><i data-lucide="image-plus"></i></button>
+      <input id="file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+      <span id="count">0 / 2000</span>
+      <button id="send" class="send" disabled><i data-lucide="send"></i><span>发送</span></button>
+    </div>
+    <p id="compose-hint">回车发送 · Shift + 回车换行 · 可粘贴图片</p>
+  </section>
+</main>
+<dialog id="viewer"><button id="close-viewer" class="icon-button" title="关闭图片" aria-label="关闭图片"><i data-lucide="x"></i></button><img id="full-image" alt="群聊图片"></dialog>
+</body>
+</html>

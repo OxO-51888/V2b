@@ -23997,6 +23997,13 @@
                             className: "nav-main-link-icon si si-speedometer"
                         })
                     }, {
+                        title: "\u552e\u540e\u7fa4\u804a",
+                        type: "item",
+                        href: "/community",
+                        icon: i.a.createElement("i", {
+                            className: "nav-main-link-icon si si-bubbles"
+                        })
+                    }, {
                         title: Object(u["formatMessage"])({
                             id: "\u4f7f\u7528\u6587\u6863"
                         }),
@@ -24144,6 +24151,8 @@
                 }, i.a.createElement("ul", {
                     className: "nav-main"
                 }, this.state.nav.map(e=>{
+                    if ("/community" === e.href && !window.settings.community_enabled)
+                        return null;
                     return this.renderMenu(e.type, e.title, e.href, e.icon)
                 }
                 ))), i.a.createElement("div", {
@@ -24217,7 +24226,7 @@
                 }, i.a.createElement("div", {
                     className: "sidebar-toggle",
                     style: {
-                        display: this.props.search ? "block" : "none"
+                        display: this.props.search || this.props.navigation ? "block" : "none"
                     }
                 }, i.a.createElement("button", {
                     type: "button",
@@ -24350,6 +24359,7 @@
                     }
                 }), i.a.createElement(f, this.props), i.a.createElement(y, {
                     search: this.props.search,
+                    navigation: this.props.navigation,
                     title: this.props.title
                 }), this.props.loading ? i.a.createElement("main", {
                     id: "main-container"
@@ -45285,6 +45295,27 @@
             path: "/dashboard",
             exact: !0,
             component: n("UJb+").default
+        }, {
+            path: "/community",
+            exact: !0,
+            component: function(e) {
+                if (!window.settings.community_enabled)
+                    return n("3a4m").replace("/dashboard"), null;
+                if (!Object(n("yWgo")["d"])())
+                    return n("3a4m").replace("/login?redirect=%2Fcommunity"), null;
+                return o.a.createElement(n("L12J").a, Object.assign({}, e, {
+                    title: "\u552e\u540e\u7fa4\u804a",
+                    navigation: !0
+                }), o.a.createElement("main", {
+                    id: "main-container",
+                    className: "default-community-main"
+                }, o.a.createElement("iframe", {
+                    className: "default-community-frame",
+                    src: "/community/index.html?client=default&embedded=1",
+                    title: "\u552e\u540e\u7fa4\u804a",
+                    referrerPolicy: "same-origin"
+                })))
+            }
         }, {
             path: "/forgetpassword",
             exact: !0,

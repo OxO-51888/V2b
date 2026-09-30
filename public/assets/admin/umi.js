@@ -20571,7 +20571,10 @@
             constructor(e) {
                 super(e),
                 this.state = {
-                    visible: !1
+                    visible: !1,
+                    domesticThemeSaving: !1,
+                    domesticThemeSaved: !1,
+                    domesticThemeError: ""
                 }
             }
             componentDidMount() {
@@ -20579,86 +20582,113 @@
                     type: "theme/getThemes"
                 })
             }
-            activeTheme(e) {
-                var t = this;
-                return a()(y().mark(function n() {
-                    var r;
-                    return y().wrap(function(n) {
-                        while (1)
-                            switch (n.prev = n.next) {
-                            case 0:
-                                return n.next = 2,
-                                Object(v["b"])("/" + window.settings.secure_path + "/config/save", {
-                                    frontend_theme: e
-                                });
-                            case 2:
-                                if (r = n.sent,
-                                200 === r.code) {
-                                    n.next = 5;
-                                    break
-                                }
-                                return n.abrupt("return");
-                            case 5:
-                                t.props.dispatch({
-                                    type: "theme/getThemes"
-                                });
-                            case 6:
-                            case "end":
-                                return n.stop()
-                            }
-                    }, n)
-                }))()
+            setDomesticDefaultTheme(e) {
+                var t = this.props.theme
+                  , n = Number(t.domestic_default_theme) === 1
+                  , r = e ? 1 : 0;
+                if (this.domesticThemeRequest || t.getThemesLoading || !Object.keys(t.themes || {}).length || r === Number(n) || r && (t.domestic_entry_ready !== !0 || !t.themes.default || !t.themes.NINI))
+                    return;
+                this.domesticThemeRequest = !0,
+                this.setState({
+                    domesticThemeSaving: !0,
+                    domesticThemeSaved: !1,
+                    domesticThemeError: ""
+                });
+                return Promise.resolve().then(()=>Object(v["b"])("/" + window.settings.secure_path + "/config/save", {
+                    frontend_domestic_default_theme: r
+                })).then(e=>{
+                    if (!e || e.code !== 200)
+                        throw new Error(e && (e.message || e.msg) || "保存失败，请重试");
+                    this.props.dispatch({
+                        type: "theme/setState",
+                        payload: {
+                            domestic_default_theme: r,
+                            active: r ? "NINI" : "default"
+                        }
+                    }),
+                    this.setState({
+                        domesticThemeSaved: !0
+                    })
+                }).catch(e=>{
+                    this.setState({
+                        domesticThemeError: e && e.message || "保存失败，请重试"
+                    })
+                }).then(()=>{
+                    this.domesticThemeRequest = !1,
+                    this.setState({
+                        domesticThemeSaving: !1
+                    })
+                })
             }
             render() {
                 var e = this.props.theme
                   , t = e.themes
-                  , n = e.active;
-                e.getThemesLoading;
+                  , r = Number(e.domestic_default_theme) === 1
+                  , o = e.domestic_entry_ready === !0 && !!t.default && !!t.NINI
+                  , a = e.getThemesLoading || !Object.keys(t).length || this.state.domesticThemeSaving;
                 return l.a.createElement(c["a"], i()({}, this.props, {
                     loading: Object.keys(t).length <= 0,
                     title: "\u4e3b\u9898\u914d\u7f6e"
                 }), l.a.createElement("div", {
-                    className: "row"
+                    className: "block block-rounded mb-3"
                 }, l.a.createElement("div", {
-                    className: "col-lg-12"
+                    className: "block-content block-content-full"
                 }, l.a.createElement("div", {
-                    className: "alert alert-warning mb-0 mb-md-4",
-                    role: "alert"
-                }, l.a.createElement("p", {
-                    className: "mb-0"
-                }, "\u5982\u679c\u4f60\u91c7\u7528\u524d\u540e\u5206\u79bb\u7684\u65b9\u5f0f\u90e8\u7f72V2board\uff0c\u90a3\u4e48\u4e3b\u9898\u914d\u7f6e\u5c06\u4e0d\u4f1a\u751f\u6548\u3002\u4e86\u89e3", l.a.createElement("b", null, l.a.createElement("a", {
-                    href: "https://docs.v2board.com/use/advanced.html#%E5%89%8D%E7%AB%AF%E5%88%86%E7%A6%BB"
-                }, "\u524d\u540e\u5206\u79bb")))))), Object.keys(t).map(e=>{
-                    var r = t[e];
+                    className: "d-flex justify-content-between align-items-center"
+                }, l.a.createElement("label", {
+                    htmlFor: "domestic-default-theme-switch",
+                    className: "font-w600 mb-0 mr-3"
+                }, "按入口使用不同主题"), l.a.createElement("button", {
+                    id: "domestic-default-theme-switch",
+                    type: "button",
+                    role: "switch",
+                    "aria-label": "按入口使用不同主题",
+                    "aria-checked": r,
+                    "aria-describedby": "domestic-default-theme-description" + (o ? "" : " domestic-default-theme-unavailable"),
+                    className: "btn btn-sm rounded-pill px-3 " + (r ? "btn-primary" : "btn-secondary"),
+                    disabled: a || !o && !r,
+                    onClick: ()=>this.setDomesticDefaultTheme(!r)
+                }, this.state.domesticThemeSaving ? "保存中…" : r ? "已开启" : "已关闭")), l.a.createElement("p", {
+                    id: "domestic-default-theme-description",
+                    className: "text-muted mt-2 mb-0"
+                }, "开启：国内入口使用原版主题，海外入口使用新主题。关闭：所有入口使用原版主题。"), !o && l.a.createElement("p", {
+                    id: "domestic-default-theme-unavailable",
+                    className: "text-muted mt-2 mb-0"
+                }, "国内入口和新旧主题准备就绪后可开启"), this.state.domesticThemeError && l.a.createElement("p", {
+                    role: "alert",
+                    className: "text-danger mt-2 mb-0"
+                }, this.state.domesticThemeError), this.state.domesticThemeSaved && l.a.createElement("p", {
+                    role: "status",
+                    className: "text-success mt-2 mb-0"
+                }, "保存成功"))), Object.keys(t).map(e=>{
+                    var n = t[e]
+                      , o = "default" === e ? r ? "国内入口使用" : "所有入口使用" : "NINI" === e && r ? "海外入口使用" : "未启用"
+                      , a = "default" === e ? "原版主题" : "NINI" === e ? "新主题（NINI）" : n.name;
                     return l.a.createElement("div", {
-                        className: "block block-transparent bg-image mb-0 mb-md-3 bg-primary",
-                        style: {
-                            backgroundImage: "url(https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1374&q=80)"
-                        }
+                        key: e,
+                        className: "block block-rounded mb-3"
                     }, l.a.createElement("div", {
-                        className: "block-content block-content-full bg-gd-white-op-l"
+                        className: "block-content block-content-full"
                     }, l.a.createElement("div", {
                         className: "d-md-flex justify-content-md-between align-items-md-center"
                     }, l.a.createElement("div", {
                         className: "p-2 py-4"
                     }, l.a.createElement("h3", {
                         className: "font-size-h4 font-w400 text-black mb-1"
-                    }, r.name), l.a.createElement("p", {
+                    }, a), l.a.createElement("p", {
                         className: "text-black-75 mb-0"
-                    }, r.description)), l.a.createElement("div", {
+                    }, n.description)), l.a.createElement("div", {
                         className: "p-2 py-4"
-                    }, l.a.createElement("button", {
-                        type: "button",
-                        className: "btn btn-sm rounded-pill btn-outline-light px-3 mr-2",
-                        onClick: ()=>this.activeTheme(e),
-                        disabled: n === e
-                    }, n === e ? "\u5f53\u524d\u4e3b\u9898" : "\u6fc0\u6d3b\u4e3b\u9898"), l.a.createElement(g, {
+                    }, l.a.createElement("span", {
+                        className: "text-muted mr-3",
+                        "data-theme-usage": e
+                    }, o), l.a.createElement(g, {
                         keyName: e,
-                        themeName: r.name,
-                        configs: r.configs
+                        themeName: a,
+                        configs: n.configs
                     }, l.a.createElement("button", {
                         type: "button",
-                        className: "btn btn-sm rounded-pill btn-outline-light px-3"
+                        className: "btn btn-sm rounded-pill btn-outline-primary px-3"
                     }, "\u4e3b\u9898\u8bbe\u7f6e"))))))
                 }
                 ))
@@ -40025,7 +40055,10 @@
         }
         var s = {
             themes: [],
-            active: void 0
+            active: void 0,
+            domestic_default_theme: 0,
+            domestic_entry_ready: !1,
+            getThemesLoading: !0
         };
         t["default"] = {
             name: "theme",
@@ -40076,7 +40109,9 @@
                                         type: "setState",
                                         payload: {
                                             themes: null === i || void 0 === i ? void 0 : null === (t = i.data) || void 0 === t ? void 0 : t.themes,
-                                            active: null === i || void 0 === i ? void 0 : null === (r = i.data) || void 0 === r ? void 0 : r.active
+                                            active: null === i || void 0 === i ? void 0 : null === (r = i.data) || void 0 === r ? void 0 : r.active,
+                                            domestic_default_theme: Number(i.data && i.data.domestic_default_theme) === 1 ? 1 : 0,
+                                            domestic_entry_ready: !!(i.data && i.data.domestic_entry_ready === !0)
                                         }
                                     });
                                 case 11:

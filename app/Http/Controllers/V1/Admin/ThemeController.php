@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\ThemeService;
+use App\Services\FrontendThemeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -37,7 +38,9 @@ class ThemeController extends Controller
         return response([
             'data' => [
                 'themes' => $themeConfigs,
-                'active' => config('v2board.frontend_theme', 'v2board')
+                'active' => (new FrontendThemeService())->activeTheme(),
+                'domestic_default_theme' => (int) config('v2board.frontend_domestic_default_theme', 0),
+                'domestic_entry_ready' => (new FrontendThemeService())->domesticEntryReady(),
             ]
         ]);
     }

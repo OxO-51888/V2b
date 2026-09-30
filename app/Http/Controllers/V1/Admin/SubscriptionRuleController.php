@@ -568,14 +568,7 @@ class SubscriptionRuleController extends Controller
 
     private function writeV2boardConfig(array $config)
     {
-        $data = var_export($config, true);
-        if (!File::put(base_path() . '/config/v2board.php', "<?php\n return $data ;")) {
-            abort(500, 'Save failed');
-        }
-        if (function_exists('opcache_reset')) {
-            opcache_reset();
-        }
-        Artisan::call('config:cache');
+        app(\App\Services\ConfigurationSaveService::class)->save($config);
     }
 
     private function buildAiRiskPayload($logs)

@@ -76,6 +76,7 @@ class ConfigSave extends FormRequest
         'server_device_online_min_traffic' => 'integer', 
         // frontend
         'frontend_theme' => '',
+        'frontend_domestic_default_theme' => 'in:0,1',
         'frontend_theme_sidebar' => 'nullable|in:dark,light',
         'frontend_theme_header' => 'nullable|in:dark,light',
         'frontend_theme_color' => 'nullable|in:default,darkblue,black,green',
@@ -126,6 +127,15 @@ class ConfigSave extends FormRequest
     public function rules()
     {
         $rules = self::RULES;
+
+        $rules['frontend_domestic_default_theme'] = [
+            'in:0,1',
+            function ($attribute, $value, $fail) {
+                if (($value === 1 || $value === '1') && !(new \App\Services\FrontendThemeService())->domesticEntryReady()) {
+                    $fail('国内入口和新旧主题准备完成后才可开启');
+                }
+            },
+        ];
 
         $rules['deposit_bounus'][] = function ($attribute, $value, $fail) {
             foreach ($value as $tier) {

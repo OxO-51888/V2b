@@ -83,7 +83,8 @@
                 'zh-TW',
                 'fa-IR'
             ],
-            logo: '{{$logo}}'
+            logo: '{{$logo}}',
+            community_enabled: @json((bool) config('community.enabled', false))
         }
     </script>
     <script src="/theme/{{$theme}}/assets/i18n/zh-CN.js?v={{$version}}"></script>

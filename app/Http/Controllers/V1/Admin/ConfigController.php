@@ -132,7 +132,8 @@ class ConfigController extends Controller
                 'show_subscribe_expire' => (int)config('v2board.show_subscribe_expire', 5),
             ],
             'frontend' => [
-                'frontend_theme' => config('v2board.frontend_theme', 'v2board'),
+                'frontend_theme' => (new \App\Services\FrontendThemeService())->activeTheme(),
+                'frontend_domestic_default_theme' => (int) config('v2board.frontend_domestic_default_theme', 0),
                 'frontend_theme_sidebar' => config('v2board.frontend_theme_sidebar', 'light'),
                 'frontend_theme_header' => config('v2board.frontend_theme_header', 'dark'),
                 'frontend_theme_color' => config('v2board.frontend_theme_color', 'default'),
@@ -203,6 +204,12 @@ class ConfigController extends Controller
     public function save(ConfigSave $request)
     {
         $data = $request->validated();
+        if (array_key_exists('frontend_domestic_default_theme', $data)) {
+            $data['frontend_theme'] = (int) $data['frontend_domestic_default_theme'] === 1 ? 'NINI' : 'default';
+        } elseif (array_key_exists('frontend_theme', $data)
+            && array_key_exists('frontend_domestic_default_theme', config('v2board', []))) {
+            $data['frontend_theme'] = (new \App\Services\FrontendThemeService())->activeTheme();
+        }
         if (array_key_exists('ticket_ai_api_key', $data) && trim((string)$data['ticket_ai_api_key']) === '') {
             unset($data['ticket_ai_api_key']);
         }
@@ -219,16 +226,7 @@ class ConfigController extends Controller
                 $config[$k] = $data[$k];
             }
         }
-        $data = var_export($config, 1);
-        if (!File::put(base_path() . '/config/v2board.php', "<?php\n return $data ;")) {
-            abort(500, '修改失败');
-        }
-        if (function_exists('opcache_reset')) {
-            if (opcache_reset() === false) {
-                abort(500, '缓存清除失败，请卸载或检查opcache配置状态');
-            }
-        }
-        Artisan::call('config:cache');
+        app(\App\Services\ConfigurationSaveService::class)->save($config);
         if(Cache::has('WEBMANPID')) {
             $pid = Cache::get('WEBMANPID');
             Cache::forget('WEBMANPID');
