@@ -9,9 +9,11 @@ use Illuminate\Cache\ArrayStore;
 use Illuminate\Cache\Repository;
 use Illuminate\Config\Repository as Config;
 use Illuminate\Container\Container;
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Database\Capsule\Manager;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Facade;
+use Mockery;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use ReflectionMethod;
@@ -61,8 +63,11 @@ class TicketAiPersistenceTest extends TestCase
             ['id' => 1, 'email' => 'fixture@example.invalid', 'is_admin' => 0],
             ['id' => 2, 'email' => 'staff@example.invalid', 'is_admin' => 1]
         ]);
-        // Suppress notifications at the in-memory cache boundary, never use mail transport.
-        $this->container['cache']->put('ticket_sendEmailNotify_1', 1, 1800);
+        // Replies must never enqueue notification mail, even with an empty cache.
+        $dispatcher = Mockery::mock(Dispatcher::class);
+        $dispatcher->shouldReceive('dispatch')->never();
+        $dispatcher->shouldReceive('dispatchSync')->never();
+        $this->container->instance(Dispatcher::class, $dispatcher);
     }
 
     protected function tearDown(): void
@@ -71,6 +76,7 @@ class TicketAiPersistenceTest extends TestCase
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication(null);
         Container::setInstance(null);
+        Mockery::close();
     }
 
     private function fixture($message = '节点测试失败')
@@ -121,6 +127,29 @@ class TicketAiPersistenceTest extends TestCase
         $this->assertTrue($this->persist($ticket, $message->id));
         $this->assertFalse($this->persist($ticket, $message->id));
         $this->assertSame(2, TicketMessage::count());
+        $this->assertSame(1, (int)$ticket->fresh()->reply_status);
+    }
+
+    public function test_manual_reply_is_saved_without_notification_mail(): void
+    {
+        [$ticket] = $this->fixture();
+        $ticket->update(['status' => 1]);
+        (new TicketService())->replyByAdmin($ticket->id, 'Manual fixture reply', 2);
+        $this->assertSame(2, TicketMessage::count());
+        $this->assertSame('Manual fixture reply', TicketMessage::orderByDesc('id')->first()->message);
+        $this->assertSame(0, (int)$ticket->fresh()->status);
+        $this->assertSame(1, (int)$ticket->fresh()->reply_status);
+    }
+
+    public function test_user_followup_is_saved_without_notification_mail(): void
+    {
+        [$ticket] = $this->fixture();
+        $ticket->update(['reply_status' => 1]);
+        $reply = (new TicketService())->reply($ticket, 'User fixture followup', 1);
+        $this->assertInstanceOf(TicketMessage::class, $reply);
+        $this->assertSame('User fixture followup', $reply->message);
+        $this->assertSame(2, TicketMessage::count());
+        $this->assertSame(0, (int)$ticket->fresh()->reply_status);
     }
 
     public function test_handoff_and_withdrawal_stop_before_model_call(): void

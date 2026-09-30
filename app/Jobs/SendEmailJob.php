@@ -9,6 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Redis;
 use App\Models\MailLog;
 
 class SendEmailJob implements ShouldQueue
@@ -18,6 +19,7 @@ class SendEmailJob implements ShouldQueue
 
     public $tries = 3;
     public $timeout = 10;
+    public $maxExceptions;
     /**
      * Create a new job instance.
      *
@@ -27,6 +29,11 @@ class SendEmailJob implements ShouldQueue
     {
         $this->onQueue($queue);
         $this->params = $params;
+        if ($queue === 'send_email_mass') {
+            // Waiting for a rate-limit slot must not exhaust queue attempts.
+            $this->tries = 0;
+            $this->maxExceptions = 3;
+        }
     }
 
     /**
@@ -36,6 +43,11 @@ class SendEmailJob implements ShouldQueue
      */
     public function handle()
     {
+        if ($this->queue === 'send_email_mass' && !$this->acquireBulkSendSlot()) {
+            $this->release(1);
+            return;
+        }
+
         if (config('v2board.email_host')) {
             Config::set('mail.host', config('v2board.email_host', env('mail.host')));
             Config::set('mail.port', config('v2board.email_port', env('mail.port')));
@@ -50,7 +62,9 @@ class SendEmailJob implements ShouldQueue
         $subject = $params['subject'];
         $params['template_name'] = 'mail.' . config('v2board.email_template', 'default') . '.' . $params['template_name'];
         try {
-            sleep(2); 
+            if ($this->queue !== 'send_email_mass') {
+                sleep(2);
+            }
             Mail::send(
                 $params['template_name'],
                 $params['template_value'],
@@ -72,5 +86,29 @@ class SendEmailJob implements ShouldQueue
         MailLog::create($log);
         $log['config'] = config('mail');
         return $log;
+    }
+
+    protected function bulkRateLimitKey()
+    {
+        return 'send_email_mass:rate:' . hash('sha256', base_path());
+    }
+
+    protected function acquireBulkSendSlot()
+    {
+        // Redis time and one atomic sliding window coordinate all site workers.
+        $script = <<<'LUA'
+local clock = redis.call('TIME')
+local now = clock[1] * 1000 + math.floor(clock[2] / 1000)
+redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', now - 1000)
+if redis.call('ZCARD', KEYS[1]) >= 10 then
+    return 0
+end
+redis.call('ZADD', KEYS[1], now, ARGV[1])
+redis.call('PEXPIRE', KEYS[1], 1000)
+return 1
+LUA;
+
+        return (bool) Redis::connection(config('queue.connections.redis.connection', 'default'))
+            ->eval($script, 1, $this->bulkRateLimitKey(), bin2hex(random_bytes(16)));
     }
 }

@@ -2,7 +2,6 @@
 namespace App\Services;
 
 
-use App\Jobs\SendEmailJob;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
@@ -63,7 +62,6 @@ class TicketService {
             abort(500, '工单回复失败');
         }
         DB::commit();
-        $this->sendEmailNotify($ticket, $ticketMessage);
     }
 
     public function autoReplyByAi(Ticket $ticket, $question = '', $source = 'user_ticket')
@@ -159,7 +157,6 @@ class TicketService {
         if (!$created) {
             return false;
         }
-        $this->sendEmailNotify($created[0], $created[1]);
         return true;
     }
 
@@ -205,23 +202,4 @@ class TicketService {
         ];
     }
 
-    // 半小时内不再重复通知
-    private function sendEmailNotify(Ticket $ticket, TicketMessage $ticketMessage)
-    {
-        $user = User::find($ticket->user_id);
-        $cacheKey = 'ticket_sendEmailNotify_' . $ticket->user_id;
-        if (!Cache::get($cacheKey)) {
-            Cache::put($cacheKey, 1, 1800);
-            SendEmailJob::dispatch([
-                'email' => $user->email,
-                'subject' => '您在' . config('v2board.app_name', 'V2Board') . '的工单得到了回复',
-                'template_name' => 'notify',
-                'template_value' => [
-                    'name' => config('v2board.app_name', 'V2Board'),
-                    'url' => config('v2board.app_url'),
-                    'content' => "主题：{$ticket->subject}\r\n回复内容：{$ticketMessage->message}"
-                ]
-            ]);
-        }
-    }
 }

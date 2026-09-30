@@ -78,7 +78,7 @@ class UserController extends Controller
                     'url' => config('v2board.app_url'),
                     'content' => $request->input('content')
                 ]
-            ]);
+            ], 'send_email_mass');
         }
 
         return response([
