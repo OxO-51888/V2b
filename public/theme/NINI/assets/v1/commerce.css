@@ -1,0 +1,710 @@
+.nini-app .commerce-page{display:grid;gap:20px;min-width:0}
+.nini-app .commerce-page .plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px;min-width:0}
+.nini-app.modal form[data-form^="commerce-"]{display:grid;gap:15px}
+.nini-app .commerce-page h2,.nini-app .commerce-page h3{margin:0 0 8px}
+.nini-app .commerce-tabs{width:fit-content;max-width:100%;padding:5px;border:1px solid #ffc3dc;border-radius:32px;background:linear-gradient(180deg,#fff,#fff4f9);box-shadow:0 3px 0 #ffe9f2;gap:4px;overflow:auto;flex-wrap:nowrap}
+.nini-app .commerce-tabs .button{white-space:nowrap;min-width:90px;border-color:transparent;box-shadow:none;flex-shrink:0}
+.nini-app .commerce-tabs .active{color:#fff;background:linear-gradient(170deg,#ff89bb,#ff4997);border:1px solid #ff5c9f;box-shadow:inset 0 0 0 2px #ffffff88,0 3px 0 #ffd9e9}
+.nini-app .commerce-plan{position:relative;display:flex;flex-direction:column;gap:14px;padding:24px 20px 20px;border:1px solid #ffc9df;border-radius:20px;background:radial-gradient(ellipse at 30% 0,#fff2f8,transparent 55%),#fff;box-shadow:0 5px 15px #db8eaa09;min-width:0}
+.nini-app .commerce-plan:before{content:"";position:absolute;inset:7px;border:1px dashed #ffd7e7;border-radius:15px;pointer-events:none}
+.nini-app .commerce-plan.selected{border:2px solid #ff64a3;padding:23px 19px 19px;box-shadow:0 0 0 4px #fff,0 0 0 5px #ffb8d3;background:radial-gradient(ellipse at 20% 0,#ffe2ef,transparent 68%),#fff}
+.nini-app .commerce-plan.selected:after{content:"♡";position:absolute;right:17px;top:9px;color:#ff77ae;font-size:29px;text-shadow:0 2px #fff;pointer-events:none}
+.nini-app .commerce-plan-head{display:flex;align-items:center;gap:8px;margin-top:5px;min-height:114px}
+.nini-app .commerce-plan h2{font-size:21px;overflow-wrap:anywhere;padding-right:12px}
+.nini-app .commerce-gift{width:105px;height:105px;flex-shrink:0;filter:drop-shadow(0 4px 2px #ffdee9)}
+.nini-app .commerce-plan .price{display:block;font-size:33px;line-height:1.25;overflow-wrap:anywhere}
+.nini-app .commerce-plan .price small{font-size:13px;color:var(--muted,#8b7191);font-weight:400;white-space:nowrap}
+.nini-app .commerce-plan-current{position:absolute;top:-12px;right:16px;padding:4px 15px;border-radius:14px;border:1px solid #ffcbe1;background:#fff7fb;color:var(--pink,#ff4f98);font-size:12px;z-index:1}
+.nini-app .commerce-feature-list{display:grid;gap:11px;padding:0;margin:0;list-style:none;font-size:14px}
+.nini-app .commerce-feature-list li{display:flex;gap:12px;align-items:center}
+.nini-app .commerce-feature-list svg{width:22px;height:22px;color:var(--pink,#ff4f98);flex-shrink:0}
+.nini-app .commerce-plan-content{font-size:13px;color:var(--muted,#81698a);line-height:1.75;overflow-wrap:anywhere}
+.nini-app .commerce-plan-content p{margin:0 0 6px}
+.nini-app .commerce-plan>.button{margin-top:auto;justify-content:center;gap:24px;width:100%;min-height:47px;font-weight:700;font-size:17px}
+.nini-app .commerce-purchase{border-style:solid!important;border-color:#ff89b8!important}
+.nini-app .commerce-purchase-grid{display:grid;grid-template-columns:1.25fr 1fr .85fr;gap:23px}
+.nini-app .commerce-purchase-grid>section+section{border-left:1px dashed #ffc7de;padding-left:23px}
+.nini-app .commerce-purchase-grid h3{font-size:14px;margin-bottom:15px}
+.nini-app .commerce-periods{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:9px}
+.nini-app .commerce-period{display:grid;gap:8px;justify-items:center;min-height:77px;border:1px dashed #ffb6d2;padding:12px 9px;border-radius:13px;background:linear-gradient(#fff,#fff7fa);color:var(--text,#322238);cursor:pointer;font-size:13px}
+.nini-app .commerce-period.selected{border:1px solid #ff4f98;background:linear-gradient(#fff3f8,#ffe8f1);color:var(--pink,#ff4f98);box-shadow:inset 0 0 0 3px #ffffff88}
+.nini-app .commerce-coupon-state{margin-top:9px;gap:6px}
+.nini-app .commerce-buy-total{display:flex;flex-direction:column;justify-content:center;gap:7px}
+.nini-app .commerce-buy-total .price{font-size:35px;line-height:1.25;overflow-wrap:anywhere}
+.nini-app .commerce-buy-total .primary{width:100%;font-size:18px;font-weight:700}
+.nini-app .commerce-page .small{line-height:1.7}
+.nini-app .commerce-page .inline-form{display:flex;align-items:flex-start;gap:8px;min-width:0}
+.nini-app .commerce-page .inline-form>.input{min-width:0;flex:1}
+.nini-app .commerce-page .inline-form>.button{flex-shrink:0}
+.nini-app .commerce-page .ticket-stamp{display:inline-block;max-width:100%;padding:10px 13px;background:linear-gradient(160deg,#40353e,#221d25);color:#ffe4f1;font-weight:700;border-radius:7px;outline:1px dashed #f8b6d4;outline-offset:-5px;box-shadow:0 3px 0 #f8dce8;overflow-wrap:anywhere}
+.nini-app .commerce-order-layout{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(300px,1fr);gap:18px;align-items:start}
+.nini-app .commerce-order-table th,.nini-app .commerce-order-table td{padding:15px 12px;font-size:13px}
+.nini-app .commerce-order-table .ticket-stamp{font-size:12px;min-width:118px}
+.nini-app .commerce-order-table tr.selected td{background:#fff0f7}
+.nini-app .commerce-order-plan{display:block;margin-top:8px;max-width:200px;overflow-wrap:anywhere}
+.nini-app .commerce-money{font-weight:700;color:var(--pink,#ff4f98);white-space:nowrap}
+.nini-app .commerce-order-table .button{min-height:34px;padding:6px 18px}
+.nini-app .commerce-order-detail{border-style:dashed!important;border-color:#ffa7ca!important;overflow:hidden}
+.nini-app .commerce-order-detail .card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;background:linear-gradient(110deg,#ffedf6,#fff)!important}
+.nini-app .commerce-order-stamp{display:grid;justify-items:center;gap:8px;margin-bottom:22px}
+.nini-app .commerce-order-stamp .ticket-stamp{font-size:17px;letter-spacing:.4px}
+.nini-app .commerce-detail-line{padding:10px 0;border-bottom:1px dashed #ffd1e3;font-size:14px;gap:14px;align-items:flex-start}
+.nini-app .commerce-detail-line>strong{text-align:right;max-width:68%;overflow-wrap:anywhere}
+.nini-app .commerce-grand-total{font-size:17px;margin-bottom:18px}
+.nini-app .commerce-grand-total strong{font-size:24px;color:var(--pink,#ff4f98)}
+.nini-app .commerce-order-detail form>.primary{width:100%;margin-top:15px;font-size:19px;font-weight:700}
+.nini-app .commerce-order-detail .link{display:block;margin:12px auto 0;background:none;border:0;box-shadow:none;color:var(--muted,#897187)}
+.nini-app .commerce-payments{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:9px}
+.nini-app .commerce-payment{display:flex;align-items:center;gap:9px;border:1px solid #f0d4e1;border-radius:13px;background:#fff;padding:11px 9px;color:var(--text,#322238);font:inherit;cursor:pointer;font-size:13px;min-width:0}
+.nini-app .commerce-payment img,.nini-app .commerce-payment svg{width:26px;height:26px;object-fit:contain;flex-shrink:0}
+.nini-app .commerce-payment.selected{border-color:var(--pink,#ff4f98);background:#fff2f8;box-shadow:inset 0 0 0 2px #fff}
+.nini-app .commerce-payment span{overflow-wrap:anywhere}
+.nini-app .commerce-check-status{text-align:center;margin-top:10px}
+.nini-app .commerce-check-status p{min-height:20px;margin:8px 0}
+.nini-app .commerce-check-status .button{min-height:32px;font-size:12px}
+.nini-app .commerce-detail-art{display:block;width:190px;max-height:210px;object-fit:contain;margin:12px auto -20px;object-position:center bottom;pointer-events:none}
+.nini-app .commerce-thankyou{display:flex;align-items:center;gap:20px;border:1px dashed #ffa2c6;border-radius:19px;padding:14px 22px;background:repeating-conic-gradient(#fff7fa 0 25%,#fff 0 50%) 0/28px 28px}
+.nini-app .commerce-thankyou .commerce-gift{width:83px;height:83px}
+.nini-app .commerce-thankyou strong{font-size:21px;color:#6f477b}
+.nini-app .commerce-thankyou p{font-size:13px;margin:7px 0}
+.nini-app .commerce-stripe{margin-top:16px;display:grid;gap:9px;font-size:13px}
+.nini-app .commerce-stripe .input{background:#fff;min-height:48px;display:block;padding:15px 10px}
+.nini-app [data-commerce-stripe-error]{color:#ce3567}
+.commerce-qr{width:248px;height:248px;margin:16px auto;border:12px solid #fff;box-sizing:content-box;max-width:calc(100% - 24px)}
+.commerce-qr img,.commerce-qr canvas{max-width:100%;height:auto!important}
+.nini-app .commerce-invite-stats{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:16px}
+.nini-app .commerce-stat{display:flex;align-items:center;gap:17px;padding:24px}
+.nini-app .commerce-stat-icon{width:58px;height:58px;display:grid;place-items:center;border:1px solid #ffd1e5;background:linear-gradient(135deg,#fff,#ffe7f2);border-radius:50%;color:var(--pink,#ff4f98);flex-shrink:0}
+.nini-app .commerce-stat-icon svg{width:32px;height:32px}
+.nini-app .commerce-stat .metric-value{display:block;margin-top:12px;font-size:32px}
+.nini-app .commerce-stat .metric-value small{font-size:19px}
+.nini-app .commerce-commission-wallet{padding:24px;display:grid;align-content:center;gap:15px}
+.nini-app .commerce-commission-wallet .metric-value{font-size:30px;overflow-wrap:anywhere}
+.nini-app .commerce-commission-wallet .button{padding:8px 21px;min-height:38px}
+.nini-app .commerce-invite-layout{display:grid;grid-template-columns:minmax(300px,1fr) minmax(0,1.6fr);gap:18px;align-items:start}
+.nini-app .commerce-invite-card{border-style:dashed!important;border-color:#ffb3d1!important}
+.nini-app .commerce-invite-codes{display:grid;gap:17px;margin-bottom:18px}
+.nini-app .commerce-invite-code{display:grid;gap:14px;padding:12px 0 18px;border-bottom:1px dashed #ffd5e6}
+.nini-app .commerce-invite-code .ticket-stamp{font-size:26px;letter-spacing:2px;text-align:center;padding:17px;justify-self:center;min-width:210px}
+.nini-app .commerce-copy-field{display:flex;gap:8px;margin:12px 0;align-items:center;min-width:0}
+.nini-app .commerce-copy-field .input{min-width:0;flex:1;font-size:12px}
+.nini-app .commerce-copy-field .button{flex-shrink:0;padding-left:15px;padding-right:15px}
+.nini-app .commerce-commission-summary{margin:0 0 17px;padding:13px;background:#fff4f9;border:1px solid #ffe0ed;border-radius:13px;gap:10px;font-size:13px}
+.nini-app .commerce-commission-summary strong{color:var(--pink,#ff4f98);margin-left:5px}
+.nini-app .commerce-trade-cell{font-size:12px;word-break:break-all;max-width:190px}
+.nini-app .commerce-identity{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(300px,1fr);gap:26px;padding:27px;background:linear-gradient(90deg,#ffeff7dc,#ffffffda),repeating-conic-gradient(#ffe0ed 0 25%,#fff 0 50%) 0/32px 32px;border:1px dashed #ffadd0!important;box-shadow:inset 0 0 0 6px #fff;align-items:center}
+.nini-app .commerce-identity>.row{gap:20px;flex-wrap:nowrap}
+.nini-app .commerce-identity h2{font-size:24px;overflow-wrap:anywhere}
+.nini-app .commerce-identity p{font-size:13px;margin:12px 0 0}
+.nini-app .commerce-avatar{width:91px;height:91px;border-radius:50%;border:5px solid #fff;outline:1px solid #ffa7cd;box-shadow:0 5px 14px #e690b033;flex-shrink:0}
+.nini-app .commerce-avatar-fallback{display:grid;place-items:center;font-size:42px;background:#ffe0ef;color:#e84d91}
+.nini-app .commerce-identity-meta{border-left:1px dashed #ffb7d4;padding-left:24px}
+.nini-app .commerce-identity-meta .commerce-detail-line{font-size:13px}
+.nini-app .commerce-identity-meta .commerce-detail-line:last-child{border-bottom:0}
+.nini-app .commerce-profile-grid{align-items:start}
+.nini-app .commerce-wallet-ticket{display:flex!important;flex-direction:column;gap:7px;min-width:220px;padding:20px 27px!important}
+.nini-app .commerce-wallet-ticket>span{font-size:13px;font-weight:400}
+.nini-app .commerce-wallet-ticket>strong{font-size:30px;color:#ffc8e3}
+.nini-app .commerce-setting-row{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px;border:1px solid #ffd3e6;border-radius:15px;margin-top:13px;background:linear-gradient(110deg,#fff,#fff9fc)}
+.nini-app .commerce-setting-row strong{font-size:14px}
+.nini-app .commerce-setting-row p{font-size:12px;margin:5px 0 0;line-height:1.6}
+.nini-app .commerce-setting-row>.button{flex-shrink:0;min-height:35px;padding:6px 25px;font-size:13px}
+.nini-app .commerce-setting-row .switch{width:53px;height:30px;min-width:53px;position:relative;padding:3px;border:1px solid #e6cdd9;background:#e6dce3;border-radius:20px;cursor:pointer;box-shadow:none}
+.nini-app .commerce-setting-row .switch>span{display:block;position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 0 #82567425;transition:transform .15s}
+.nini-app .commerce-setting-row .switch.on{background:linear-gradient(150deg,#ff8ebf,#ff4c9a);border-color:#ff72ad}
+.nini-app .commerce-setting-row .switch.on>span{transform:translateX(22px)}
+.nini-app .commerce-notifications{padding:16px;border:1px dashed #ffb9d4;border-radius:16px;margin-top:15px}
+.nini-app .commerce-notifications h3{font-size:15px}
+.nini-app .commerce-notifications .commerce-setting-row{padding:12px;margin-top:10px}
+.nini-app .commerce-security .card-body>.commerce-setting-row:first-child{margin-top:0}
+.nini-app .commerce-gift-footer{height:160px;display:flex;gap:10px;align-items:center;justify-content:center;background:radial-gradient(ellipse at bottom,#ffdfef70,transparent 68%);overflow:hidden;margin:0 -12px -20px;pointer-events:none}
+.nini-app .commerce-gift-footer img{height:170px;width:190px;object-fit:contain;align-self:flex-end;object-position:center bottom}
+.nini-app .commerce-gift-footer span{text-align:center;font-size:14px;line-height:1.8;color:#b55d8b;padding:16px;border:1px dashed #ffbfd9;border-radius:30px;background:#fff8fc}
+
+
+
+
+
+/* Approved 1536 x 1024 composition: only artwork is clipped from the originals.
+   Fixed tracks below sum to the same 1206px content width. Integer pixel origins
+   prevent native-size PNG fragments and 1px borders from being resampled. */
+.nini-app .commerce-page{gap:16px;margin-left:0;margin-right:0;color:#201332}
+.nini-app .commerce-page svg.reference-fragment,.nini-app .commerce-page svg.original-fragment{display:block;pointer-events:none;flex-shrink:0}
+.nini-app .commerce-semantic-heading{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
+.nini-app .commerce-fidelity-hero{position:relative;isolation:isolate;min-width:0;overflow:hidden;border:1px solid #ff9ec6;border-radius:17px;background:repeating-conic-gradient(#ffe2ed66 0 25%,#fff5f8aa 0 50%) 0/54px 54px;box-shadow:inset 0 0 0 4px #fff8fc}
+.nini-app .commerce-fidelity-hero:before,.nini-app .commerce-fidelity-hero:after{content:"";position:absolute;left:0;right:0;height:25px;z-index:4;pointer-events:none;background:radial-gradient(circle at 50% -3px,#fff 17px,#ffd7e6 18px,#fff0 19px) 0 0/39px 25px repeat-x}
+.nini-app .commerce-fidelity-hero:before{top:0}
+.nini-app .commerce-fidelity-hero:after{bottom:0;transform:rotate(180deg)}
+.nini-app .commerce-hero-original{position:absolute;right:-1px;bottom:-1px;pointer-events:none;z-index:1;display:block}
+.nini-app .commerce-hero-copy{position:absolute;left:44px;z-index:3;right:360px;top:68px}
+.nini-app .commerce-hero-copy p{margin:10px 0 0;font-size:19px;line-height:1.4;color:#1d1330;white-space:nowrap}
+.nini-app .commerce-heading-original{display:block;max-width:100%;height:auto;pointer-events:none}
+.nini-app .commerce-hero-label{position:absolute;left:20px;top:-1px;z-index:4;pointer-events:none}
+.nini-app .commerce-hero-cart{position:absolute;left:16px;top:20px;width:100px;height:98px;z-index:4}
+.nini-app .commerce-hero-heart{position:absolute;left:0;top:4px;width:47px;height:50px}
+.nini-app .commerce-hero-plan{height:181px}
+.nini-app .commerce-hero-plan .commerce-hero-original{width:550px;height:197px}
+.nini-app .commerce-hero-plan .commerce-hero-copy{left:131px;top:28px;right:400px}
+.nini-app .commerce-hero-plan .commerce-heading-original{width:249px;height:54px}
+.nini-app .commerce-hero-plan .commerce-hero-copy p{font-size:18px;margin-top:0}
+.nini-app .commerce-hero-order{height:222px}
+.nini-app .commerce-hero-order .commerce-hero-original{width:778px;height:232px}
+.nini-app .commerce-hero-order .commerce-heading-original{width:350px;height:74px}
+.nini-app .commerce-hero-order .commerce-hero-label{width:222px;height:67px}
+.nini-app .commerce-hero-order .commerce-hero-copy p{margin-top:8px}
+.nini-app .commerce-hero-invite{height:285px}
+.nini-app .commerce-hero-invite .commerce-hero-original{width:623px;height:300px}
+.nini-app .commerce-hero-invite .commerce-heading-original{width:507px;height:72px}
+.nini-app .commerce-hero-invite .commerce-hero-label{width:250px;height:66px}
+.nini-app .commerce-hero-invite .commerce-hero-copy{top:72px}
+.nini-app .commerce-hero-invite .commerce-hero-copy p{margin-top:12px;font-size:19px}
+.nini-app .commerce-invite-points{display:flex;gap:23px;margin-top:23px;font-size:16px;white-space:nowrap}
+.nini-app .commerce-invite-points span::first-letter{color:#ff65a3;font-size:25px}
+.nini-app .commerce-hero-profile{height:100px;overflow:visible;border:0;background:none;box-shadow:none;z-index:2}
+.nini-app .commerce-hero-profile:before,.nini-app .commerce-hero-profile:after{display:none}
+.nini-app .commerce-hero-profile .commerce-hero-copy{left:52px;top:5px;right:500px}
+.nini-app .commerce-hero-profile .commerce-heading-original{width:270px;height:60px}
+.nini-app .commerce-hero-profile .commerce-hero-copy p{margin:5px 0 0;font-size:19px;color:#59436d}
+.nini-app .commerce-hero-profile .commerce-hero-original{width:624px;height:220px;top:-18px;right:0;bottom:auto;z-index:5}
+.nini-app .commerce-page-plan{margin-top:2px}
+.nini-app .commerce-plan-hero{position:relative}
+.nini-app .commerce-plan-hero>.commerce-tabs{position:absolute;left:15px;bottom:3px;width:463px;height:53px;margin:0;z-index:5;padding:3px;overflow:visible}
+.nini-app .commerce-tabs{padding:4px;background:#fffafce8;box-shadow:inset 0 0 0 3px white;gap:0}
+.nini-app .commerce-tabs .button{min-width:0;flex:1;font-size:17px;padding:8px 21px;min-height:43px;font-weight:500}
+.nini-app .commerce-tabs .button.active{font-weight:700;background:linear-gradient(160deg,#ff84b7,#ff4a94);box-shadow:inset 0 0 0 3px #ffffff66,0 0 0 1px #ff77ae,0 3px 0 #ffd1e3}
+.nini-app .commerce-tabs .button.active:after{content:"★";color:#ffe49f;font-size:20px;margin-left:8px;-webkit-text-stroke:1px white}
+.nini-app .commerce-tabs .button:not(.active)+.button:not(.active):before{content:"";height:16px;border-left:1px solid #ffc1dc;position:absolute;left:0}
+.nini-app .commerce-tabs .button{position:relative}
+.nini-app .commerce-page-plan .plan-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.nini-app .commerce-page-plan .commerce-plan{height:auto;min-height:400px;align-self:start;padding:13px 16px 17px;gap:8px;border-radius:14px;display:grid;grid-template-rows:137px minmax(0,1fr) 54px;background:linear-gradient(120deg,#fffaff,#fff);overflow:visible}
+.nini-app .commerce-page-plan .commerce-plan:before{inset:8px;border-color:#ffe0ed;border-style:solid;border-radius:12px}
+.nini-app .commerce-page-plan .commerce-plan.selected{padding:12px 15px 16px;border:2px solid #ff559c;box-shadow:inset 0 0 0 3px white;background:radial-gradient(ellipse at 50% 20%,#fff2f8,#fff9fc 70%)}
+.nini-app .commerce-page-plan .commerce-plan.selected:after{content:"";inset:7px;border:3px solid #ffe6f0;border-radius:12px;background:none;pointer-events:none}
+.nini-app .commerce-page-plan .commerce-plan-current{top:-21px;left:50%;right:auto;transform:translateX(-50%) rotate(-2deg);border:0;border-radius:6px;background:#30272f;color:#fff;padding:7px 17px;font-size:21px;line-height:1.2;white-space:nowrap;display:flex;gap:9px;align-items:center;z-index:5;box-shadow:none}
+.nini-app .commerce-page-plan .commerce-plan-current .icon{color:#ffe6b0;width:27px;height:27px}
+.nini-app .commerce-page-plan .commerce-plan-head{margin:0;min-height:0;gap:0;height:137px;flex-direction:row;align-items:center;position:relative;z-index:1}
+.nini-app .commerce-page-plan .commerce-plan-head .commerce-gift{width:137px;height:140px;filter:none;flex:0 0 137px}
+.nini-app .commerce-page-plan .commerce-plan:nth-child(3n) .commerce-gift{width:151px;flex-basis:151px}
+.nini-app .commerce-page-plan .commerce-plan-head>div{padding-top:7px;min-width:0}
+.nini-app .commerce-page-plan .commerce-plan h2{font-size:23px;line-height:1.2;margin:0;padding:0;font-weight:800;color:#16101f}
+.nini-app .commerce-page-plan .commerce-plan .price{font-size:42px;line-height:1.1;margin-top:31px;color:#f50077;letter-spacing:-1px;white-space:nowrap}
+.nini-app .commerce-page-plan .commerce-plan .price small{font-size:18px;letter-spacing:0;color:#4b365f}
+.nini-app .commerce-page-plan .commerce-feature-list{display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:0;padding:4px 10px 0;margin:0;font-size:16px;line-height:1.25;position:relative;z-index:1;scrollbar-width:thin}
+.nini-app .commerce-page-plan .commerce-feature-list li{gap:19px;min-height:25px;flex-shrink:0}
+.nini-app .commerce-page-plan .commerce-feature-list .icon{width:24px;height:24px;color:#ff347f;flex-shrink:0}
+.nini-app .commerce-page-plan .commerce-plan-content{font-size:14px;color:#594870;line-height:1.25;align-items:flex-start}
+.nini-app .commerce-page-plan .commerce-plan-content .article{line-height:1.4}
+.nini-app .commerce-page-plan .commerce-plan-content p{margin:0}
+.nini-app .commerce-page-plan .commerce-plan>.button{min-height:54px;height:54px;font-size:22px;position:relative;z-index:3;gap:25px;font-weight:700;line-height:1}
+.nini-app .commerce-page-plan .commerce-plan>.button>span{font-size:35px;font-weight:400}
+.nini-app .commerce-page-plan .commerce-purchase{min-height:259px;box-shadow:inset 0 0 0 5px #fff;border-radius:10px;border-color:#ff70ad!important}
+.nini-app .commerce-page-plan .commerce-purchase>.card-head{height:62px;padding:8px 16px 8px 6px;border-bottom:1px solid #ffe2ec;flex-wrap:nowrap;background:#fffafdbb}
+.nini-app .commerce-purchase-title{display:flex;align-items:center;gap:19px;min-width:0}
+.nini-app .commerce-purchase-title .commerce-heading-icon{width:53px;height:52px}
+.nini-app .commerce-purchase-title h2{margin:0;white-space:nowrap;font-size:29px;font-weight:800;color:#201629}
+.nini-app .commerce-purchase-title .small{font-size:15px;white-space:nowrap}
+.nini-app .commerce-chosen-plan{font-size:15px;color:#867094;white-space:nowrap;margin-right:110px}
+.nini-app .commerce-chosen-plan .badge{border-radius:7px;padding:5px 15px;font-size:16px;background:#ffedf6;color:#f21679}
+.nini-app .commerce-page-plan .commerce-purchase-grid{grid-template-columns:402px 363px 355px;gap:18px;padding:16px 24px 12px;min-height:189px}
+.nini-app .commerce-page-plan .commerce-purchase-grid>section+section{padding-left:18px;border-left:1px dashed #ffc1d9;border-top:0}
+.nini-app .commerce-page-plan .commerce-purchase-grid h3{display:flex;align-items:center;gap:16px;font-size:16px;color:#241833;margin:0 0 10px;font-weight:700;line-height:28px}
+.nini-app .commerce-page-plan .commerce-purchase-grid h3>.icon{height:30px;width:30px;color:#ff277d}
+.nini-app .commerce-page-plan .commerce-periods{gap:10px;grid-template-columns:repeat(auto-fit,minmax(105px,1fr))}
+.nini-app .commerce-page-plan .commerce-period{height:91px;padding:12px 5px 8px;gap:4px;align-content:start;font-size:16px;border-radius:12px;line-height:1.3}
+.nini-app .commerce-page-plan .commerce-period strong{font-size:17px}
+.nini-app .commerce-page-plan .commerce-period small{font-size:12px;white-space:nowrap;color:#87729d}
+.nini-app .commerce-page-plan .commerce-period.selected{color:#fe006d;background:linear-gradient(#fff5fa,#ffeaf2);border-color:#ff458f}
+.nini-app .commerce-page-plan .commerce-purchase .inline-form{gap:10px;flex-wrap:nowrap;margin-top:15px}
+.nini-app .commerce-page-plan .commerce-purchase .inline-form .input{height:47px;font-size:17px}
+.nini-app .commerce-page-plan .commerce-purchase .inline-form .button{height:47px;border-radius:8px;padding:8px 23px;font-size:18px;box-shadow:inset 0 0 0 2px #ff95c1;background:linear-gradient(#ff76ac,#ff4c91)}
+.nini-app .commerce-page-plan .commerce-coupon-state:empty{display:none}
+.nini-app .commerce-page-plan .commerce-purchase .small{font-size:13px;margin:10px 0 0;line-height:1.4}
+.nini-app .commerce-page-plan .commerce-buy-total{display:flex;grid-column:auto;gap:0;justify-content:flex-start;align-items:stretch}
+.nini-app .commerce-page-plan .commerce-buy-total h3{margin-bottom:0}
+.nini-app .commerce-page-plan .commerce-buy-total .price{font-size:41px;line-height:1.15;padding-left:54px;margin:0 0 4px;color:#f00078}
+.nini-app .commerce-page-plan .commerce-buy-total .primary{height:52px;font-size:22px;letter-spacing:2px}
+.nini-app .commerce-page-plan .commerce-buy-total .primary .icon{width:26px;height:26px}
+.nini-app .commerce-page-plan .commerce-buy-total>.small{text-align:center;font-size:13px;margin-top:12px}
+.nini-app .commerce-page-order{margin-top:0;gap:14px}
+.nini-app .commerce-page-order .commerce-order-layout{grid-template-columns:802px 388px;gap:16px;align-items:start}
+.nini-app .commerce-page-order .commerce-order-layout>.stack{gap:14px}
+.nini-app .commerce-page-order .commerce-tabs{height:57px;width:625px;max-width:100%;border-radius:32px}
+.nini-app .commerce-page-order .commerce-tabs .button{font-size:18px;min-height:44px}
+.nini-app .commerce-page-order .commerce-order-list{height:420px;min-height:420px;border-radius:15px;border-color:#ffd3e5;display:flex;flex-direction:column;overflow:hidden}
+.nini-app .commerce-page-order .commerce-order-list .table-wrap{flex:1;border-radius:13px 13px 0 0}
+.nini-app .commerce-page-order .commerce-order-table{font-size:16px;border-collapse:separate;border-spacing:0 5px;table-layout:fixed;margin-top:-5px;min-width:740px}
+.nini-app .commerce-page-order .commerce-order-table th{height:49px;font-size:17px;font-weight:500;text-align:center;color:#fc2076;background:#ffedf4;padding:10px 7px}
+.nini-app .commerce-page-order .commerce-order-table th:nth-child(1){width:23%}
+.nini-app .commerce-page-order .commerce-order-table th:nth-child(2){width:12%}
+.nini-app .commerce-page-order .commerce-order-table th:nth-child(3){width:14%}
+.nini-app .commerce-page-order .commerce-order-table th:nth-child(4){width:15%}
+.nini-app .commerce-page-order .commerce-order-table th:nth-child(5){width:21%}
+.nini-app .commerce-page-order .commerce-order-table th:nth-child(6){width:15%}
+.nini-app .commerce-page-order .commerce-order-table td{height:69px;text-align:center;font-size:16px;padding:5px 8px;border-top:1px solid #ffdbeb;border-bottom:1px solid #ffdbeb;background:transparent}
+.nini-app .commerce-page-order .commerce-order-table td:first-child{border-left:1px solid #ffdbeb;border-radius:15px 0 0 15px}
+.nini-app .commerce-page-order .commerce-order-table td:last-child{border-right:1px solid #ffdbeb;border-radius:0 15px 15px 0}
+.nini-app .commerce-page-order .commerce-order-table .selected td{border-color:#ff8bbb;background:transparent}
+.nini-app .commerce-page-order .commerce-order-table .commerce-money{font-size:21px;color:#ff207e}
+.nini-app .commerce-page-order .commerce-order-table .badge{min-height:37px;border-radius:20px;font-size:16px;padding:4px 13px;background:#fff0f6;outline:1px dotted #ffb2d2;outline-offset:2px}
+.nini-app .commerce-page-order .commerce-order-table .badge.success{color:#1ba7a5;background:#f2fffc;outline-color:#94ddd2}
+.nini-app .commerce-page-order .commerce-order-table .badge.muted{color:#6d647a;background:#faf9fc;border-color:#c8bfd1;outline-color:#d4cbdc}
+.nini-app .commerce-page-order .commerce-order-table .button{height:39px;min-height:39px;padding:4px 24px;font-size:17px}
+.nini-app .commerce-page .ticket-stamp{position:relative;border:0;outline:0;border-radius:5px;background:#2d2630;color:#ffedf7;box-shadow:none;padding:9px 12px;isolation:isolate}
+.nini-app .commerce-page .ticket-stamp:before{content:"";position:absolute;inset:4px;border:1px dashed #d79dbb;border-radius:4px;pointer-events:none;opacity:.6}
+.nini-app .commerce-page-order .commerce-order-table .ticket-stamp{font-size:16px;line-height:1.2;letter-spacing:0;min-width:132px;max-width:100%;white-space:normal;word-break:break-all;padding:12px 10px}
+.nini-app .commerce-page-order .commerce-order-list>.pagination{height:66px;min-height:66px;justify-content:center;gap:18px;padding:12px}
+.nini-app .commerce-page-order .commerce-order-list>.pagination .button{border-radius:9px;padding:5px 12px;font-size:13px;min-height:35px}
+.nini-app .commerce-page-order .commerce-order-list>.pagination>span{padding:7px 12px;background:#ff5f9f;color:white;border-radius:8px;font-size:15px}
+.nini-app .commerce-page-order .commerce-thankyou{border:0;background:none;padding:0;height:137px;margin-top:2px;border-radius:0;display:block}
+.nini-app .commerce-page-order .commerce-original-thanks{display:block;width:100%;height:137px}
+.nini-app .commerce-page-order .commerce-order-detail{min-height:660px;padding:0;border-radius:15px;box-shadow:inset 0 0 0 5px #fff;background:linear-gradient(120deg,#fff,#fff9fc);border-color:#ff90bd!important}
+.nini-app .commerce-page-order .commerce-order-detail>.card-head{height:53px;padding:0 30px;position:relative;background:none!important;justify-content:center}
+.nini-app .commerce-page-order .commerce-order-detail>.card-head h2{height:48px;min-width:203px;padding:7px 18px;background:linear-gradient(#ff9ec8,#ff65a6);border:4px double white;color:white;text-shadow:0 1px #d04d86;font-size:23px;letter-spacing:2px;transform:rotate(-3deg);justify-content:center;box-shadow:0 0 0 1px #ff8db8;margin-top:-6px}
+.nini-app .commerce-page-order .commerce-order-detail>.card-head h2:before,.nini-app .commerce-page-order .commerce-order-detail>.card-head h2:after{content:"";position:absolute;width:20px;top:8px;bottom:4px;background:#ff9ec8;border:1px solid #ff5e9e;z-index:-1}
+.nini-app .commerce-page-order .commerce-order-detail>.card-head h2:before{left:-21px;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,35% 50%)}
+.nini-app .commerce-page-order .commerce-order-detail>.card-head h2:after{right:-21px;clip-path:polygon(0 0,100% 0,65% 50%,100% 100%,0 100%)}
+.nini-app .commerce-page-order .commerce-order-refresh-icon{position:absolute;right:12px;top:13px;width:29px;height:29px;min-height:29px;padding:4px;border:0;color:#ffb369;background:#fff7ed;border-radius:50%;box-shadow:none}
+.nini-app .commerce-page-order .commerce-order-refresh-icon .icon{width:20px;height:20px}
+.nini-app .commerce-page-order .commerce-order-detail>.card-body{padding:0 28px 0}
+.nini-app .commerce-page-order .commerce-order-stamp{gap:6px;margin:3px 0 9px;height:84px;align-content:start}
+.nini-app .commerce-page-order .commerce-order-stamp>.small{font-size:17px;color:#55405e}
+.nini-app .commerce-page-order .commerce-order-stamp>.ticket-stamp{font-size:20px;line-height:1.25;padding:12px 14px;max-width:100%;word-break:break-all}
+.nini-app .commerce-page-order .commerce-detail-line{font-size:17px;padding:9px 2px;min-height:39px;line-height:1.3;align-items:center}
+.nini-app .commerce-page-order .commerce-detail-line>.muted{color:#5c4569}
+.nini-app .commerce-page-order .commerce-grand-total{margin:0 0 10px;min-height:52px;border-bottom-color:#ff8dbd}
+.nini-app .commerce-page-order .commerce-grand-total strong{font-size:29px;color:#ff267e}
+.nini-app .commerce-page-order .commerce-order-detail form>h3{font-size:17px;font-weight:500;margin:0 0 5px}
+.nini-app .commerce-page-order .commerce-payments{gap:9px;display:flex;flex-wrap:wrap;min-height:47px}
+.nini-app .commerce-page-order .commerce-payment{border:0;box-shadow:none;background:none;padding:5px 0;gap:9px;flex:1;min-width:135px;font-size:16px;white-space:nowrap}
+.nini-app .commerce-page-order .commerce-payment img,.nini-app .commerce-page-order .commerce-payment>.icon{width:35px;height:35px}
+.nini-app .commerce-payment-radio{width:20px;height:20px;border:2px solid #baa2c8;border-radius:50%;flex-shrink:0;box-sizing:border-box}
+.nini-app .commerce-payment.selected .commerce-payment-radio{border-color:#ff3485;background:#ff3485;box-shadow:inset 0 0 0 3px white}
+.nini-app .commerce-page-order .commerce-order-detail form>.primary{height:54px;min-height:54px;margin-top:10px;font-size:25px;letter-spacing:2px;line-height:1;padding:7px 12px}
+.nini-app .commerce-page-order .commerce-order-detail .link{height:30px;line-height:24px;margin:12px auto 0;font-size:15px;padding:0 15px;position:relative}
+.nini-app .commerce-page-order .commerce-order-detail .link:before,.nini-app .commerce-page-order .commerce-order-detail .link:after{content:"";position:absolute;top:12px;width:88px;height:1px;background:#c6b5cf}
+.nini-app .commerce-page-order .commerce-order-detail .link:before{right:100%}
+.nini-app .commerce-page-order .commerce-order-detail .link:after{left:100%}
+.nini-app .commerce-page-order .commerce-check-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.nini-app .commerce-page-order .commerce-detail-art{width:calc(100% + 38px);height:197px;max-height:none;display:block;margin:1px -19px 0;object-fit:contain}
+.nini-app .commerce-page-invite{margin-top:0;gap:15px}
+.nini-app .commerce-page-invite .commerce-invite-stats{grid-template-columns:361px 382px 435px;gap:14px;height:132px}
+.nini-app .commerce-page-invite .commerce-stat{padding:15px 16px;gap:18px;height:132px;align-items:flex-start;position:relative;border-radius:12px}
+.nini-app .commerce-page-invite .commerce-stat-icon{width:73px;height:73px;border:0;border-radius:50%;background:linear-gradient(140deg,#fff,#ffe9f4);color:#ff3488;flex:0 0 73px}
+.nini-app .commerce-page-invite .commerce-stat-icon .icon{width:44px;height:44px}
+.nini-app .commerce-page-invite .commerce-stat>.commerce-stat-icon{margin-top:0}
+.nini-app .commerce-page-invite .commerce-stat>div{padding-top:5px}
+.nini-app .commerce-page-invite .commerce-stat .muted{font-size:18px;color:#261a36}
+.nini-app .commerce-page-invite .commerce-stat .metric-value{font-size:41px;line-height:1.1;margin:21px 0 0;font-weight:800}
+.nini-app .commerce-page-invite .commerce-stat .metric-value small{font-size:23px}
+.nini-app .commerce-page-invite .commerce-commission-wallet{display:flex;gap:16px;padding:15px 16px;height:132px;grid-column:auto;align-items:flex-start;border-radius:12px}
+.nini-app .commerce-page-invite .commerce-commission-main{flex:1;min-width:0;padding-top:5px}
+.nini-app .commerce-page-invite .commerce-commission-main>.muted{font-size:18px;color:#21162e}
+.nini-app .commerce-page-invite .commerce-commission-main>.row{margin-top:22px;flex-wrap:nowrap;gap:12px}
+.nini-app .commerce-page-invite .commerce-commission-wallet .metric-value{font-size:28px;margin:0;white-space:nowrap}
+.nini-app .commerce-page-invite .commerce-commission-wallet .button{font-size:18px;min-height:42px;height:42px;padding:6px 23px}
+.nini-app .commerce-page-invite .commerce-commission-wallet .row .row{gap:13px;flex-wrap:nowrap}
+.nini-app .commerce-page-invite .commerce-invite-layout{grid-template-columns:450px 740px;gap:16px;margin-top:3px;align-items:start}
+.nini-app .commerce-fidelity-card{position:relative;border-radius:12px;box-shadow:none;overflow:hidden}
+.nini-app .commerce-fidelity-card>.card-head{height:77px;display:flex;gap:12px;justify-content:flex-start;align-items:center;padding:8px 14px 5px;background:none}
+.nini-app .commerce-fidelity-card .commerce-heading-icon{height:59px;width:59px;flex:0 0 59px;pointer-events:none}
+.nini-app .commerce-fidelity-card>.card-head h2{font-size:22px;font-weight:800;color:#21142f;margin:0;line-height:1.4}
+.nini-app .commerce-fidelity-card>.card-head p{font-size:15px;line-height:1.45;margin:2px 0 0;color:#8d77a8}
+.nini-app .commerce-fidelity-card .commerce-heading-star{width:38px;height:38px;margin-left:auto;flex:0 0 38px;pointer-events:none}
+.nini-app .commerce-page-invite .commerce-fidelity-card{min-height:405px;border:1px dashed #ff8fbd}
+.nini-app .commerce-page-invite .commerce-fidelity-card>.card-head{height:77px;padding:8px 13px 3px;gap:8px}
+.nini-app .commerce-page-invite .commerce-fidelity-card>.card-body{padding:0 18px 10px}
+.nini-app .commerce-page-invite .commerce-invite-codes{gap:15px;margin:0;grid-template-columns:1fr}
+.nini-app .commerce-page-invite .commerce-invite-code{display:flex;flex-direction:column;gap:12px;padding:0;border:0}
+.nini-app .commerce-code-sticker{height:96px;border:1px dashed #ffc3dc;border-radius:12px;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden}
+.nini-app .commerce-code-heart{position:absolute;left:0;top:8px;width:47px;height:77px;pointer-events:none}
+.nini-app .commerce-code-star{position:absolute;right:0;top:8px;width:47px;height:76px;pointer-events:none}
+.nini-app .commerce-page-invite .commerce-code-sticker .ticket-stamp{font-size:38px;letter-spacing:3px;font-weight:800;min-width:0;width:300px;max-width:75%;padding:15px 13px;color:#ffc7e4;height:81px;line-height:1.4;text-align:center}
+.nini-app .commerce-page-invite .commerce-copy-field{margin:0;border:1px solid #ffd0e3;border-radius:10px;height:44px;padding:0 12px;gap:9px;overflow:hidden}
+.nini-app .commerce-page-invite .commerce-copy-field>.icon{color:#ff4e96;width:25px;height:25px;flex-shrink:0}
+.nini-app .commerce-page-invite .commerce-copy-field .input{border:0;padding:5px 0;border-radius:0;height:40px;font-size:16px;background:none;color:#33203f;box-shadow:none}
+.nini-app .commerce-code-actions{display:grid;grid-template-columns:191px 207px;gap:14px}
+.nini-app .commerce-code-actions .button{height:54px;font-size:18px;padding:8px 16px;white-space:nowrap;gap:12px}
+.nini-app .commerce-code-actions .button .icon{width:26px;height:26px}
+.nini-app .commerce-page-invite .commerce-invite-hint{font-size:14px;line-height:1.6;margin:26px 0 0;padding:0 6px;max-width:95%;color:#8d7ca3}
+.nini-app .commerce-invite-bow{position:absolute;right:9px;bottom:0;width:73px;height:48px;pointer-events:none}
+.nini-app .commerce-page-invite .commerce-invite-records{height:206px;border:1px solid #ffdae9;border-radius:11px;scrollbar-width:thin}
+.nini-app .commerce-page-invite .commerce-invite-records table{table-layout:fixed;min-width:570px;font-size:15px}
+.nini-app .commerce-page-invite .commerce-invite-records th{height:48px;padding:10px 17px;font-size:17px;font-weight:500;color:#ff006e;background:#ffedf5;position:sticky;top:0;z-index:1}
+.nini-app .commerce-page-invite .commerce-invite-records td{height:51px;padding:9px 17px;font-size:15px;white-space:nowrap}
+.nini-app .commerce-page-invite .commerce-invite-records th:first-child{width:32%}
+.nini-app .commerce-page-invite .commerce-invite-records .badge{font-size:14px;padding:4px 13px;line-height:1.3}
+.nini-app .commerce-invite-thanks{width:100%;height:106px;display:block;margin:0;pointer-events:none}
+.nini-app .commerce-invite-pagination{position:absolute;top:14px;right:56px;display:flex;gap:6px;align-items:center;font-size:11px;opacity:.85}
+.nini-app .commerce-invite-pagination>.button{font-size:11px;min-height:22px;height:22px;padding:0 7px;border-radius:8px;border-color:#ffe3ee!important}
+.nini-app .commerce-invite-pagination>.button:last-child{margin-left:7px}
+.nini-app .commerce-page-profile{gap:10px;position:relative}
+.nini-app .commerce-page-profile .commerce-identity{height:207px;min-height:207px;display:block;position:relative;padding:0;border:1px solid #ff95be!important;border-radius:14px;background:repeating-conic-gradient(#ffe0ec88 0 25%,#fff2f8bb 0 50%) 0/51px 51px;overflow:hidden;box-shadow:inset 0 0 0 7px white;z-index:1}
+.nini-app .commerce-page-profile .commerce-identity:before,.nini-app .commerce-page-profile .commerce-identity:after{content:"";position:absolute;height:22px;left:0;right:0;z-index:4;pointer-events:none;background:radial-gradient(circle at 50% -3px,#fff 17px,#ffd7e6 18px,#fff0 19px) 0 0/33px 23px repeat-x}
+.nini-app .commerce-page-profile .commerce-identity:before{top:0}
+.nini-app .commerce-page-profile .commerce-identity:after{bottom:0;transform:rotate(180deg)}
+.nini-app .commerce-identity-account{display:flex;align-items:center;gap:14px;height:100%;padding:18px 23px;position:relative;z-index:2;max-width:66%}
+.nini-app .commerce-page-profile .commerce-avatar{width:160px;height:156px;border:0;outline:0;box-shadow:none;object-fit:cover;flex:0 0 160px;border-radius:50%;align-self:flex-start;margin-top:6px}
+.nini-app .commerce-page-profile .commerce-avatar-fallback{display:block;background:none;padding:0}
+.nini-app .commerce-identity-account>div{min-width:0;align-self:flex-start;padding-top:14px}
+.nini-app .commerce-page-profile .commerce-identity h2{font-size:26px;line-height:1.3;font-weight:800;margin:0 0 5px;white-space:nowrap}
+.nini-app .commerce-identity-plan{background:linear-gradient(#ff7db3,#ff4191);display:inline-flex;align-items:center;gap:8px;color:white;padding:5px 15px;border-radius:22px;box-shadow:inset 0 0 0 2px #ffffff66,0 0 0 1px #ff91bf;font-size:17px;line-height:1.4}
+.nini-app .commerce-identity-plan .icon{width:22px;height:22px;color:#ffe094}
+.nini-app .commerce-page-profile .commerce-identity p{font-size:15px;color:#6c537c;margin:21px 0 0;white-space:nowrap}
+.nini-app .commerce-page-profile .commerce-identity-meta{position:absolute;left:582px;right:20px;bottom:8px;height:108px;background:#fffafceF;border:0;border-radius:20px 20px 0 0;padding:13px 14px;display:flex;gap:17px;align-items:center;z-index:3}
+.nini-app .commerce-identity-slogan{width:172px;height:78px;flex:0 0 172px;pointer-events:none}
+.nini-app .commerce-page-profile .commerce-identity-meta>div{flex:1;border-left:1px dashed #ff99c2;padding-left:24px;min-width:0}
+.nini-app .commerce-page-profile .commerce-identity-meta .commerce-detail-line{font-size:14px;line-height:1.3;height:30px;min-height:30px;border:0;padding:3px 0;justify-content:flex-start;gap:17px;flex-wrap:nowrap}
+.nini-app .commerce-page-profile .commerce-identity-meta .commerce-detail-line>.muted{display:flex;gap:14px;align-items:center;white-space:nowrap;color:#281d35;min-width:114px}
+.nini-app .commerce-page-profile .commerce-identity-meta .commerce-detail-line .icon{width:23px;height:23px;color:#ff227c}
+.nini-app .commerce-page-profile .commerce-identity-meta .commerce-detail-line>strong{font-size:14px;font-weight:500;white-space:nowrap;color:#604777;text-align:left;max-width:none}
+.nini-app .commerce-page-profile .commerce-profile-grid{grid-template-columns:602px 590px;gap:14px;align-items:start}
+.nini-app .commerce-page-profile .commerce-profile-grid>.stack{gap:10px}
+.nini-app .commerce-page-profile .commerce-fidelity-card>.card-head{height:76px;padding:6px 13px;gap:10px}
+.nini-app .commerce-page-profile .commerce-fidelity-card>.card-body{padding:0 18px 12px}
+.nini-app .commerce-page-profile .commerce-wallet-card{height:248px}
+.nini-app .commerce-page-profile .commerce-wallet-balance{height:93px;gap:22px;align-items:center;justify-content:space-between}
+.nini-app .commerce-page-profile .commerce-wallet-ticket{height:93px;min-width:0;width:309px;max-width:58%;display:flex!important;flex-direction:row;align-items:center;gap:11px;padding:10px 20px!important;color:#ffe8f7}
+.nini-app .commerce-wallet-graphic{width:64px;height:55px;flex:0 0 64px;pointer-events:none}
+.nini-app .commerce-wallet-ticket>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.nini-app .commerce-wallet-ticket>div>span{font-size:15px;font-weight:400;white-space:nowrap}
+.nini-app .commerce-wallet-ticket>div>strong{font-size:36px;line-height:1.1;color:#ffc4e3;white-space:nowrap}
+.nini-app .commerce-page-profile .commerce-wallet-balance>.primary{width:226px;height:65px;min-height:65px;flex:1;font-size:26px;letter-spacing:4px;gap:11px;font-weight:700;padding:8px 17px}
+.nini-app .commerce-recharge-coin{width:38px;height:40px;pointer-events:none}
+.nini-app .commerce-page-profile .commerce-setting-row{height:76px;min-height:76px;margin-top:12px;gap:15px;padding:10px 12px;border:1px dashed #ffc1dc;border-radius:15px;justify-content:flex-start;background:#fffcfd}
+.nini-app .commerce-setting-icon{display:grid;place-items:center;width:45px;height:45px;flex:0 0 45px;background:#fff1f8;border:1px solid #ffe0ee;border-radius:50%;color:#ff287f}
+.nini-app .commerce-setting-icon>.icon{width:29px;height:29px}
+.nini-app .commerce-page-profile .commerce-setting-row>div{flex:1;min-width:0}
+.nini-app .commerce-page-profile .commerce-setting-row strong{font-size:17px;font-weight:700;color:#20142f;line-height:1.4}
+.nini-app .commerce-page-profile .commerce-setting-row p{font-size:14px;line-height:1.3;margin:2px 0 0;color:#9180a4}
+.nini-app .commerce-page-profile .commerce-setting-row>.button{font-size:16px;padding:5px 22px;height:40px;min-height:40px;flex:0 0 auto;font-weight:500}
+.nini-app .commerce-page-profile .commerce-setting-row .switch{width:64px;height:35px;min-width:64px}
+.nini-app .commerce-page-profile .commerce-setting-row .switch>span{width:27px;height:27px;left:3px;top:3px}
+.nini-app .commerce-page-profile .commerce-setting-row .switch.on>span{transform:translateX(28px)}
+.nini-app .commerce-page-profile .commerce-wallet-card .commerce-setting-row{height:56px;min-height:56px;padding:4px 13px;border-style:solid;margin-top:10px}
+.nini-app .commerce-page-profile .commerce-gift-card{height:313px}
+.nini-app .commerce-page-profile .commerce-gift-card>.card-head{height:76px}
+.nini-app .commerce-page-profile .commerce-gift-card .inline-form{height:45px;flex-wrap:nowrap;position:relative;gap:13px;margin:0}
+.nini-app .commerce-page-profile .commerce-gift-card .inline-form>.input{height:45px;font-size:16px;padding-left:53px}
+.nini-app .commerce-gift-input-icon{position:absolute;left:12px;top:8px;color:#ff4093;pointer-events:none}
+.nini-app .commerce-gift-input-icon>.icon{width:28px;height:28px}
+.nini-app .commerce-page-profile .commerce-gift-card .inline-form>.primary{height:43px;min-height:43px;flex:0 0 131px;font-size:22px;padding:3px 17px;font-weight:500}
+.nini-app .commerce-page-profile .commerce-gift-footer{display:block;height:186px;margin:3px -14px -12px;overflow:hidden;background:none}
+.nini-app .commerce-original-gift-footer{height:186px;width:100%;display:block;pointer-events:none}
+.nini-app .commerce-page-profile .commerce-security{min-height:562px}
+.nini-app .commerce-page-profile .commerce-security>.card-head{height:83px}
+.nini-app .commerce-page-profile .commerce-security>.card-body{padding:0 18px 17px}
+.nini-app .commerce-page-profile .commerce-security>.card-body>.commerce-setting-row:first-child{margin-top:0}
+.nini-app .commerce-page-profile .commerce-notifications{height:auto;min-height:190px;margin-top:11px;padding:9px 20px 10px;border:1px dashed #ffc1dc}
+.nini-app .commerce-page-profile .commerce-notifications>header{display:flex;gap:14px;align-items:center;height:51px;margin-bottom:5px;margin-left:-11px}
+.nini-app .commerce-page-profile .commerce-notifications h3{font-size:17px;margin:0;line-height:1.3}
+.nini-app .commerce-page-profile .commerce-notifications header p{margin:3px 0 0;font-size:14px;line-height:1.25;color:#9180a4}
+.nini-app .commerce-page-profile .commerce-notifications .commerce-setting-row{height:49px;min-height:49px;margin-top:9px;padding:4px 12px;border-style:solid;gap:14px}
+.nini-app .commerce-page-profile .commerce-notifications .commerce-setting-icon{width:37px;height:37px;flex-basis:37px;border:0}
+.nini-app .commerce-page-profile .commerce-notifications .commerce-setting-icon>.icon{width:25px;height:25px}
+.nini-app .commerce-page .commerce-hero-cart{width:100px;height:98px}
+.nini-app .commerce-page .commerce-hero-heart{width:47px;height:50px}
+.nini-app .commerce-page .commerce-code-heart{width:47px;height:77px}
+.nini-app .commerce-page .commerce-code-star{width:47px;height:76px}
+.nini-app .commerce-page .commerce-invite-bow{width:73px;height:48px}
+.nini-app .commerce-page .commerce-invite-thanks{width:100%;height:106px}
+.nini-app .commerce-page .commerce-identity-slogan{width:172px;height:78px}
+.nini-app .commerce-page .commerce-wallet-graphic{width:64px;height:55px}
+.nini-app .commerce-page .commerce-recharge-coin{width:38px;height:40px}
+.nini-app .commerce-page .commerce-original-gift-footer{width:100%;height:186px}
+.nini-app .commerce-page .commerce-fidelity-hero{overflow:visible}
+.nini-app .commerce-page .commerce-fidelity-hero:before,.nini-app .commerce-page .commerce-fidelity-hero:after{display:none}
+.nini-app .commerce-page .commerce-hero-lace-top{position:absolute;top:0;left:2px;width:calc(100% - 4px);height:34px;z-index:0;border-radius:16px 16px 0 0}
+.nini-app .commerce-page-plan .commerce-hero-lace-top{height:24px}
+.nini-app .commerce-page .commerce-hero-lace-bottom{position:absolute;bottom:0;left:2px;width:calc(100% - 4px);height:27px;z-index:0;border-radius:0 0 16px 16px}
+.nini-app .commerce-page .commerce-tabs .button:not(.active){border:0;background:none;box-shadow:none;border-radius:0;color:#281934}
+.nini-app .commerce-page-plan .commerce-plan .price{font-size:47px;display:flex;align-items:baseline;gap:2px}
+.nini-app .commerce-page-plan .commerce-plan .price .commerce-currency{font-size:25px;letter-spacing:0}
+.nini-app .commerce-page-plan .commerce-plan .price small{font-size:20px;margin-left:7px}
+.nini-app .commerce-page-plan .commerce-plan-features{min-width:0;display:flex;flex-direction:column;gap:5px;position:relative;z-index:2}
+.nini-app .commerce-page-plan .commerce-feature-preview{position:relative;min-width:0}
+.nini-app .commerce-page-plan .commerce-feature-list{--feature-preview-height:134px;max-height:var(--feature-preview-height);overflow:hidden;padding-top:2px;gap:5px}
+.nini-app .commerce-page-plan .features-expanded .commerce-feature-list{max-height:none}
+.nini-app .commerce-page-plan .has-more-features:not(.features-expanded) .commerce-feature-preview:after{content:"";position:absolute;z-index:2;left:0;right:0;bottom:0;height:24px;background:linear-gradient(180deg,#fff0,#fff);pointer-events:none}
+.nini-app .commerce-page-plan .commerce-feature-toggle{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:28px;padding:3px 8px;border:0;border-radius:10px;background:var(--commerce-surface);color:var(--commerce-pink-strong);font-family:var(--nini-ui-font);font-size:14px;line-height:1.4;box-shadow:none;text-shadow:none}
+.nini-app .commerce-page-plan .commerce-feature-toggle[hidden]{display:none}
+.nini-app .commerce-page-plan .commerce-feature-toggle:hover{background:#ffe4f0}
+.nini-app .commerce-page-plan .commerce-feature-toggle:focus-visible{outline:2px solid var(--commerce-pink);outline-offset:2px}
+.nini-app .commerce-page-plan .commerce-feature-toggle>svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nini-app .commerce-page-plan .features-expanded .commerce-feature-toggle>svg{transform:rotate(180deg)}
+.nini-app .commerce-page-plan .commerce-purchase-title h2{font-size:29px}
+.nini-app .commerce-page-plan .commerce-purchase-title .small{font-size:15px;margin:0}
+.nini-app .commerce-page-order .commerce-order-table .ticket-stamp{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;font-size:16px;padding:13px 10px}
+.nini-app .commerce-page-order .commerce-order-list>.pagination .button{width:38px;height:35px;min-height:35px;font-size:26px;padding:0;line-height:1}
+.nini-app .commerce-page-order .commerce-order-list>.pagination>span{min-width:38px;text-align:center}
+.nini-app .commerce-page .commerce-static-hero{border:0;background:none;box-shadow:none}
+.nini-app .commerce-page .commerce-static-hero-art{position:absolute;left:0;bottom:0;width:1206px;height:232px;z-index:1}
+.nini-app .commerce-page-invite .commerce-static-hero-art{height:300px}
+.nini-app .commerce-page-plan{gap:15px}
+.nini-app .commerce-page-plan .commerce-hero-plan{height:183px;background:none}
+.nini-app .commerce-page-plan .commerce-static-hero-art{height:201px;top:-18px;bottom:auto}
+.nini-app .commerce-page-plan .plan-grid{grid-template-columns:384px 402px 390px;gap:15px}
+.nini-app .commerce-page-profile .commerce-hero-profile{height:103px}
+.nini-app .commerce-page-profile .commerce-hero-copy{top:7px}
+.nini-app .commerce-page-invite .commerce-invite-layout{margin-top:1px}
+.nini-app .commerce-page-invite .commerce-stat-original{width:73px;height:73px}
+.nini-app .commerce-page-invite .commerce-stat-ornament{position:absolute;right:21px;bottom:14px;width:78px;height:43px}
+.nini-app .commerce-page-invite .commerce-stat:nth-child(2) .commerce-stat-ornament{right:14px;bottom:37px;width:82px;height:77px}
+.nini-app .commerce-page-invite .commerce-code-sticker .ticket-stamp{font-size:35px;letter-spacing:1px;display:flex;justify-content:center;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nini-app .commerce-page .commerce-ticket-frame{border-radius:5px;overflow:hidden;z-index:0}
+.nini-app .commerce-page .commerce-ticket-frame>.frame-top{height:8px}
+.nini-app .commerce-page .commerce-ticket-frame>.frame-bottom{height:8px}
+.nini-app .commerce-page .commerce-ticket-frame>.frame-left{top:8px;bottom:8px;width:8px;height:calc(100% - 16px)}
+.nini-app .commerce-page .commerce-ticket-frame>.frame-right{top:8px;bottom:8px;width:8px;height:calc(100% - 16px)}
+.nini-app .commerce-page .ticket-stamp{position:relative;background:radial-gradient(ellipse at center,#29232d,#1c191d);border:0;outline:0;box-shadow:none;border-radius:0}
+.nini-app .commerce-page .ticket-stamp:before,.nini-app .commerce-page .ticket-stamp:after{display:none}
+.nini-app .commerce-page .commerce-gift-heading-bow{height:60px;width:131px;margin-left:auto;flex:0 0 131px}
+.nini-app .commerce-page-plan .commerce-reset-option{height:24px;min-height:24px;font-size:12px;padding:2px 0;margin-top:4px;border:0;border-radius:0;box-shadow:none;background:none;color:#957da7;font-weight:400}
+.nini-app .commerce-page-profile .commerce-profile-original-heading{position:absolute;left:0;top:-15px;width:581px;height:128px}
+.nini-app .commerce-page-profile .commerce-hero-original{width:625px;height:220px;top:-15px}
+.nini-app .commerce-page-profile .commerce-wallet-card>.card-body{padding-left:21px;padding-right:21px}
+.nini-app .commerce-page-profile .commerce-wallet-ticket>div{padding-left:4px}
+.nini-app .commerce-page-profile .commerce-wallet-ticket>div>strong{font-size:38px}
+.nini-app .commerce-page .commerce-tabs{border:1px solid #ffbdd9;background:#fffafc;border-radius:32px}
+.nini-app .commerce-page .commerce-tabs .button:not(.active){border:0!important;outline:0!important;box-shadow:none!important}
+.nini-app .commerce-page-order .commerce-order-stamp{margin-bottom:0}
+.nini-app .commerce-page-order .commerce-detail-line{min-height:38px;height:38px;padding-top:6px;padding-bottom:6px;line-height:24px}
+.nini-app .commerce-page-order .commerce-detail-line strong{line-height:24px}
+.nini-app .commerce-page-order .commerce-grand-total{height:52px;min-height:52px}
+.nini-app .commerce-page-order .commerce-order-detail form>h3{line-height:23px}
+.nini-app .commerce-page-order .commerce-order-detail .link{height:25px;min-height:25px!important;line-height:25px}
+.nini-app .commerce-page-order .commerce-order-detail>.card-head .commerce-detail-title{padding:0;border:0;background:none;box-shadow:none;text-shadow:none;transform:none;margin:0;width:224px;height:57px;position:relative;overflow:visible}
+.nini-app .commerce-page-order .commerce-detail-title:before,.nini-app .commerce-page-order .commerce-detail-title:after{display:none}
+.nini-app .commerce-page-order .commerce-detail-title-original{width:224px;height:57px;position:absolute;left:0;top:-3px}
+.nini-app .commerce-page-profile .commerce-profile-row-icon{width:45px;height:45px}
+.nini-app .commerce-page-profile .commerce-gift-input-icon .commerce-profile-row-icon{width:28px;height:28px}
+.nini-app .commerce-page-profile .commerce-notifications .commerce-profile-row-icon{width:37px;height:37px}
+.nini-app .commerce-page-order .commerce-order-table tbody>tr{background:linear-gradient(110deg,#fff,#fff9fc)}
+.nini-app .commerce-page-order .commerce-order-table tbody>tr.selected{background:linear-gradient(110deg,#fff9fc,#fff0f7)}
+.nini-app .commerce-page-order .commerce-order-table tbody>tr>td{background:transparent}
+.nini-app .commerce-page-order .commerce-order-table .badge.pending{color:#ff1b76;border-color:#ff97c1}
+.nini-app .commerce-page-order .commerce-payment{flex:0 0 calc(50% - 5px);min-width:0}
+.nini-app .commerce-page-order .commerce-payment>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+
+/* Transparent, resolution-independent small artwork. Raster illustration panels
+   retain their native aspect and pixel size; no screenshot border is stretched. */
+.nini-app .commerce-page .commerce-polished-icon{display:block;flex-shrink:0;overflow:visible;pointer-events:none}
+.nini-app .commerce-page .ticket-stamp{isolation:isolate;background:transparent;overflow:visible}
+.nini-app .commerce-page .ticket-stamp:before{display:block;content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 45% 25%,#302932,#19171b 90%);border:0;outline:0;border-radius:0;transform:none;mask:linear-gradient(#000 0 0) center/calc(100% - 8px) calc(100% - 8px) no-repeat,radial-gradient(circle at 5px 5px,#000 4.6px,#0000 5px) top left/10px 10px repeat-x,radial-gradient(circle at 5px 5px,#000 4.6px,#0000 5px) bottom left/10px 10px repeat-x,radial-gradient(circle at 5px 5px,#000 4.6px,#0000 5px) top left/10px 10px repeat-y,radial-gradient(circle at 5px 5px,#000 4.6px,#0000 5px) top right/10px 10px repeat-y}
+.nini-app .commerce-page .ticket-stamp:after{display:none}
+.nini-app .commerce-page .commerce-wallet-ticket:after{display:block;content:"";position:absolute;inset:12px;border:1px dashed #e9b4d1;border-radius:4px;z-index:-1;background:none;transform:none}
+.nini-app .commerce-page .commerce-ticket-decoration{position:absolute;inset:0;pointer-events:none;z-index:2}
+.nini-app .commerce-page .commerce-ticket-star{position:absolute;width:25px;height:25px;right:-7px;top:-4px;transform:rotate(8deg);filter:drop-shadow(0 1px 0 #965d5340)}
+.nini-app .commerce-page .commerce-wallet-ticket .commerce-ticket-star{right:13px;top:18px;width:23px;height:23px}
+.nini-app .commerce-page .commerce-wallet-ticket .small-star{right:30px;top:auto;bottom:11px;width:20px;height:20px;transform:rotate(-9deg)}
+.nini-app .commerce-page-order .commerce-order-table .ticket-stamp{overflow:visible}
+.nini-app .commerce-page-order .commerce-order-table .ticket-stamp>svg{position:absolute}
+.nini-app .commerce-page-invite .commerce-code-sticker .ticket-stamp{overflow:visible}
+.nini-app .commerce-page .commerce-wallet-ticket .commerce-wallet-graphic{width:64px;height:55px;filter:drop-shadow(0 2px 0 #0004)}
+.nini-app .commerce-page .commerce-recharge-coin{width:38px;height:40px;filter:drop-shadow(0 1px 0 #c0476650)}
+.nini-app .commerce-page .commerce-heading-star{width:38px;height:38px}
+.nini-app .commerce-page .commerce-heading-icon{width:59px;height:59px;flex:0 0 59px}
+.nini-app .commerce-page-plan .commerce-purchase-title .commerce-heading-icon{width:53px;height:52px;flex-basis:53px}
+.nini-app .commerce-page-plan .commerce-gift-slot{position:relative;width:139px;flex:0 0 139px;height:141px;display:block}
+.nini-app .commerce-page-plan .commerce-gift-slot.motif-1{width:150px;flex-basis:150px}
+.nini-app .commerce-page-plan .commerce-gift-slot.motif-2{width:155px;flex-basis:155px}
+.nini-app .commerce-page-plan .commerce-plan-head .commerce-gift-slot .commerce-gift{position:absolute;left:-5px;top:0;width:var(--art-width);height:var(--art-height);flex:none;mix-blend-mode:multiply;mask-image:linear-gradient(to right,#0000,#000 3px,#000 calc(100% - 3px),#0000),linear-gradient(to bottom,#0000,#000 3px,#000 calc(100% - 3px),#0000);mask-composite:intersect}
+.nini-app .commerce-page-plan .commerce-gift-slot.motif-1 .commerce-gift{left:2px}
+.nini-app .commerce-page-plan .commerce-plan.selected:after{inset:6px;border:1px solid #ffd3e6;border-radius:13px;box-shadow:0 0 0 2px #fff;background:radial-gradient(circle at 10px 0,#fff 9px,#ffd8e8 9.5px,#0000 10px) left top/20px 12px repeat-x,radial-gradient(circle at 10px 12px,#fff 9px,#ffd8e8 9.5px,#0000 10px) left bottom/20px 12px repeat-x,radial-gradient(circle at 0 10px,#fff 9px,#ffd8e8 9.5px,#0000 10px) left top/12px 20px repeat-y,radial-gradient(circle at 12px 10px,#fff 9px,#ffd8e8 9.5px,#0000 10px) right top/12px 20px repeat-y}
+.nini-app .commerce-page .commerce-gift-heading-bow,.nini-app .commerce-page .commerce-stat-ornament,.nini-app .commerce-page .commerce-code-heart,.nini-app .commerce-page .commerce-code-star,.nini-app .commerce-page .commerce-invite-bow{mix-blend-mode:multiply}
+.nini-app .commerce-page-profile .commerce-identity{background:repeating-conic-gradient(#ffe5ef 0 25%,#fff2f8 0 50%) 0/76px 76px;box-shadow:inset 0 0 0 5px #fff,inset 0 0 0 6px #ffd5e5}
+.nini-app .commerce-page-profile .commerce-identity:before,.nini-app .commerce-page-profile .commerce-identity:after{height:17px;background:radial-gradient(#ffbfd7 .7px,#fff0 .85px) 0 0/5px 5px #fff;mask:linear-gradient(#000 0 0) top/100% 7px no-repeat,radial-gradient(circle at 9px 0,#000 8.5px,#0000 9px) 0 7px/18px 10px repeat-x}
+.nini-app .commerce-page-profile .commerce-identity-slogan{mix-blend-mode:multiply}
+.nini-app .commerce-page-plan .commerce-purchase-star{width:38px;height:38px;position:absolute;right:25px;top:12px}
+.nini-app .commerce-page-plan .commerce-chosen-plan{margin-right:145px}
+.nini-app .commerce-page .commerce-ticket-text{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative;z-index:1}
+.nini-app .commerce-page .ticket-stamp:before{opacity:1}
+.nini-app .commerce-page .commerce-wallet-ticket:after{opacity:.9}
+.nini-app .commerce-page-profile .commerce-identity{background:repeating-conic-gradient(#ffebf3 0 25%,#fff5f9 0 50%) 0/76px 76px}
+.nini-app .commerce-page-profile .commerce-hero-original{mask:linear-gradient(#000 0 0) top/100% 128px no-repeat,linear-gradient(to right,#0000,#000 8px) bottom/100% 92px no-repeat}
+.nini-app .commerce-page-profile .commerce-identity-slogan{mask-image:linear-gradient(to right,#0000,#000 6px,#000 calc(100% - 6px),#0000)}
+.nini-app .commerce-page-plan .commerce-purchase{position:relative}
+.nini-app .commerce-page-plan .commerce-feature-icon{width:24px;height:24px}
+.nini-app .commerce-page-plan .commerce-config-icon{width:34px;height:34px;flex:0 0 34px;margin-top:-3px;margin-bottom:-3px}
+.nini-app .commerce-page-invite .commerce-invite-thanks{width:712px;height:106px;margin:5px 0 0 -1px}
+.nini-app .commerce-page-order .commerce-detail-art{width:359px;height:197px;margin-left:-11px;margin-right:0}
+.nini-app .commerce-page-order .commerce-original-thanks{width:802px;height:137px}
+.nini-app .commerce-page-profile .commerce-original-gift-footer{width:592px;height:186px}
+
+/* Modern sticker finish. Paint only: preserve the approved geometry, artwork,
+   scalloped masks, lace, ribbons, stars, bows, and every functional control. */
+.nini-app .commerce-page{--commerce-ink:var(--ink,#30202c);--commerce-pink:var(--pink,#f65094);--commerce-pink-strong:var(--pink-strong,#ee387f);--commerce-surface:var(--pink-soft,#fff0f7);--commerce-line:var(--line,#f5b6cf);--commerce-muted:var(--muted,#806b7b);--commerce-paper-shadow:var(--sticker-shadow,#f6dbe7);color:var(--commerce-ink)}
+.nini-app .commerce-page .commerce-plan,.nini-app .commerce-page .commerce-purchase,.nini-app .commerce-page .commerce-order-list,.nini-app .commerce-page .commerce-order-detail,.nini-app .commerce-page .commerce-stat,.nini-app .commerce-page .commerce-commission-wallet,.nini-app .commerce-page .commerce-fidelity-card{background:#fff;border-color:var(--commerce-line);box-shadow:0 3px 0 var(--commerce-paper-shadow)}
+.nini-app .commerce-page-plan .commerce-plan.selected{background:var(--commerce-surface);border-color:var(--commerce-pink);box-shadow:inset 0 0 0 3px #fff,0 3px 0 var(--commerce-line)}
+/* Carry the artwork's pink paper pattern across the card, including selection. */
+.nini-app .commerce-page-plan .commerce-plan,.nini-app .commerce-page-plan .commerce-plan.selected{background:linear-gradient(180deg,#fff0 0,#ffffff55 90px,#fffffff0 225px,#fff 100%),repeating-conic-gradient(from 8deg at 80px 80px,#ffedf666 0deg 12deg,#fff0 12deg 26deg),repeating-conic-gradient(#fff5fa 0 25%,#fff 0 50%) 0 0/36px 36px}
+.nini-app .commerce-page-plan .commerce-plan-head{mix-blend-mode:multiply}
+.nini-app .commerce-page-plan .commerce-plan:before{border-color:var(--commerce-line)}
+.nini-app .commerce-page-plan .commerce-plan.selected:after{border-color:var(--commerce-line)}
+.nini-app .commerce-page-plan .commerce-plan-current{background:var(--commerce-ink);color:#fff;box-shadow:0 0 0 2px #fff,0 3px 0 var(--commerce-paper-shadow);text-shadow:none}
+.nini-app .commerce-page-plan .commerce-purchase{border-color:var(--commerce-line)!important;box-shadow:inset 0 0 0 5px #fff,0 3px 0 var(--commerce-paper-shadow)}
+.nini-app .commerce-page-plan .commerce-purchase>.card-head{background:#fff;border-bottom-color:var(--commerce-line)}
+.nini-app .commerce-page-plan .commerce-purchase-grid>section+section{border-left-color:var(--commerce-line)}
+.nini-app .commerce-page-plan .commerce-period{background:#fff;border-color:var(--commerce-line);color:var(--commerce-ink);box-shadow:none}
+.nini-app .commerce-page-plan .commerce-period.selected{background:var(--commerce-surface);border-color:var(--commerce-pink);color:var(--commerce-pink-strong);box-shadow:inset 0 0 0 2px #fff,0 2px 0 var(--commerce-paper-shadow)}
+.nini-app .commerce-page-plan .commerce-purchase .inline-form .button{background:var(--commerce-pink);border-color:var(--commerce-pink)!important;box-shadow:0 0 0 2px #fff,0 2px 0 var(--commerce-line);text-shadow:none}
+.nini-app .commerce-page-plan .commerce-chosen-plan .badge{background:var(--commerce-surface);border-color:var(--commerce-line);color:var(--commerce-pink-strong)}
+.nini-app .commerce-page .commerce-tabs{background:#fff;border-color:var(--commerce-line);box-shadow:0 2px 0 var(--commerce-paper-shadow)}
+.nini-app .commerce-page .commerce-tabs .button.active{background:var(--commerce-pink);border-color:var(--commerce-pink);box-shadow:0 0 0 2px #fff,0 2px 0 var(--commerce-line);text-shadow:none}
+.nini-app .commerce-page .commerce-tabs .button:not(.active){color:var(--commerce-ink)}
+.nini-app .commerce-page .commerce-tabs .button:not(.active)+.button:not(.active):before{border-left-color:var(--commerce-line)}
+.nini-app .commerce-page .commerce-plan h2,.nini-app .commerce-page .commerce-purchase-title h2,.nini-app .commerce-page .commerce-purchase-grid h3,.nini-app .commerce-page .commerce-fidelity-card>.card-head h2,.nini-app .commerce-page .commerce-identity h2,.nini-app .commerce-page .commerce-setting-row strong,.nini-app .commerce-page .commerce-stat .muted,.nini-app .commerce-page .commerce-commission-main>.muted,.nini-app .commerce-page .commerce-identity-meta .commerce-detail-line>.muted{color:var(--commerce-ink)}
+.nini-app .commerce-page .commerce-plan .price,.nini-app .commerce-page .commerce-buy-total .price,.nini-app .commerce-page .commerce-order-table .commerce-money,.nini-app .commerce-page .commerce-grand-total strong{color:var(--commerce-pink-strong)}
+.nini-app .commerce-page .commerce-plan-content,.nini-app .commerce-page .commerce-plan .price small,.nini-app .commerce-page .commerce-chosen-plan,.nini-app .commerce-page .commerce-period small,.nini-app .commerce-page .commerce-fidelity-card>.card-head p,.nini-app .commerce-page .commerce-reset-option,.nini-app .commerce-page .commerce-invite-hint,.nini-app .commerce-page .commerce-identity p,.nini-app .commerce-page .commerce-identity-meta .commerce-detail-line>strong,.nini-app .commerce-page .commerce-notifications header p,.nini-app .commerce-page .commerce-order-stamp>.small,.nini-app .commerce-page .commerce-detail-line>.muted{color:var(--commerce-muted)}
+.nini-app .commerce-page-order .commerce-order-table th,.nini-app .commerce-page-invite .commerce-invite-records th{background:var(--commerce-surface);color:var(--commerce-pink-strong)}
+.nini-app .commerce-page-order .commerce-order-table tbody>tr{background:#fff}
+.nini-app .commerce-page-order .commerce-order-table tbody>tr.selected{background:var(--commerce-surface)}
+.nini-app .commerce-page-order .commerce-order-table tbody>tr>td{background:transparent;border-color:var(--commerce-line)}
+.nini-app .commerce-page-order .commerce-order-table tbody>tr.selected>td{border-color:var(--commerce-pink)}
+.nini-app .commerce-page-order .commerce-order-table .badge.pending{background:var(--commerce-surface);border-color:var(--commerce-line);outline-color:var(--commerce-line);color:var(--commerce-pink-strong)}
+.nini-app .commerce-page-order .commerce-order-detail{border-color:var(--commerce-line)!important;box-shadow:inset 0 0 0 5px #fff,0 3px 0 var(--commerce-paper-shadow)}
+.nini-app .commerce-page-order .commerce-detail-line{border-bottom-color:var(--commerce-line)}
+.nini-app .commerce-page-order .commerce-grand-total{border-bottom-color:var(--commerce-pink)}
+.nini-app .commerce-page-order .commerce-order-list>.pagination>span{background:var(--commerce-pink);box-shadow:0 2px 0 var(--commerce-paper-shadow)}
+.nini-app .commerce-page-order .commerce-payment-radio{border-color:var(--commerce-line)}
+.nini-app .commerce-page-order .commerce-payment.selected .commerce-payment-radio{background:var(--commerce-pink);border-color:var(--commerce-pink);box-shadow:inset 0 0 0 3px #fff}
+.nini-app .commerce-page-order .commerce-order-detail .link{color:var(--commerce-muted)}
+.nini-app .commerce-page-order .commerce-order-detail .link:before,.nini-app .commerce-page-order .commerce-order-detail .link:after{background:var(--commerce-line)}
+.nini-app .commerce-page .ticket-stamp:before{background:var(--commerce-ink)}
+.nini-app .commerce-page .commerce-wallet-ticket:after{border-color:var(--commerce-line);opacity:1}
+.nini-app .commerce-page-invite .commerce-stat-icon{background:var(--commerce-surface);color:var(--commerce-pink)}
+.nini-app .commerce-page-invite .commerce-stat .metric-value,.nini-app .commerce-page-invite .commerce-commission-wallet .metric-value{color:var(--commerce-ink)}
+.nini-app .commerce-page-invite .commerce-fidelity-card,.nini-app .commerce-page-invite .commerce-invite-records,.nini-app .commerce-page-invite .commerce-copy-field,.nini-app .commerce-page-invite .commerce-code-sticker{border-color:var(--commerce-line)}
+.nini-app .commerce-page-invite .commerce-code-sticker{background:var(--commerce-surface)}
+.nini-app .commerce-page-invite .commerce-copy-field{background:#fff}
+.nini-app .commerce-page-invite .commerce-copy-field .input{color:var(--commerce-ink)}
+.nini-app .commerce-page-invite .commerce-invite-pagination{opacity:1;color:var(--commerce-muted)}
+.nini-app .commerce-page-invite .commerce-invite-pagination>.button{border-color:var(--commerce-line)!important}
+.nini-app .commerce-page-profile .commerce-identity{background:none;border-color:transparent!important;box-shadow:none}
+.nini-app .commerce-page-profile .commerce-identity:before,.nini-app .commerce-page-profile .commerce-identity:after{display:none}
+.nini-app .commerce-page-profile .commerce-profile-intro{position:relative;display:grid;grid-template-rows:103px 207px;gap:10px;isolation:isolate}
+.nini-app .commerce-page-profile .commerce-profile-surface{position:absolute;left:0;top:-15px;width:1206px;height:334px;z-index:0}
+.nini-app .commerce-page-profile .commerce-identity-slogan{mix-blend-mode:normal;mask:none}
+.nini-app .commerce-page-profile .commerce-identity-paws{position:absolute;inset:0;pointer-events:none}
+.nini-app .commerce-page-profile .commerce-identity-paw{position:absolute;fill:#ffa6cd;stroke:#fff;stroke-width:1.2;paint-order:stroke fill}
+.nini-app .commerce-page-profile .commerce-identity-paw.paw-left{left:10px;top:73px;transform:rotate(-20deg)}
+.nini-app .commerce-page-profile .commerce-identity-paw.paw-right{left:152px;top:31px;transform:rotate(17deg)}
+.nini-app .commerce-page-plan .commerce-hero-plan:before,.nini-app .commerce-page-plan .commerce-hero-plan:after{display:none}
+.nini-app .commerce-page-profile .commerce-identity-plan{background:var(--commerce-pink);box-shadow:0 0 0 2px #fff,0 2px 0 var(--commerce-line);text-shadow:none}
+.nini-app .commerce-page-profile .commerce-identity-meta{background:linear-gradient(105deg,#ffeaf4 0,#fff7fb 55%,#fffafd 100%);border-top:1px solid #ffc7df;padding:8px 16px 8px 14px}
+.nini-app .commerce-page-profile .commerce-identity-meta:before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;opacity:.42;background:url('./drift-stickers/heart-ffc2dc.png') 16px 12px/18px 18px no-repeat,url('./drift-stickers/star-ffe7a5.png') 176px 12px/13px 13px no-repeat,url('./drift-stickers/heart-ffc2dc.png') 86px calc(100% - 8px)/12px 12px no-repeat,url('./drift-stickers/star-c9ebff.png') calc(100% - 110px) 9px/11px 11px no-repeat,url('./drift-stickers/heart-ffc2dc.png') calc(100% - 24px) 12px/19px 19px no-repeat,url('./drift-stickers/star-ffe7a5.png') calc(100% - 65px) 46px/15px 15px no-repeat,url('./drift-stickers/heart-ffc2dc.png') calc(100% - 120px) calc(100% - 8px)/12px 12px no-repeat,url('./drift-stickers/star-c9ebff.png') calc(100% - 21px) calc(100% - 13px)/18px 18px no-repeat}
+.nini-app .commerce-page-profile .commerce-identity-meta>div{border-left:0;padding-left:22px}
+.nini-app .commerce-page-profile .commerce-identity-meta .commerce-detail-line{align-items:center;padding:3px 0;gap:14px}
+.nini-app .commerce-page-profile .commerce-identity-meta .commerce-detail-line>strong{color:#714263;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.nini-app .commerce-page-profile .commerce-identity-meta .commerce-detail-line:nth-child(2) .icon{color:#a478c2}
+.nini-app .commerce-page-profile .commerce-identity-meta .commerce-detail-line:nth-child(3) .icon{color:#d99748;fill:#fff0cd}
+.nini-app .commerce-page-profile .commerce-setting-row{background:#fff;border-color:var(--commerce-line)}
+.nini-app .commerce-page-profile .commerce-setting-icon{background:var(--commerce-surface);border-color:var(--commerce-line);color:var(--commerce-pink)}
+.nini-app .commerce-page-profile .commerce-notifications{background:var(--commerce-surface);border-color:var(--commerce-line)}
+.nini-app .commerce-page-profile .commerce-setting-row .switch{background:#eddee6;border-color:var(--commerce-line);box-shadow:none}
+.nini-app .commerce-page-profile .commerce-setting-row .switch.on{background:var(--commerce-pink);border-color:var(--commerce-pink)}
+.nini-app .commerce-page-profile .commerce-setting-row .switch>span{box-shadow:0 1px 0 #30202c26}
+.nini-app .commerce-page .commerce-polished-icon [id$="-pink"] stop{stop-color:#ffbdd9}
+.nini-app .commerce-page .commerce-polished-icon [id$="-gold"] stop{stop-color:#ffdb86}
+/* Each intro uses one continuous native-coordinate surface. Tabs, identity,
+   membership state and metadata remain independent HTML above that surface. */
+
+/* Interface labels use the selected UI font; the full-font preview also
+   assigns the same family to inherited plan and account content. */
+.nini-app .commerce-page .commerce-purchase-title>h2,
+.nini-app .commerce-page .commerce-purchase-grid>section>h3,
+.nini-app .commerce-page .commerce-period>strong,
+.nini-app .commerce-page .commerce-plan-current,
+.nini-app .commerce-page .commerce-fidelity-card>.card-head>div>h2,
+.nini-app .commerce-page .commerce-order-table>thead th,
+.nini-app .commerce-page .commerce-invite-records>table>thead th,
+.nini-app .commerce-page .commerce-order-stamp>span.muted,
+.nini-app .commerce-page .commerce-detail-line>span.muted,
+.nini-app .commerce-page .commerce-stat>div>span.muted,
+.nini-app .commerce-page .commerce-commission-main>span.muted,
+.nini-app .commerce-page .commerce-wallet-ticket>div>span,
+.nini-app .commerce-page .commerce-setting-row>div>strong,
+.nini-app .commerce-page .commerce-notifications>header>div>h3,
+.nini-app [data-form="commerce-checkout"]>h3,
+.nini-app .commerce-stripe>label,
+.nini-app [data-form^="commerce-"]>.field>span{font-family:var(--nini-ui-font)}
+
+/* Target known action copy, rather than all buttons: period prices and
+   configured payment names share button elements with ordinary controls. */
+.nini-app [data-action="commerce-plan-select"],
+.nini-app [data-action="commerce-plan-filter"],
+.nini-app [data-action="commerce-coupon-remove"],
+.nini-app [data-action="commerce-order-filter"],
+.nini-app [data-action="commerce-order-select"],
+.nini-app [data-action="commerce-order-cancel"],
+.nini-app [data-action="commerce-order-refresh"],
+.nini-app [data-action="commerce-copy-payment"],
+.nini-app [data-action="commerce-transfer"],
+.nini-app [data-action="commerce-withdraw"],
+.nini-app [data-action="commerce-invite-copy"],
+.nini-app [data-action="commerce-invite-create"],
+.nini-app [data-action="commerce-invite-summary"],
+.nini-app [data-action="commerce-deposit"],
+.nini-app [data-action="commerce-password"],
+.nini-app [data-action="commerce-telegram-unbind"],
+.nini-app [data-action="commerce-telegram-bind"],
+.nini-app [data-action="commerce-telegram-copy"],
+.nini-app [data-action="commerce-profile-refresh"],
+.nini-app [data-action="commerce-reset-security"],
+.nini-app [data-form^="commerce-"]>button[type="submit"]{font-family:var(--nini-ui-font)}
+
+.nini-app [data-form^="commerce-"] input::placeholder{font-family:var(--nini-ui-font)}
+
+/* Server-defined plan features and renewal controls retain the existing cards. */
+.nini-app .commerce-renewal{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:0 0 28px;padding:12px 16px;border:1px solid var(--commerce-line,#ffc9df);border-radius:14px;background:var(--commerce-surface,#fff7fb)}
+.nini-app .commerce-renewal>.button,.nini-app [data-action="commerce-resume-order"]{font-family:var(--nini-ui-font)}
+.nini-app .commerce-page-plan .commerce-configured-feature{overflow-wrap:anywhere}
+.nini-app .commerce-page-plan .commerce-configured-feature.unsupported{opacity:.45}
+.nini-app .commerce-page-plan .commerce-feature-support{flex:0 0 24px;text-align:center;color:var(--commerce-pink-strong,#f50077);font-family:system-ui,sans-serif;font-size:23px;font-weight:700;line-height:1}
+
+/* Subscription configuration uses soft surfaces rather than stitched dividers. */
+.nini-app .commerce-page-plan .commerce-purchase{border-radius:24px;border-color:#ffd1e3!important;background:#fff;box-shadow:0 4px 0 #ffeaf3;min-height:0}
+.nini-app .commerce-page-plan .commerce-purchase>.card-head{height:auto;min-height:76px;padding:12px 72px 12px 20px;border-bottom:0;border-radius:23px 23px 0 0;background:linear-gradient(100deg,#fff6fb,#fff 75%);gap:20px}
+.nini-app .commerce-page-plan .commerce-purchase-title{flex:1;flex-wrap:wrap;column-gap:12px;row-gap:2px}
+.nini-app .commerce-page-plan .commerce-purchase-title .small{white-space:normal;line-height:1.5}
+.nini-app .commerce-page-plan .commerce-chosen-plan{display:flex;align-items:center;gap:8px;max-width:30%;min-width:0;margin-right:0;flex-shrink:0}
+.nini-app .commerce-page-plan .commerce-chosen-plan .badge{white-space:normal;overflow-wrap:anywhere;min-width:0;border:0;border-radius:14px;padding:8px 14px}
+.nini-app .commerce-page-plan .commerce-purchase-star{top:19px;right:23px}
+.nini-app .commerce-page-plan .commerce-purchase-grid{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,.95fr);gap:20px;padding:4px 20px 20px;align-items:stretch;min-height:0}
+.nini-app .commerce-page-plan .commerce-purchase-grid>section{min-width:0;padding:16px;border:0;border-radius:20px;background:#fff9fc}
+.nini-app .commerce-page-plan .commerce-purchase-grid>section+section{padding-left:16px;border:0}
+.nini-app .commerce-page-plan .commerce-purchase-grid>section:last-child{background:#fff1f8}
+.nini-app .commerce-page-plan .commerce-purchase-grid h3{margin-bottom:12px;gap:10px;font-size:17px}
+.nini-app .commerce-page-plan .commerce-periods{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.nini-app .commerce-page-plan .commerce-period{height:auto;min-height:91px;padding:12px 6px;align-content:center;border:1px solid #f8dce9;border-radius:16px;background:#fff;box-shadow:0 2px 0 #fcecf4}
+.nini-app .commerce-page-plan .commerce-period small{white-space:normal;overflow-wrap:anywhere;line-height:1.4}
+.nini-app .commerce-page-plan .commerce-period.selected{background:#ffe5f1;border-color:#ff69a7;box-shadow:inset 0 0 0 2px #fff,0 3px 0 #ffd2e5}
+.nini-app .commerce-page-plan .commerce-period:focus-visible{outline:2px solid var(--commerce-pink);outline-offset:3px}
+.nini-app .commerce-page-plan .commerce-purchase .inline-form{margin-top:0;gap:8px}
+.nini-app .commerce-page-plan .commerce-purchase .inline-form .input{min-width:0;border-radius:14px}
+.nini-app .commerce-page-plan .commerce-purchase .inline-form .button{padding:8px 18px;border-radius:14px;flex-shrink:0;box-shadow:0 3px 0 #ffd2e5}
+.nini-app .commerce-page-plan .commerce-purchase .primary:after{display:none}
+.nini-app .commerce-page-plan .commerce-buy-total h3{margin-bottom:12px}
+.nini-app .commerce-page-plan .commerce-buy-total .price{padding-left:0;margin:0 0 14px;text-align:center;line-height:1.2;overflow-wrap:anywhere}
+.nini-app .commerce-page-plan .commerce-buy-total .primary{width:100%;height:50px;font-size:21px;letter-spacing:1px;box-shadow:0 3px 0 #ffc1dc,inset 0 1px 0 #ffffff66}
+.nini-app .commerce-page-plan .commerce-buy-total>.small{margin-top:14px;line-height:1.5}
+
+/* Keep the theme avatar visible until an actual account photo is available. */
+.nini-app .commerce-page-profile .commerce-avatar-frame{position:relative;display:block;overflow:hidden}
+.nini-app .commerce-page-profile .commerce-avatar-frame>.commerce-avatar-default{display:block;width:100%;height:100%}
+.nini-app .commerce-page-profile .commerce-avatar-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;opacity:0}
+.nini-app .commerce-page-profile .commerce-avatar-photo.loaded{opacity:1}
+
+/* Keep the existing receipt composition and move its content down as one block. */
+.nini-app .commerce-page-order .commerce-order-detail{
+  padding-top:20px;
+}
+/* A long order ID must stay inside the existing stamp rather than widen the card. */
+.nini-app .commerce-page-order .commerce-order-detail .commerce-order-stamp{
+  grid-template-columns:minmax(0,1fr);
+  min-width:0;
+}
+.nini-app .commerce-page-order .commerce-order-detail .commerce-order-stamp>.ticket-stamp{
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}

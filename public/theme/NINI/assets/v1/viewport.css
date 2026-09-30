@@ -1,0 +1,1050 @@
+/* Retain the native 1536px canvas. Zoom participates in document layout. */
+html.nini-fit-viewport,
+html.nini-fit-viewport body {
+  min-width:0;
+  width:100%;
+  overflow-x:clip;
+}
+html.nini-fit-viewport #nini-root.nini-app {
+  width:1536px;
+  min-width:1536px;
+  max-width:1536px;
+  margin-left:0!important;
+  margin-right:0!important;
+  zoom:var(--nini-viewport-scale,1);
+}
+html.nini-fit-viewport #nini-root.nini-app.auth-app {
+  min-height:var(--nini-canvas-viewport-height,100vh);
+}
+html.nini-fit-viewport #nini-root.nini-app:not(.auth-app):not(.landing-app),
+html.nini-fit-viewport #nini-root.nini-app:not(.auth-app):not(.landing-app) .main-shell {
+  min-height:max(1048px,var(--nini-canvas-viewport-height,1048px));
+}
+html.nini-fit-viewport body:after {display:none}
+/* The public heart pattern lives on body, outside the scaled canvas. */
+html.nini-fit-viewport body:has(>#nini-root:is(.landing-app,.auth-app)) {
+  background-size:calc(64px * var(--nini-viewport-scale,1)) calc(64px * var(--nini-viewport-scale,1))!important;
+}
+/* Body-level dialogs stay at readable viewport dimensions. */
+html.nini-fit-viewport body>dialog.nini-app.modal {
+  zoom:1;
+  min-width:0;
+  width:min(610px,calc(100vw - 32px));
+  max-width:calc(100vw - 32px);
+  max-height:90dvh;
+}
+
+/* The display font draws ASCII tilde too high; keep other glyphs unchanged. */
+@font-face {
+  font-family:"NINI Notice Symbols";
+  src:local("Arial"),local("Roboto"),local("Noto Sans"),local("PingFang SC"),local("Microsoft YaHei"),local("DejaVu Sans");
+  font-style:normal;
+  font-weight:400;
+  unicode-range:U+007E;
+}
+html.nini-fit-viewport body>dialog.nini-app.modal.notice-modal {
+  width:min(960px,calc(100vw - 32px));
+  font-size:24px;
+}
+body>dialog.nini-app.modal.notice-modal[open] {display:flex;flex-direction:column;overflow:hidden}
+body>dialog.nini-app.modal.notice-modal>.card-head {padding:24px 32px;flex:none;gap:20px}
+body>dialog.nini-app.modal.notice-modal>.card-head h2 {font-size:32px;line-height:1.4;overflow-wrap:anywhere}
+body>dialog.nini-app.modal.notice-modal>.card-head .icon-button {width:48px;height:48px;flex:0 0 48px}
+body>dialog.nini-app.modal.notice-modal>.modal-body {padding:28px 36px;overflow:auto;min-height:0;overscroll-behavior:contain}
+body>dialog.nini-app.modal.notice-modal .article {font-family:"NINI Notice Symbols",var(--nini-content-font);font-size:24px;line-height:1.85}
+body>dialog.nini-app.modal.notice-modal .article h3 {font-size:28px;line-height:1.5}
+body>dialog.nini-app.modal.notice-modal .article small {font-size:18px}
+@media(max-width:600px) {
+  html.nini-fit-viewport body>dialog.nini-app.modal.notice-modal {width:calc(100vw - 24px);max-width:calc(100vw - 24px);font-size:20px}
+  body>dialog.nini-app.modal.notice-modal>.card-head {padding:16px 18px;gap:12px}
+  body>dialog.nini-app.modal.notice-modal>.card-head h2 {font-size:26px}
+  body>dialog.nini-app.modal.notice-modal>.modal-body {padding:20px}
+  body>dialog.nini-app.modal.notice-modal .article {font-size:20px}
+  body>dialog.nini-app.modal.notice-modal .article h3 {font-size:24px}
+  body>dialog.nini-app.modal.notice-modal .article small {font-size:16px}
+}
+
+/* Navigation and account pages reflow independently of the desktop canvas. */
+.nini-app .mobile-nav-close,.nini-app .mobile-nav-backdrop,.nini-app .mobile-dashboard-art{display:none}
+@media(max-width:1024px){
+  html,body{width:100%;min-width:0;max-width:100%;overflow-x:clip}
+  html{scrollbar-width:auto;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  html::-webkit-scrollbar{width:auto;height:auto}
+  body:after{display:none}
+  html body #nini-root.nini-app:not(.auth-app),html body #nini-root.nini-app.auth-app{width:100%;min-width:0;max-width:100%;min-height:100dvh;margin:0!important;border-radius:0;zoom:1;overflow:clip}
+  #nini-root.nini-app:not(.auth-app) .main-shell{width:100%;min-width:0;min-height:100dvh;margin-left:0}
+  #nini-root.nini-app:not(.auth-app) #page-content{width:100%;min-width:0;max-width:100%;padding:18px 20px 24px}
+  #nini-root.nini-app:not(.auth-app) .sidebar{position:fixed;inset:0 auto 0 0;width:min(290px,calc(100vw - 48px));min-height:0;height:100dvh;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;transform:translateX(-105%);visibility:hidden;z-index:102;transition:transform .2s ease,visibility .2s;box-shadow:8px 0 30px #83436724;padding-bottom:env(safe-area-inset-bottom)}
+  #nini-root.nini-app.menu-open .sidebar{transform:translateX(0);visibility:visible}
+  #nini-root.nini-app .mobile-nav-close{display:inline-flex;position:absolute;top:8px;right:8px;z-index:6;width:40px;height:40px;padding:0}
+  #nini-root.nini-app .mobile-nav-backdrop{position:fixed;inset:0;z-index:101;border:0;border-radius:0;background:#38243866;padding:0;width:100%;height:100dvh}
+  #nini-root.nini-app.menu-open .mobile-nav-backdrop{display:block}
+  html:has(#nini-root.menu-open),body:has(>#nini-root.menu-open){overflow:hidden}
+  #nini-root.nini-app .sidebar nav{padding:15px 20px;gap:8px}
+  #nini-root.nini-app .sidebar nav .nav-link{min-height:46px;height:auto;padding:8px 16px}
+  #nini-root.nini-app .sidebar nav .nav-link>span{font-size:18px;line-height:1.6}
+  #nini-root.nini-app .sidebar-decoration{flex:0 0 285px;min-height:285px;height:285px;max-height:285px;margin-top:4px;max-width:100%}
+  #nini-root.nini-app .topbar{height:auto;min-height:90px;padding:12px 16px;gap:12px;align-items:flex-start}
+  #nini-root.nini-app .topbar .mobile-menu{display:inline-flex;width:44px;height:44px;flex:0 0 44px;margin-top:2px}
+  #nini-root.nini-app #account-header{height:auto;min-width:0;gap:10px;flex-wrap:wrap}
+  #nini-root.nini-app .account{min-width:0;flex:1 1 220px;gap:10px}
+  #nini-root.nini-app .account .avatar{width:44px;height:44px;flex:0 0 44px}
+  #nini-root.nini-app .avatar .original-avatar{width:48px;height:48px;margin:-2px}
+  #nini-root.nini-app .account>div:last-child{min-width:0;flex:1}
+  #nini-root.nini-app .account strong{max-width:100%;font-size:17px;line-height:1.5}
+  #nini-root.nini-app .account .row{font-size:13px;line-height:1.5;gap:4px 8px;flex-wrap:wrap}
+  #nini-root.nini-app .account .badge{font-size:13px;line-height:1.5;white-space:normal;overflow-wrap:anywhere;max-width:100%;padding:2px 7px}
+  #nini-root.nini-app .top-actions{gap:8px;flex-wrap:wrap;max-width:100%;margin-left:auto}
+  #nini-root.nini-app .wallet-pill{height:42px;min-width:0;font-size:15px;padding:6px 12px;gap:7px}
+  #nini-root.nini-app .wallet-original-icon{width:27px;height:28px}
+  #nini-root.nini-app .top-actions .icon-button{height:42px;width:42px}
+  #nini-root.nini-app .top-actions .icon-button .icon{height:23px;width:23px}
+  .nini-app{font-size:16px}
+  .nini-app :is(.card,.card-body,.stack,.grid,.row){min-width:0}
+  .nini-app .grid.four{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nini-app .button{min-height:44px}
+  .nini-app :is(input:not([type=checkbox]):not([type=radio]),select,textarea){font-size:16px}
+  .nini-app .table-wrap{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+  .nini-app footer{padding:20px 16px max(20px,env(safe-area-inset-bottom));font-size:13px;line-height:1.7;overflow-wrap:anywhere}
+  .nini-app .fidelity-dashboard-hero{height:auto;min-height:224px;margin-bottom:16px;overflow:hidden}
+  .nini-app .dashboard-continuous-art{display:none}
+  .nini-app .mobile-dashboard-art{display:block;position:absolute;right:-22px;top:8px;width:240px;height:160px;z-index:1}
+  .nini-app .dashboard-hero-copy{height:auto;min-height:224px;max-width:none;width:100%;padding:24px;pointer-events:auto}
+  #nini-root .dashboard-hero-copy>h1:is(.sr-only,.custom-greeting){position:relative!important;inset:auto!important;width:calc(100% - 155px)!important;height:auto!important;max-width:480px;min-height:0;margin:0 0 10px!important;padding:0!important;clip:auto!important;white-space:normal!important;overflow:visible!important;overflow-wrap:anywhere;font-size:30px!important;line-height:1.4;letter-spacing:0;-webkit-text-stroke:3px white;filter:none}
+  #nini-root .dashboard-hero-copy>p.sr-only{position:relative!important;inset:auto!important;clip:auto!important;width:calc(100% - 155px)!important;height:auto!important;max-width:420px;margin:0!important;padding:0!important;white-space:normal!important;overflow:visible!important;font-size:16px;line-height:1.7}
+  .nini-app .dashboard-hero-copy>.row{position:relative;inset:auto;display:flex;flex-wrap:wrap;gap:12px;width:100%;margin-top:26px;padding:0}
+  .nini-app .dashboard-hero-copy .button{height:46px;min-width:0;padding:9px 18px;font-size:17px;flex:0 1 auto}
+  .nini-app .dashboard-hero-copy [data-action="import-sub"]{padding-left:42px}
+  .nini-app .dashboard-hero-copy .subscribe-crown-art{left:13px;top:11px;width:24px;height:23px}
+  .nini-app .dashboard-hero-copy .purchase-cart-icon{width:23px;height:23px}
+  .nini-app .fidelity-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px;align-items:stretch}
+  .nini-app .fidelity-metrics>.fidelity-metric{height:auto;min-height:228px;display:flex;flex-direction:column}
+  .nini-app .metric-heading{display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;gap:4px 8px;padding:12px 12px 0;min-height:72px}
+  .nini-app .metric-heading h2{font-size:16px;line-height:1.5;white-space:normal}
+  .nini-app .metric-medallion{width:32px;height:32px}
+  .nini-app .metric-original-icon{width:36px;height:36px;left:-2px;top:-2px}
+  .nini-app .metric-heading .badge{position:static;grid-column:1/-1;justify-self:start;width:auto;min-width:0;height:auto;font-size:12px;line-height:1.5;padding:2px 8px}
+  .nini-app .metric-interior{flex:1;display:flex;flex-direction:column;padding:8px 14px 14px;gap:8px}
+  .nini-app .metric-number{font-size:27px;line-height:1.45;white-space:normal;overflow-wrap:anywhere;overflow:visible;text-overflow:clip}
+  .nini-app .metric-number small{font-size:19px}
+  .nini-app .current-plan-card .metric-number{font-size:20px;line-height:1.55;min-height:0}
+  .nini-app .metric-progress{height:8px;margin:auto 0 0;min-height:8px}
+  .nini-app .metric-interior p{font-size:14px;line-height:1.5;margin:0;padding-right:12px;overflow-wrap:anywhere}
+  .nini-app .traffic-card .metric-interior{padding:8px 12px 14px;gap:8px}
+  .nini-app .traffic-card .fidelity-ring{position:relative;inset:auto;transform:none;width:94px;height:94px;min-height:94px;margin:auto;flex:none}
+  .nini-app .traffic-card .fidelity-ring b{font-size:25px}
+  .nini-app .traffic-card .metric-interior p{position:static;font-size:13px;line-height:1.6;white-space:normal;text-align:center;padding:0}
+  .nini-app .metric-corner-art:is(.corner-chart,.corner-calendar,.corner-device,.corner-crown){top:auto;right:6px;bottom:7px;width:25px;height:25px;opacity:.6}
+  .nini-app .fidelity-action-strip,.nini-app .fidelity-action-strip.has-four-actions{height:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:8px;gap:4px;margin-bottom:16px;border-radius:16px}
+  .nini-app .fidelity-action-strip>:is(a,button){padding:9px;gap:9px;min-height:78px;border:0!important}
+  .nini-app .fidelity-action-strip .strip-star{display:none}
+  .nini-app .fidelity-action-strip .action-round{width:36px;height:36px;flex:0 0 36px}
+  .nini-app .fidelity-action-strip .action-round :is(.icon,.sticker-glyph){width:25px;height:25px}
+  .nini-app .fidelity-action-strip b{font-size:15px;white-space:normal}
+  .nini-app .fidelity-action-strip small{font-size:13px;line-height:1.5;white-space:normal}
+  .nini-app .fidelity-action-strip .badge{font-size:13px;padding:0 7px}
+  .nini-app .fidelity-dashboard-bottom{grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+  .nini-app .fidelity-dashboard-right{contain:none;min-height:0;gap:16px;align-self:auto}
+  .nini-app .fidelity-dashboard-right>.subscription-status-card{flex:none;overflow:visible}
+  .nini-app .fidelity-dashboard-right>.subscription-status-card>.card-body{flex:none;max-height:360px;overflow:auto}
+  .nini-app .fidelity-community-banner{width:100%;height:auto;aspect-ratio:719/154;min-height:0;margin:0}
+  .nini-app .fidelity-community-banner .community-complete-art{width:100%;height:100%;inset:0}
+  .nini-app .fidelity-subscribe .card-body{padding:12px 16px 18px}
+  .nini-app .sub-copy{flex-wrap:wrap}
+  .nini-app .sub-copy input{flex:1 1 160px;width:auto;font-size:16px}
+  .nini-app .sub-copy .button{font-size:15px;min-height:44px}
+  .nini-app .client-platforms{gap:3px;padding:4px;grid-template-columns:repeat(5,minmax(0,1fr))}
+  .nini-app .client-platforms>button{min-height:44px;font-size:13px;padding:5px 2px}
+  .nini-app .fidelity-subscribe .subscription-client-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+  .nini-app .fidelity-subscribe .subscription-client{padding:10px 6px;gap:7px;min-height:100px;aspect-ratio:1}
+  .nini-app .fidelity-subscribe .subscription-client .client-art-box,.nini-app .fidelity-subscribe .subscription-client .client-app-icon{width:40px;height:40px;flex:0 0 40px;border-radius:11px}
+  .nini-app .fidelity-subscribe .subscription-client .client-name{font-size:14px;line-height:1.35;overflow-wrap:anywhere}
+  .nini-app .client-utilities>:is(a,button){min-height:44px;font-size:14px}
+  .nini-app .fidelity-notices .card-head{height:auto;min-height:58px;flex-wrap:wrap;padding:10px 12px;gap:8px}
+  .nini-app .fidelity-notices h2{font-size:18px}
+  .nini-app .fidelity-notices .card-head .button{font-size:13px;min-height:36px;height:auto;padding:6px 10px}
+  .nini-app .fidelity-notices .notice{height:auto;min-height:72px;gap:9px;flex-wrap:wrap;padding:10px}
+  .nini-app .fidelity-notices strong{font-size:15px;white-space:normal}
+  .nini-app .fidelity-notices small{font-size:13px;line-height:1.6}
+  .nini-app .fidelity-notices time{font-size:12px;margin-left:auto}
+  .nini-app .subscription-explanation-advice{flex-wrap:wrap;gap:4px}
+  body>dialog.nini-app.modal{width:calc(100vw - 24px);max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);border-radius:18px;font-size:16px;zoom:1}
+  body>dialog.nini-app.modal>.card-head{padding:16px;gap:12px}
+  body>dialog.nini-app.modal>.card-head h2{font-size:21px;overflow-wrap:anywhere}
+  body>dialog.nini-app.modal .modal-body{padding:18px}
+}
+@media(max-width:600px){
+  #nini-root.nini-app:not(.auth-app) #page-content{padding:14px 12px 20px}
+  #nini-root.nini-app .topbar{padding:10px 12px;gap:9px}
+  #nini-root.nini-app .top-actions{margin-left:0}
+  .nini-app .dashboard-hero-copy{padding:22px 18px;min-height:230px}
+  #nini-root .dashboard-hero-copy>h1:is(.sr-only,.custom-greeting){font-size:25px!important;width:calc(100% - 128px)!important}
+  #nini-root .dashboard-hero-copy>p.sr-only{width:calc(100% - 138px)!important;font-size:15px}
+  .nini-app .mobile-dashboard-art{right:-42px;top:16px;width:190px;height:155px}
+  .nini-app .dashboard-hero-copy>.row{gap:10px;margin-top:22px}
+  .nini-app .dashboard-hero-copy .button{font-size:16px;flex:1 1 auto;padding-left:12px;padding-right:12px}
+  .nini-app .fidelity-metrics{gap:10px}
+  .nini-app .fidelity-action-strip,.nini-app .fidelity-action-strip.has-four-actions{grid-template-columns:minmax(0,1fr)}
+  .nini-app .fidelity-action-strip>:is(a,button){min-height:64px;padding:10px 12px}
+  .nini-app .fidelity-action-strip>:is(a,button)+:is(a,button){border-top:1px solid #ffe1ed!important}
+  .nini-app .fidelity-notices .card-body{padding:0 12px 12px}
+  .nini-app .fidelity-notices .notice time{display:block}
+}
+@media(max-width:360px){
+  .nini-app .fidelity-metrics{grid-template-columns:minmax(0,1fr)}
+  .nini-app .fidelity-metrics>.fidelity-metric{min-height:200px}
+  .nini-app .fidelity-subscribe .subscription-client-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nini-app .client-platforms{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
+/* Commerce pages use real mobile tracks while keeping the desktop composition intact. */
+@media (max-width:1024px){
+  .nini-app .commerce-page{width:100%;min-width:0;gap:16px;margin:0}
+  .nini-app .commerce-page :is(.stack,.card,.card-body,.card-head,.plan-grid,.commerce-profile-grid,.commerce-order-layout,.commerce-invite-layout,.commerce-invite-stats){min-width:0;max-width:100%}
+  .nini-app .commerce-page :is(.card-head,.commerce-setting-row,.commerce-detail-line){overflow-wrap:anywhere}
+  .nini-app .commerce-page :is(.input,input,select,textarea){min-width:0;max-width:100%;font-size:16px}
+  .nini-app .commerce-page .button{min-height:44px;font-size:16px}
+  .nini-app .commerce-page .table-wrap{max-width:100%;min-width:0;overflow:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:auto}
+  .nini-app .commerce-page .table-wrap::-webkit-scrollbar{height:12px;width:12px}
+  .nini-app .commerce-page .table-wrap::-webkit-scrollbar-track{background:#fff0f7}
+  .nini-app .commerce-page .table-wrap::-webkit-scrollbar-thumb{background:#ff91bf;border:2px solid #fff0f7;border-radius:8px}
+  .nini-app .commerce-page :is(.commerce-order-layout,.commerce-invite-layout,.commerce-profile-grid){display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+
+  /* Restore the semantic title at a readable size; the existing illustration stays decorative. */
+  .nini-app .commerce-page .commerce-fidelity-hero{height:auto;min-height:152px;padding:22px 18px;overflow:hidden;border:1px solid #ffd1e3;border-radius:18px;background:linear-gradient(110deg,#fff5fa,#fffafc);box-shadow:inset 0 0 0 4px #fff}
+  .nini-app .commerce-page .commerce-fidelity-hero>.commerce-semantic-heading{position:relative!important;z-index:2;width:auto!important;max-width:calc(100% - 132px);height:auto!important;clip-path:none!important;overflow:visible!important;white-space:normal!important;overflow-wrap:anywhere;line-height:1.4}
+  .nini-app .commerce-page .commerce-fidelity-hero>h1.commerce-semantic-heading{margin:0 0 8px;font-size:26px;color:var(--commerce-ink,#201332)}
+  .nini-app .commerce-page .commerce-fidelity-hero>p.commerce-semantic-heading{margin:0;font-size:15px;color:var(--commerce-muted,#81698a)}
+  .nini-app .commerce-page .commerce-static-hero-art{position:absolute;left:auto;right:-8px;top:auto;bottom:0;width:640px;height:auto;aspect-ratio:1206/232;clip-path:inset(0 0 0 72%);z-index:1;pointer-events:none}
+  .nini-app .commerce-page-plan .commerce-static-hero-art{aspect-ratio:1206/201}
+  .nini-app .commerce-page-invite .commerce-static-hero-art{aspect-ratio:1206/300}
+
+  .nini-app .commerce-page .commerce-tabs{display:flex;flex-wrap:wrap;position:static;width:100%;height:auto;max-width:100%;padding:5px;gap:5px;border-radius:18px;overflow:visible}
+  .nini-app .commerce-page .commerce-tabs .button{flex:1 1 auto;min-width:0;padding:8px 12px;font-size:16px;white-space:nowrap}
+  .nini-app .commerce-page .commerce-tabs .button.active:after{margin-left:3px;font-size:15px}
+  .nini-app .commerce-page .commerce-tabs .button:not(.active)+.button:not(.active):before{display:none}
+  .nini-app .commerce-page-plan .commerce-plan-hero{display:grid;gap:12px}
+  .nini-app .commerce-page-plan .commerce-plan-hero>.commerce-tabs{position:static;left:auto;bottom:auto;width:100%;height:auto}
+  .nini-app .commerce-page-plan .plan-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .nini-app .commerce-page-plan .commerce-plan{grid-template-rows:auto minmax(0,1fr) auto;min-height:0;height:auto;align-self:stretch;padding:16px;gap:14px}
+  .nini-app .commerce-page-plan .commerce-plan.selected{padding:15px}
+  .nini-app .commerce-page-plan .commerce-plan-head{height:auto;min-height:114px;gap:8px;margin:0}
+  .nini-app .commerce-page-plan .commerce-plan-head>div{padding-top:0;min-width:0}
+  .nini-app .commerce-page-plan .commerce-plan h2{font-size:22px;line-height:1.4;white-space:normal;overflow-wrap:anywhere}
+  .nini-app .commerce-page-plan .commerce-gift-slot,
+  .nini-app .commerce-page-plan .commerce-gift-slot.motif-1,
+  .nini-app .commerce-page-plan .commerce-gift-slot.motif-2{width:100px;height:108px;flex:0 0 100px}
+  .nini-app .commerce-page-plan .commerce-plan-head .commerce-gift-slot .commerce-gift{left:0;top:0;width:100%;height:100%;object-fit:contain}
+  .nini-app .commerce-page-plan .commerce-plan .price{font-size:36px;line-height:1.2;margin-top:12px;white-space:normal;flex-wrap:wrap;gap:2px}
+  .nini-app .commerce-page-plan .commerce-plan .price .commerce-currency{font-size:22px}
+  .nini-app .commerce-page-plan .commerce-plan .price small{font-size:16px;margin-left:4px}
+  .nini-app .commerce-page-plan .commerce-feature-list{font-size:16px;line-height:1.5;padding:2px 4px 0;gap:8px;--feature-preview-height:160px}
+  .nini-app .commerce-page-plan .commerce-feature-list li{gap:10px;min-width:0}
+  .nini-app .commerce-page-plan .commerce-feature-list li>span:last-child{min-width:0;overflow-wrap:anywhere}
+  .nini-app .commerce-page-plan .commerce-plan-content{font-size:15px;line-height:1.5}
+  .nini-app .commerce-page-plan .commerce-feature-toggle{min-height:40px;font-size:15px}
+  .nini-app .commerce-page-plan .commerce-plan>.button{height:auto;min-height:48px;font-size:19px;padding:12px 18px}
+  .nini-app .commerce-page-plan .commerce-renewal{display:flex;flex-wrap:wrap;gap:12px;min-width:0;overflow-wrap:anywhere}
+  .nini-app .commerce-page-plan .commerce-purchase>.card-head{height:auto;min-height:0;padding:16px;flex-wrap:wrap;gap:12px}
+  .nini-app .commerce-page-plan .commerce-purchase-title{flex:1 1 100%;gap:8px;align-items:center}
+  .nini-app .commerce-page-plan .commerce-purchase-title h2{font-size:23px;white-space:normal}
+  .nini-app .commerce-page-plan .commerce-purchase-title .commerce-heading-icon{width:38px;height:38px;flex-basis:38px}
+  .nini-app .commerce-page-plan .commerce-purchase-title .small{flex-basis:100%;font-size:14px;margin:0}
+  .nini-app .commerce-page-plan .commerce-chosen-plan{flex-wrap:wrap;max-width:100%;margin:0;white-space:normal}
+  .nini-app .commerce-page-plan .commerce-purchase-star{display:none}
+  .nini-app .commerce-page-plan .commerce-purchase-grid{grid-template-columns:minmax(0,1fr);gap:12px;padding:0 12px 12px}
+  .nini-app .commerce-page-plan .commerce-purchase-grid>section,
+  .nini-app .commerce-page-plan .commerce-purchase-grid>section+section{padding:16px;border:0}
+  .nini-app .commerce-page-plan .commerce-periods{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .nini-app .commerce-page-plan .commerce-period{font-size:16px;min-height:90px}
+  .nini-app .commerce-page-plan .commerce-period strong{font-size:17px}
+  .nini-app .commerce-page-plan .commerce-period small{font-size:13px}
+  .nini-app .commerce-page-plan .commerce-buy-total .primary{height:auto;min-height:50px;font-size:20px;line-height:1.3}
+
+  .nini-app .commerce-page-order .commerce-order-list{height:auto;min-height:0;max-width:100%}
+  .nini-app .commerce-page-order .commerce-order-list .table-wrap{flex:auto;max-height:480px}
+  .nini-app .commerce-page-order .commerce-order-table{min-width:720px}
+  .nini-app .commerce-page-order .commerce-order-list>.pagination{height:auto;min-height:64px}
+  .nini-app .commerce-page-order .commerce-order-list>.pagination .button{min-height:44px;height:44px;width:44px}
+  .nini-app .commerce-page-order .commerce-order-detail{min-height:0;width:100%}
+  .nini-app .commerce-page-order .commerce-order-detail>.card-head{padding:0 42px 0 12px;height:64px}
+  .nini-app .commerce-page-order .commerce-order-detail .commerce-order-refresh-icon{width:40px;height:40px;min-height:40px;right:10px;top:12px}
+  .nini-app .commerce-page-order .commerce-order-detail>.card-body{padding:0 16px 16px}
+  .nini-app .commerce-page-order .commerce-order-stamp{height:auto;min-height:84px;margin-bottom:12px}
+  .nini-app .commerce-page-order .commerce-order-stamp>.ticket-stamp{font-size:17px;white-space:normal;overflow-wrap:anywhere}
+  .nini-app .commerce-page-order .commerce-order-stamp .commerce-ticket-text{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+  .nini-app .commerce-page-order .commerce-detail-line{font-size:16px;gap:12px;align-items:flex-start}
+  .nini-app .commerce-page-order .commerce-detail-line>strong{max-width:65%;white-space:normal;overflow-wrap:anywhere}
+  .nini-app .commerce-page-order .commerce-grand-total strong{font-size:26px}
+  .nini-app .commerce-page-order .commerce-payments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .nini-app .commerce-page-order .commerce-payment{min-width:0;min-height:48px;white-space:normal;font-size:15px;gap:7px}
+  .nini-app .commerce-page-order .commerce-payment img,
+  .nini-app .commerce-page-order .commerce-payment>.icon{width:28px;height:28px}
+  .nini-app .commerce-page-order .commerce-order-detail form>.primary{height:auto;min-height:50px;font-size:21px;line-height:1.3;letter-spacing:1px}
+  .nini-app .commerce-page-order .commerce-order-detail .link{height:auto;min-height:44px!important;line-height:1.4;padding:10px 15px}
+  .nini-app .commerce-page-order .commerce-order-detail .link:before,
+  .nini-app .commerce-page-order .commerce-order-detail .link:after{display:none}
+  .nini-app .commerce-page-order .commerce-detail-art{width:min(100%,359px);height:auto;aspect-ratio:359/197;max-height:190px;margin:8px auto 0}
+  .nini-app .commerce-page-order .commerce-thankyou{height:auto;margin:0}
+  .nini-app .commerce-page-order .commerce-original-thanks{height:auto;aspect-ratio:802/137;width:100%}
+
+  .nini-app .commerce-page-invite .commerce-invite-stats{grid-template-columns:repeat(2,minmax(0,1fr));height:auto;gap:12px}
+  .nini-app .commerce-page-invite .commerce-stat{height:auto;min-height:112px;padding:16px;gap:12px;align-items:center}
+  .nini-app .commerce-page-invite .commerce-stat-icon{width:54px;height:54px;flex-basis:54px}
+  .nini-app .commerce-page-invite .commerce-stat-icon>svg{width:100%;height:100%}
+  .nini-app .commerce-page-invite .commerce-stat-ornament{display:none}
+  .nini-app .commerce-page-invite .commerce-stat>div{min-width:0;padding:0}
+  .nini-app .commerce-page-invite .commerce-stat .muted{font-size:16px}
+  .nini-app .commerce-page-invite .commerce-stat .metric-value{font-size:30px;line-height:1.25;margin:8px 0 0;overflow-wrap:anywhere}
+  .nini-app .commerce-page-invite .commerce-stat .metric-value small{font-size:17px}
+  .nini-app .commerce-page-invite .commerce-commission-wallet{grid-column:1/-1;height:auto;min-height:110px;padding:16px;gap:12px}
+  .nini-app .commerce-page-invite .commerce-commission-main>.row{margin-top:12px;flex-wrap:wrap}
+  .nini-app .commerce-page-invite .commerce-commission-wallet .metric-value{white-space:normal;overflow-wrap:anywhere;font-size:28px}
+  .nini-app .commerce-page-invite .commerce-commission-wallet .button{height:auto;min-height:44px;font-size:16px;padding:8px 18px}
+  .nini-app .commerce-page-invite .commerce-commission-wallet .row .row{flex-wrap:wrap;gap:10px}
+  .nini-app .commerce-page-invite .commerce-fidelity-card{min-height:0}
+  .nini-app .commerce-page .commerce-fidelity-card>.card-head{height:auto;min-height:72px;padding:12px;gap:10px;align-items:center}
+  .nini-app .commerce-page .commerce-fidelity-card>.card-head>div{min-width:0;flex:1}
+  .nini-app .commerce-page .commerce-fidelity-card>.card-head h2{font-size:20px;line-height:1.4}
+  .nini-app .commerce-page .commerce-fidelity-card>.card-head p{font-size:14px;line-height:1.5;white-space:normal}
+  .nini-app .commerce-page .commerce-fidelity-card .commerce-heading-icon{width:42px;height:42px;flex-basis:42px}
+  .nini-app .commerce-page .commerce-fidelity-card .commerce-heading-star{width:26px;height:26px;flex-basis:26px}
+  .nini-app .commerce-page .commerce-fidelity-card>.card-body{padding:0 14px 16px}
+  .nini-app .commerce-page-invite .commerce-code-sticker .ticket-stamp{width:300px;max-width:76%;height:auto;min-height:64px;font-size:29px;line-height:1.3;overflow-wrap:anywhere}
+  .nini-app .commerce-page-invite .commerce-code-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .nini-app .commerce-page-invite .commerce-code-actions .button{height:auto;min-height:48px;font-size:16px;padding:10px 8px;gap:6px;white-space:normal}
+  .nini-app .commerce-page-invite .commerce-invite-hint{max-width:100%;margin:18px 0 0;padding:0;line-height:1.6}
+  .nini-app .commerce-page-invite .commerce-invite-bow{display:none}
+  .nini-app .commerce-page-invite .commerce-invite-records{height:auto;max-height:360px;scrollbar-width:auto}
+  .nini-app .commerce-page-invite .commerce-invite-thanks{width:100%;height:auto;aspect-ratio:712/106;margin:10px 0}
+  .nini-app .commerce-page-invite .commerce-invite-pagination{position:static;display:flex;justify-content:center;flex-wrap:wrap;font-size:14px;gap:8px;margin-top:12px}
+  .nini-app .commerce-page-invite .commerce-invite-pagination>.button{font-size:14px;min-height:40px;height:auto;padding:8px 12px}
+
+  .nini-app .commerce-page-profile .commerce-profile-intro{grid-template-rows:auto auto;gap:14px}
+  .nini-app .commerce-page-profile .commerce-profile-surface{display:none}
+  .nini-app .commerce-page-profile .commerce-hero-profile{min-height:0;padding:18px}
+  .nini-app .commerce-page-profile .commerce-hero-profile>.commerce-semantic-heading{max-width:100%}
+  .nini-app .commerce-page-profile .commerce-identity{height:auto;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);padding:0;background:repeating-conic-gradient(#ffebf3 0 25%,#fff5f9 0 50%) 0/48px 48px;border-color:#ffd1e3!important;box-shadow:inset 0 0 0 4px #fff}
+  .nini-app .commerce-page-profile .commerce-identity-account{height:auto;max-width:100%;padding:20px;gap:16px;align-items:center}
+  .nini-app .commerce-page-profile .commerce-avatar{width:92px;height:92px;flex:0 0 92px;margin:0;align-self:center}
+  .nini-app .commerce-page-profile .commerce-identity-account>div{padding:0;align-self:center}
+  .nini-app .commerce-page-profile .commerce-identity h2{font-size:22px;white-space:normal;overflow-wrap:anywhere;margin-bottom:10px}
+  .nini-app .commerce-page-profile .commerce-identity-plan{font-size:16px;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+  .nini-app .commerce-page-profile .commerce-identity-plan .icon{flex-shrink:0}
+  .nini-app .commerce-page-profile .commerce-identity p{font-size:14px;margin:12px 0 0;white-space:normal;line-height:1.6}
+  .nini-app .commerce-page-profile .commerce-identity-meta{position:relative;left:auto;right:auto;bottom:auto;height:auto;min-width:0;padding:16px;border-radius:0;gap:14px}
+  .nini-app .commerce-page-profile .commerce-identity-meta>div{padding-left:0;min-width:0}
+  .nini-app .commerce-page-profile .commerce-identity-meta .commerce-detail-line{height:auto;min-height:34px;gap:10px;padding:6px 0;align-items:flex-start}
+  .nini-app .commerce-page-profile .commerce-identity-meta .commerce-detail-line>.muted{min-width:100px;gap:7px;font-size:14px}
+  .nini-app .commerce-page-profile .commerce-identity-meta .commerce-detail-line>strong{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.5;font-size:14px}
+  .nini-app .commerce-page-profile .commerce-identity-slogan{width:120px;height:auto;aspect-ratio:172/78;flex:0 0 120px}
+  .nini-app .commerce-page-profile .commerce-identity-paws{display:none}
+  .nini-app .commerce-page-profile :is(.commerce-wallet-card,.commerce-gift-card,.commerce-security){height:auto;min-height:0}
+  .nini-app .commerce-page-profile .commerce-wallet-balance{height:auto;gap:14px;flex-wrap:wrap}
+  .nini-app .commerce-page-profile .commerce-wallet-ticket{height:auto;min-height:88px;width:auto;max-width:100%;flex:1 1 220px;padding:14px 18px!important}
+  .nini-app .commerce-page-profile .commerce-wallet-ticket>div>strong{font-size:30px;white-space:normal;overflow-wrap:anywhere}
+  .nini-app .commerce-page-profile .commerce-wallet-balance>.primary{width:auto;min-height:50px;height:auto;flex:1 1 120px;font-size:21px;letter-spacing:1px;padding:10px 16px}
+  .nini-app .commerce-page-profile .commerce-setting-row,
+  .nini-app .commerce-page-profile .commerce-wallet-card .commerce-setting-row,
+  .nini-app .commerce-page-profile .commerce-notifications .commerce-setting-row{height:auto;min-height:68px;padding:12px 10px;gap:10px;align-items:center}
+  .nini-app .commerce-page-profile .commerce-setting-row strong{font-size:16px;line-height:1.5}
+  .nini-app .commerce-page-profile .commerce-setting-row p{font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+  .nini-app .commerce-page-profile .commerce-setting-row>.button{height:auto;min-height:44px;font-size:15px;padding:8px 14px}
+  .nini-app .commerce-page-profile .commerce-setting-icon{width:36px;height:36px;flex-basis:36px}
+  .nini-app .commerce-page-profile .commerce-profile-row-icon{width:36px;height:36px}
+  .nini-app .commerce-page-profile .commerce-notifications{padding:12px;margin-top:12px}
+  .nini-app .commerce-page-profile .commerce-notifications header{gap:10px;align-items:center}
+  .nini-app .commerce-page-profile .commerce-gift-card .inline-form{height:auto;gap:10px;align-items:center}
+  .nini-app .commerce-page-profile .commerce-gift-card .inline-form>.input{height:48px;font-size:16px}
+  .nini-app .commerce-page-profile .commerce-gift-card .inline-form>.button{height:48px;min-height:48px;font-size:17px;padding:8px 16px;flex:0 0 auto}
+  .nini-app .commerce-page-profile .commerce-gift-heading-bow{width:56px;height:auto;flex:0 0 56px}
+  .nini-app .commerce-page-profile .commerce-gift-footer{height:auto;margin:10px 0 -12px;overflow:hidden}
+  .nini-app .commerce-page-profile .commerce-original-gift-footer{width:100%;height:auto;aspect-ratio:592/186}
+}
+
+@media (max-width:600px){
+  .nini-app .commerce-page-plan .plan-grid{grid-template-columns:minmax(0,1fr)}
+  .nini-app .commerce-page .commerce-fidelity-hero{padding:20px 14px;min-height:146px}
+  .nini-app .commerce-page .commerce-fidelity-hero>h1.commerce-semantic-heading{font-size:23px}
+  .nini-app .commerce-page .commerce-fidelity-hero>p.commerce-semantic-heading{font-size:14px;line-height:1.5}
+  .nini-app .commerce-page .commerce-static-hero-art{right:-14px;width:560px;clip-path:inset(0 0 0 73%)}
+  .nini-app .commerce-page .commerce-fidelity-hero>.commerce-semantic-heading{max-width:calc(100% - 110px)}
+  .nini-app .commerce-page-profile .commerce-hero-profile>.commerce-semantic-heading{max-width:100%}
+  .nini-app .commerce-page-invite .commerce-stat{padding:12px;gap:8px;flex-wrap:wrap;align-content:start}
+  .nini-app .commerce-page-invite .commerce-stat-icon{width:44px;height:44px;flex-basis:44px}
+  .nini-app .commerce-page-invite .commerce-stat .metric-value{font-size:28px}
+  .nini-app .commerce-page-profile .commerce-identity-account{padding:18px 14px;gap:12px}
+  .nini-app .commerce-page-profile .commerce-avatar{width:76px;height:76px;flex-basis:76px}
+  .nini-app .commerce-page-profile .commerce-identity h2{font-size:20px}
+  .nini-app .commerce-page-profile .commerce-identity-meta{padding:12px 14px}
+  .nini-app .commerce-page-profile .commerce-identity-slogan{display:none}
+}
+
+@media (max-width:400px){
+  .nini-app .commerce-page-plan .commerce-periods{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nini-app .commerce-page-plan .commerce-plan .price{font-size:32px}
+  .nini-app .commerce-page-plan .commerce-purchase-grid>section,
+  .nini-app .commerce-page-plan .commerce-purchase-grid>section+section{padding:12px}
+  .nini-app .commerce-page-order .commerce-order-detail .commerce-payments{grid-template-columns:minmax(0,1fr)}
+  .nini-app .commerce-page-profile .commerce-setting-row{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:8px}
+  .nini-app .commerce-page-profile .commerce-setting-icon{width:32px;height:32px;flex-basis:32px}
+  .nini-app .commerce-page-profile .commerce-profile-row-icon{width:32px;height:32px}
+  .nini-app .commerce-page-profile .commerce-setting-row>.button{padding:8px 10px}
+  .nini-app .commerce-page-profile .commerce-setting-row .switch{width:56px;min-width:56px;height:34px}
+  .nini-app .commerce-page-profile .commerce-setting-row .switch>span{width:26px;height:26px}
+  .nini-app .commerce-page-profile .commerce-setting-row .switch.on>span{transform:translateX(22px)}
+  .nini-app .commerce-page-invite .commerce-code-actions{grid-template-columns:minmax(0,1fr)}
+}
+
+/* Mobile support pages use normal document flow; desktop artwork is untouched. */
+@media (max-width: 1024px) {
+  .nini-app .support-page,
+  .nini-app .support-page .card { min-width: 0; max-width: 100%; }
+  .nini-app .support-page { font-size: 16px; }
+  .nini-app .support-header { max-width: 100%; }
+
+  /* The artwork scales as a banner, while real controls keep their touch size. */
+  .nini-app .support-knowledge-header,
+  .nini-app .support-ticket-header { height: auto; min-height: 0; }
+  .nini-app .knowledge-approved-banner,
+  .nini-app .ticket-approved-banner { position: relative; inset: auto; width: 100%; height: auto; }
+  .nini-app .knowledge-approved-banner { aspect-ratio: 1206 / 130; }
+  .nini-app .ticket-approved-banner { aspect-ratio: 1206 / 191; }
+  .nini-app .knowledge-approved-overlap,
+  .nini-app .ticket-approved-overlap,
+  .nini-app .knowledge-seal-custom { display: none; }
+
+  .nini-app .knowledge-layout,
+  #nini-root:has(.sidebar nav a[href="#/community"]) .knowledge-layout {
+    grid-template-columns: minmax(0, 1fr); height: auto; gap: 14px;
+  }
+  .nini-app .knowledge-nav { max-height: 310px; overflow: auto; }
+  .nini-app .knowledge-nav .support-search { position: sticky; top: 0; z-index: 3; background: #fff; }
+  .nini-app .knowledge-detail { min-width: 0; overflow: visible; }
+  .nini-app .knowledge-article-head { height: auto; min-height: 0; padding: 16px; }
+  .nini-app .knowledge-article-head h2 { max-width: none; flex: 1; min-width: 0; font-size: 25px; }
+  .nini-app .knowledge-article-head > .row { gap: 8px; }
+  .nini-app .knowledge-article-note { display: none; }
+  .nini-app .knowledge-article-meta { padding-left: 0; gap: 14px; flex-wrap: wrap; margin-top: 12px; font-size: 14px; }
+  .nini-app .knowledge-category-stamp { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  .nini-app .knowledge-article-surface { flex: none; overflow: visible; min-width: 0; margin: 0 12px 12px; }
+  .nini-app .knowledge-article { min-width: 0; min-height: 0; padding: 16px 18px 8px 62px; font-size: 16px; line-height: 1.85; }
+  .nini-app .knowledge-article h2,
+  .nini-app .knowledge-article h3 { font-size: 21px; }
+  .nini-app .knowledge-article h3:before { left: -47px; width: 32px; height: 32px; font-size: 22px; }
+  .nini-app .knowledge-article pre { min-width: 0; max-width: 100%; white-space: pre; overflow: auto; }
+  .nini-app .knowledge-article table { width: 100%; min-width: 0; max-width: 100%; overflow-x: auto; }
+  .nini-app .knowledge-article img,
+  .nini-app .knowledge-article video,
+  .nini-app .knowledge-article iframe { max-width: 100%; }
+  .nini-app .knowledge-article-tail { min-height: 200px; padding: 16px 255px 16px 16px; }
+  .nini-app .knowledge-reader-art { width: 250px; height: 187px; }
+  .nini-app .knowledge-book-label { right: 63px; bottom: 45px; width: 54px; min-height: 22px; font-size: 11px; }
+
+  .nini-app .support-node-header { height: auto; padding: 16px; border: 1px solid var(--line, #f5b6cf); border-radius: 16px; overflow: hidden; }
+  .nini-app .node-continuous-header { left: auto; right: 0; top: 0; width: 100%; height: 150px; overflow: hidden; }
+  .nini-app .node-continuous-header > svg { position: absolute; right: 0; width: 822px; height: 150px; max-width: none; }
+  .nini-app .support-node-header > h1.sr-only {
+    position: relative; width: auto; height: auto; clip: auto; overflow: visible;
+    white-space: normal; margin: 0; padding: 0; font-size: 28px; z-index: 2;
+  }
+  .nini-app .node-status-stamps { position: relative; inset: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 500px; margin-top: 22px; }
+  .nini-app .support-page .node-stat-stamp { width: 100%; min-width: 0; height: 96px; padding: 12px 18px; gap: 10px; }
+  .nini-app .node-stat-vector-frame { width: 100%; height: 100%; }
+  .nini-app .node-stat-stamp > span { min-width: 0; font-size: 16px; }
+  .nini-app .node-stat-stamp strong { font-size: 32px; }
+  .nini-app .support-page .node-stat-stamp > .support-sticker-star { right: 7px; top: 8px; width: 20px; height: 21px; }
+  .nini-app .support-node-layout { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .nini-app .node-list-card { min-height: 0; padding: 0 12px 12px; }
+  .nini-app .node-list-heading { height: 64px; padding-left: 0; }
+  .nini-app .node-table { width: 100%; height: auto; max-height: 560px; overflow: auto; }
+  .nini-app .node-table table { min-width: 500px; width: 100%; font-size: 16px; }
+  .nini-app .node-table th,
+  .nini-app .node-table td { font-size: 16px; }
+  .nini-app .node-table td:first-child > .row { gap: 10px; }
+  .nini-app .node-table-tools .icon-button { width: 40px; height: 40px; }
+  .nini-app .support-subscription { height: auto; min-height: 270px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 38%); align-items: center; }
+  .nini-app .node-plan-copy { min-width: 0; padding: 62px 24px 24px; }
+  .nini-app .node-plan-copy h3 { max-height: none; font-size: 22px; }
+  .nini-app .node-plan-name { display: block; overflow: visible; overflow-wrap: anywhere; -webkit-line-clamp: unset; }
+  .nini-app .node-travel-scene { position: relative; inset: auto; width: 100%; height: auto; aspect-ratio: 379 / 318; align-self: end; }
+  .nini-app .node-travel-original { width: 100%; height: 100%; }
+  .nini-app .node-travel-brand { display: none; }
+  .nini-app .node-help-banner { width: 100%; height: auto; min-height: 0; margin: 18px 0 0; padding: 18px 22px; border: 1px solid var(--line, #f5b6cf); border-radius: 16px; overflow: hidden; }
+  .nini-app .node-help-banner > div { max-width: none; }
+  .nini-app .node-help-banner h3 { font-size: 23px; }
+  .nini-app .node-help-banner p { margin: 8px 0 0; font-size: 16px; }
+  .nini-app .node-help-continuous { display: none; }
+
+  .nini-app .support-ticket-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .nini-app .ticket-list { height: auto; min-height: 0; }
+  .nini-app .ticket-list-body { max-height: 350px; flex: none; }
+  .nini-app .ticket-list-head > .row { gap: 12px; }
+  .nini-app .ticket-list-head > .row > .button { min-width: 0; padding: 9px 16px; font-size: 16px; }
+  .nini-app .ticket-list-head h2 { font-size: 23px; }
+  .nini-app .ticket-list-row { grid-template-columns: minmax(100px, 1fr) 60px 78px 90px 12px; padding: 12px; gap: 6px; }
+  .nini-app .ticket-detail { height: auto; min-height: 0; }
+  .nini-app .ticket-detail-heading { min-height: 0; padding: 16px; }
+  .nini-app .ticket-detail-heading h2 { font-size: 23px; overflow-wrap: anywhere; }
+  .nini-app .ticket-detail-heading > .row,
+  .nini-app .ticket-detail-heading > .row > .row { min-width: 0; gap: 10px; }
+  .nini-app .support-ticket-messages { flex: none; max-height: 65vh; max-height: 65dvh; min-height: 150px; padding: 18px 16px; gap: 22px; }
+  .nini-app .ticket-message { gap: 12px; }
+  .nini-app .ticket-message.me .ticket-avatar,
+  .nini-app .ticket-message:not(.me) .ticket-avatar { width: 46px; height: 46px; flex-basis: 46px; }
+  .nini-app .ticket-message-content > .row { gap: 6px 12px; }
+  .nini-app .ticket-message-text { font-size: 16px; padding: 12px 34px 12px 14px; }
+  .nini-app .ticket-message-heart { right: 8px; width: 20px; height: 20px; }
+  .nini-app .ticket-detail > .card-body { flex: none; padding: 10px 12px 14px; }
+  .nini-app .ticket-composer { height: auto; min-height: 158px; gap: 10px; padding: 12px; }
+  .nini-app .ticket-composer textarea { width: 100%; min-height: 88px; height: 88px; flex: none; font-size: 16px; padding: 8px; }
+  .nini-app .ticket-composer .primary { min-width: 135px; font-size: 16px; padding: 9px 14px; }
+  .nini-app .ticket-pagination { flex: none; padding: 14px; }
+
+  .nini-app .support-community-header { height: auto; border: 1px solid var(--line, #f5b6cf); border-radius: 16px; overflow: hidden; background: #fff7fb; }
+  .nini-app .community-continuous-header { display: none; }
+  .nini-app .support-community-header .support-heading { max-width: none; height: auto; padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; }
+  .nini-app .support-community-header .support-chat-emblem { display: none; }
+  .nini-app .support-community-header .community-original-title { width: auto !important; height: auto !important; flex: none; font-size: 28px; white-space: normal; }
+  .nini-app .support-community-header .community-original-title .sr-only { position: static; width: auto; height: auto; clip: auto; overflow: visible; white-space: normal; margin: 0; }
+  .nini-app .support-community-header .support-chat-status { position: static; font-size: 15px; line-height: 1.5; white-space: normal; overflow-wrap: anywhere; }
+  .nini-app .support-community-header .support-chat-status:before { width: 11px; height: 11px; margin-right: 6px; }
+  .nini-app .support-community-header .support-heading p { position: static; white-space: normal; font-size: 14px; margin-top: 8px; }
+  .nini-app .support-community-header .support-heading > .button { position: static; width: auto; height: 44px; min-width: 75px; min-height: 44px; padding: 8px 12px; }
+  .nini-app .community-card { height: calc(100vh - 235px); height: calc(100dvh - 235px); min-height: 460px; max-height: 850px; }
+  .nini-app .community-frame { height: 100%; min-height: 0; }
+
+  .nini-app .support-traffic-header { height: auto; min-height: 0; padding: 16px; }
+  .nini-app .traffic-heading { position: relative; inset: auto; width: 100%; gap: 10px; }
+  .nini-app .traffic-heading .traffic-title { width: 245px; height: 50px; flex-basis: 245px; }
+  .nini-app .traffic-title-art { width: 245px; height: 50px; }
+  .nini-app .traffic-heading p { font-size: 16px; margin: 4px 0 0; }
+  .nini-app .traffic-period { font-size: 15px; padding: 6px 12px; }
+  .nini-app .traffic-ledger-stamp.original-ledger-stamp,
+  .nini-app .traffic-header-art { display: none; }
+  .nini-app .traffic-metrics { position: relative; inset: auto; width: 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+  .nini-app .support-page .traffic-metric { height: auto; min-height: 115px; padding: 12px; gap: 10px; }
+  .nini-app .support-page .traffic-metric .original-metric-icon { width: 58px; height: 60px; flex-basis: 58px; margin: 0; align-self: center; }
+  .nini-app .support-page .traffic-medallion-art { width: 100%; height: 100%; }
+  .nini-app .traffic-metric-label { font-size: 16px; }
+  .nini-app .support-page .traffic-metric strong { font-size: 24px; }
+  .nini-app .traffic-table-card { height: auto; padding: 6px; }
+  .nini-app .traffic-table { width: 100%; max-height: 520px; }
+  .nini-app .traffic-table table { width: 100%; min-width: 680px; }
+  .nini-app .traffic-table th,
+  .nini-app .traffic-table td { font-size: 16px; }
+  .nini-app .traffic-help { flex-wrap: wrap; gap: 12px; min-height: 0; padding: 16px; margin-top: 16px; }
+  .nini-app .traffic-help > strong { border: 0; padding-right: 0; font-size: 21px; }
+  .nini-app .traffic-help > p { flex: 1 1 260px; font-size: 16px; }
+  .nini-app .traffic-help > .icon-button { margin: 0 0 0 auto; width: 40px; height: 40px; }
+  .nini-app .traffic-tip-writing { display: none; }
+}
+
+@media (max-width: 600px) {
+  .nini-app .support-knowledge-header,
+  .nini-app .support-ticket-header { min-height: 100px; overflow: hidden; border: 1px solid var(--line, #f5b6cf); border-radius: 16px; background: #fff7fb; }
+  .nini-app .knowledge-approved-banner,
+  .nini-app .ticket-approved-banner { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; overflow: hidden; }
+  .nini-app .knowledge-approved-banner > svg { position: absolute; right: -60px; top: 0; width: 760px; height: 100px; max-width: none; }
+  .nini-app .ticket-approved-banner > svg { position: absolute; right: -15px; top: 0; width: 632px; height: 100px; max-width: none; }
+  .nini-app .support-knowledge-header > h1.sr-only,
+  .nini-app .support-ticket-header > h1.sr-only { position: relative; inset: auto; width: max-content; max-width: 57%; height: auto; clip: auto; overflow: visible; white-space: normal; margin: 22px 0 20px 14px; padding: 8px 10px; font-size: 25px; line-height: 1.35; border-radius: 12px; background: #fff9fc; }
+  .nini-app .knowledge-nav { max-height: 265px; }
+  .nini-app .knowledge-link { font-size: 16px; min-height: 48px; padding: 9px 10px; margin: 4px 8px; gap: 9px; }
+  .nini-app .knowledge-group h3 { height: auto; min-height: 46px; padding: 8px 12px; font-size: 17px; }
+  .nini-app .knowledge-article-head { padding: 14px 10px; }
+  .nini-app .knowledge-article-head h2 { font-size: 22px; }
+  .nini-app .knowledge-article-head > .row > .support-outline-heart { display: none; }
+  .nini-app .knowledge-article-surface { margin: 0 8px 8px; }
+  .nini-app .knowledge-article { padding: 12px 12px 8px; }
+  .nini-app .knowledge-article h3 { padding-left: 39px; min-height: 32px; }
+  .nini-app .knowledge-article h3:before { left: 0; }
+  .nini-app .knowledge-article blockquote { padding: 10px 12px; }
+  .nini-app .knowledge-article-tail { display: flex; flex-direction: column; align-items: stretch; min-height: 0; padding: 8px 12px 12px; }
+  .nini-app .knowledge-reader-art { position: relative; inset: auto; width: 220px; max-width: 100%; height: 165px; align-self: flex-end; order: -1; }
+  .nini-app .knowledge-book-label { display: none; }
+  .nini-app .support-article-footer { padding: 12px; font-size: 15px; }
+  .nini-app .support-article-footer > .icon { flex-shrink: 0; }
+
+  .nini-app .node-status-stamps { gap: 8px; }
+  .nini-app .support-page .node-stat-stamp { padding: 10px 12px; gap: 3px; height: 88px; }
+  .nini-app .support-page .node-stat-stamp > .node-stat-art,
+  .nini-app .support-page .node-stat-stamp:nth-child(2) > .node-stat-art { width: 34px; height: 40px; flex-basis: 34px; margin: 0; align-self: center; }
+  .nini-app .node-stat-stamp > span { font-size: 14px; }
+  .nini-app .node-stat-stamp strong { font-size: 28px; }
+  .nini-app .support-subscription { display: block; min-height: 0; }
+  .nini-app .node-plan-copy { padding: 62px 20px 0; }
+  .nini-app .node-travel-scene { width: 260px; max-width: 100%; margin: 0 auto; }
+  .nini-app .node-help-banner { padding: 16px; }
+
+  .nini-app .ticket-list-head { padding: 12px 10px 0; }
+  .nini-app .ticket-list-head h2 { font-size: 21px; gap: 6px; }
+  .nini-app .ticket-list-head .support-sticker-star { display: none; }
+  .nini-app .ticket-list-icon,
+  .nini-app .ticket-list-original-icon { width: 35px; height: 36px; }
+  .nini-app .ticket-list-body { padding: 0 8px; }
+  .nini-app .ticket-list-row { grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; padding: 12px; }
+  .nini-app .ticket-list-row > strong { grid-column: 1 / 3; grid-row: 1; }
+  .nini-app .ticket-list-row > span:last-child { grid-column: 3; grid-row: 1; }
+  .nini-app .ticket-list-row > span:nth-child(2) { grid-column: 1; grid-row: 2; }
+  .nini-app .ticket-list-row > span:nth-child(3) { grid-column: 2; grid-row: 2; }
+  .nini-app .ticket-list-row > time { grid-column: 3; grid-row: 2; font-size: 12px; }
+  .nini-app .ticket-list-heading { display: none; }
+  .nini-app .ticket-list-row .badge { font-size: 13px; padding: 3px 8px; }
+  .nini-app .ticket-detail-heading { padding: 14px 12px; }
+  .nini-app .support-ticket-messages { padding: 16px 12px; }
+  .nini-app .ticket-message.me .ticket-avatar,
+  .nini-app .ticket-message:not(.me) .ticket-avatar { width: 35px; height: 35px; flex-basis: 35px; }
+  .nini-app .ticket-message { gap: 9px; }
+  .nini-app .ticket-message-content time { font-size: 12px; }
+  .nini-app .ticket-composer .row { gap: 8px; }
+
+  .nini-app .support-community-header .support-heading { padding: 14px 12px; gap: 10px; }
+  .nini-app .support-community-header .community-original-title { font-size: 25px; }
+  .nini-app .support-community-header .support-heading > .button { min-width: 64px; padding: 8px; }
+
+  .nini-app .support-traffic-header { padding: 12px; }
+  .nini-app .traffic-metrics { grid-template-columns: minmax(0, 1fr); }
+  .nini-app .support-page .traffic-metric { min-height: 88px; padding: 12px 16px; gap: 16px; }
+  .nini-app .support-page .traffic-metric > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; }
+  .nini-app .traffic-metric-label { grid-column: 1; }
+  .nini-app .support-page .traffic-metric strong { grid-column: 1; font-size: 27px; }
+  .nini-app .traffic-metric-badge { grid-column: 2; grid-row: 1 / 3; align-self: center; }
+}
+
+@media (max-width: 400px) {
+  .nini-app .support-page .traffic-metric > div { display: block; }
+  .nini-app .traffic-metric-badge { margin-top: 5px; }
+  .nini-app .ticket-list-head > .row > .button { padding: 9px 12px; }
+}
+
+/* Public pages reflow independently of the desktop illustration canvas. */
+@media (max-width:1024px) {
+  #nini-root.nini-app.landing-app,
+  #nini-root.nini-app.auth-app,
+  #nini-root.nini-app.auth-app:has(.auth-poster) {
+    width:100%;min-width:0;max-width:100%;min-height:100dvh;margin:0;
+  }
+  .landing-app .lp-paper {width:100%;min-width:0}
+  .landing-app .lp-nav {
+    margin:0 24px;padding:16px 12px 12px;min-height:0;
+    display:flex;flex-wrap:wrap;gap:14px 20px;align-items:center;
+  }
+  .landing-app .lp-brand {min-width:0;max-width:100%;gap:8px;flex:1}
+  .landing-app .lp-brand strong {font-size:30px;max-width:100%;line-height:1.25}
+  .landing-app .lp-brand small {font-size:12px;letter-spacing:1px}
+  .landing-app .lp-brand>img,.landing-app .lp-brand-sticker {width:48px;height:48px;flex-shrink:0}
+  .landing-app .lp-nav nav {
+    order:3;flex:1 0 100%;display:flex;justify-content:space-between;
+    gap:8px;overflow-x:auto;min-width:0;white-space:nowrap;padding:4px 2px;
+    scrollbar-width:thin;
+  }
+  .landing-app .lp-nav nav>a,.landing-app .lp-nav nav>button,
+  .landing-app .lp-nav nav>button:first-child {font-size:16px;min-height:44px;padding:8px 12px;flex:0 0 auto}
+  .landing-app .lp-nav-actions {gap:12px;max-width:100%;flex-wrap:wrap;justify-content:flex-end}
+  .landing-app .lp-login {font-size:14px;min-height:44px;display:inline-flex;align-items:center}
+  .landing-app .lp-nav-actions .lp-button {font-size:16px;min-height:44px;padding:8px 17px;gap:8px}
+  .landing-app .lp-nav-actions .lp-button>svg {width:20px;height:20px}
+  .landing-app .lp-hero {
+    display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);
+    align-items:center;gap:24px;margin:34px 26px 0;padding:34px 26px 48px;
+    min-height:0;height:auto;border-radius:30px;
+  }
+  .landing-app .lp-hero>.lp-copy {position:relative;left:auto;top:auto;width:auto;min-width:0;margin:0;z-index:5}
+  .landing-app .lp-eyebrow {font-size:12px;letter-spacing:1px;padding:7px 14px;gap:8px;max-width:100%;white-space:normal}
+  .landing-app .lp-kicker {font-size:16px;letter-spacing:1px;gap:12px;margin:24px 0 14px;flex-wrap:wrap}
+  .landing-app .lp-kicker-line {width:46px}
+  .landing-app .lp-copy>h1#lp-title {font-size:clamp(32px,4.7vw,46px);line-height:1.3;letter-spacing:0;max-width:100%;margin:0 0 18px;-webkit-text-stroke:5px white}
+  .landing-app .lp-copy>.lp-description {font-size:17px;line-height:1.8;max-width:100%;margin:0 0 22px}
+  .landing-app .lp-hero-actions {flex-wrap:wrap;gap:20px}
+  .landing-app .lp-hero-actions>.lp-button {font-size:18px;min-height:54px;padding:12px 16px;gap:10px;max-width:100%;white-space:normal}
+  .landing-app .lp-hero-actions>.lp-button>svg {width:28px;height:28px;padding:5px;flex-shrink:0}
+  .landing-app .lp-hero-actions>.lp-button:after {width:42px;height:34px;left:-8px;top:-17px}
+  .landing-app .lp-hero-actions>.lp-button-white:after {left:auto;right:-8px;width:30px;height:30px;top:-15px}
+  .landing-app .lp-hero .lp-small-notes {width:100%;grid-template-columns:1fr;gap:14px;margin-top:24px;padding-top:4px}
+  .landing-app .lp-hero .lp-small-notes>a {min-width:0;min-height:64px;padding:9px 12px;gap:12px}
+  .landing-app .lp-hero .lp-shortcut-icon {width:38px;height:38px;background-size:38px 38px;flex-shrink:0}
+  .landing-app .lp-hero .lp-small-notes b {font-size:16px;line-height:1.4}
+  .landing-app .lp-hero .lp-small-notes small {font-size:12px;line-height:1.4}
+  .landing-app .lp-hero>.lp-art {
+    position:relative;inset:auto;justify-self:center;align-self:center;
+    width:100%;max-width:440px;height:auto;aspect-ratio:1/1.13;min-width:0;
+    transform:none;transform-origin:center;
+  }
+  .landing-app .lp-hero .lp-photo {inset:9% 9% 9% 9%;border-width:4px;border-radius:26px;outline-width:5px}
+  .landing-app .lp-photo:before {inset:8px;border-width:2px;border-radius:17px}
+  .landing-app .lp-photo:after {height:17%}
+  .landing-app .lp-photo-top {left:0;right:0;top:12px;text-align:center;font-size:9px;letter-spacing:2px}
+  .landing-app .lp-photo-bottom {bottom:12px;font-size:12px;letter-spacing:1px}
+  .landing-app .lp-girl-window {left:5%;top:0;width:90%;height:85%;border-radius:0 0 30% 20%}
+  .landing-app .lp-girl {width:100%;height:100%;max-width:100%!important;object-fit:contain;object-position:center bottom}
+  .landing-app .lp-speech {right:0;top:19%;font-size:14px;padding:10px 12px;line-height:1.5;outline-width:3px}
+  .landing-app .lp-speech span {font-size:17px}
+  .landing-app .lp-hero .lp-handwritten,.landing-app .lp-hero .lp-rosette {display:none}
+  .landing-app .lp-jewel-left,.landing-app .lp-hero .lp-jewel-left {left:0;bottom:13%;width:70px;height:70px}
+  .landing-app .lp-jewel-right {right:-3px;top:auto;bottom:27%;width:72px;height:66px}
+  .landing-app .lp-welcome-ticket {left:12%;bottom:1%;width:76%;padding:12px 9px;border-width:4px;border-radius:17px}
+  .landing-app .lp-welcome-ticket>span {font-size:9px;letter-spacing:1.5px}
+  .landing-app .lp-welcome-ticket strong {font-size:clamp(17px,2.2vw,22px);line-height:1.7;white-space:normal}
+  .landing-app .lp-welcome-ticket small {font-size:10px;letter-spacing:1px}
+  .landing-app .lp-welcome-ticket i {width:60%;margin:2px auto 5px}
+  .landing-app .lp-art-floating {inset:0}
+  .landing-app .lp-art-floating .lp-float {display:none}
+  .landing-app .lp-art-floating .lp-float:nth-child(1) {display:block;width:72px!important;height:62px!important;left:6%!important;top:-2%!important}
+  .landing-app .lp-art-floating .lp-float:nth-child(2) {display:block;width:43px!important;height:43px!important;left:0!important;top:28%!important}
+  .landing-app .lp-art-floating .lp-float:nth-child(3) {display:block;width:45px!important;height:45px!important;left:84%!important;top:7%!important}
+  .landing-app .lp-art-floating .lp-float:nth-child(4) {display:block;width:38px!important;height:38px!important;left:3%!important;top:69%!important}
+  .landing-app .lp-art-floating .lp-float:nth-child(5) {display:block;width:38px!important;height:38px!important;left:86%!important;top:65%!important}
+  .landing-app .lp-hero .lp-corner-star {left:-18px;top:-20px;width:50px;height:50px}
+  .landing-app .lp-hero .lp-corner-heart {right:-14px;bottom:-17px;width:46px;height:46px}
+  .landing-app .lp-hero-pennants {right:28px;top:-9px;gap:5px}
+  .landing-app .lp-hero-pennants i {width:23px;height:27px;font-size:12px}
+  .landing-app .lp-binding-bow,.landing-app .lp-binding-charms {display:none}
+  .landing-app .lp-binding-tape {width:58px;height:19px}
+  .landing-app .lp-binding-tape-left {left:-19px}
+  .landing-app .lp-binding-tape-right {right:-20px}
+  .landing-app .lp-hero>.lp-edge-note {left:26px;bottom:8px;padding:5px 10px;font-size:9px;letter-spacing:1px;max-width:calc(100% - 52px)}
+  .landing-app .lp-ribbon-divider {width:100%;margin:28px 0 0;height:36px;gap:18px;font-size:11px;letter-spacing:1px;overflow:hidden;transform:none}
+  .landing-app .lp-ribbon-bow {width:64px;height:50px;left:16px;top:-15px}
+  .landing-app .lp-section {margin-left:28px;margin-right:28px;scroll-margin-top:18px}
+  .landing-app .lp-pricing {padding-top:32px}
+  .landing-app .lp-section-heading {min-height:0;padding:0 14px 14px;margin-bottom:38px}
+  .landing-app .lp-section-heading>p {font-size:10px;letter-spacing:2px;margin:0 0 16px}
+  .landing-app .lp-section-heading>h2 {position:relative;z-index:1;font-size:25px;line-height:1.4;padding:12px 8px}
+  .landing-app .lp-heading-scroll {left:0;right:0;top:30px;width:auto;height:calc(100% - 45px);min-height:62px;border-radius:20px;transform:none}
+  .landing-app .lp-section-bow {left:-9px;top:12px;width:64px;height:56px}
+  .landing-app .lp-heading-dots {margin-top:8px;font-size:18px}
+  .landing-app .lp-heading-dots i {width:55px}
+  .landing-app .lp-price-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:42px 28px}
+  .landing-app .lp-price-grid[data-plan-count="1"] {grid-template-columns:minmax(0,580px);justify-content:center}
+  .landing-app .lp-price-grid>.lp-plan-card,
+  .landing-app .lp-plan-card.lp-feature-02,.landing-app .lp-plan-card.lp-feature-03 {width:100%;min-width:0;min-height:0;padding:15px 16px 22px;flex-basis:auto}
+  .landing-app .lp-price-grid>.lp-price-empty {grid-column:1/-1;min-width:0}
+  .landing-app .lp-plan-card>.lp-feature-sticker,.landing-app .lp-plan-card.lp-feature-02>.lp-feature-sticker {width:72px;height:60px;top:-34px;right:8px}
+  .landing-app .lp-plan-card>.lp-frame-corners:after {width:42px;height:40px;left:-21px}
+  .landing-app .lp-plan-cap {margin:0 -5px 18px;padding:12px 13px 15px}
+  .landing-app .lp-plan-cap>h3 {font-size:24px;line-height:1.45;max-width:calc(100% - 66px);min-height:0;margin:6px 0 10px}
+  .landing-app .lp-plan-topline {gap:4px;min-height:24px}
+  .landing-app .lp-plan-topline>span:first-child {font-size:8px;letter-spacing:0;padding:4px 6px}
+  .landing-app .lp-plan-stock {font-size:11px;margin:0;padding:4px 7px}
+  .landing-app .lp-plan-present,.landing-app .lp-plan-card.lp-feature-02 .lp-plan-present {width:78px;height:78px;right:-4px;top:62px}
+  .landing-app .lp-plan-price {max-width:calc(100% - 64px);min-height:50px;gap:4px}
+  .landing-app .lp-plan-price strong {font-size:36px;letter-spacing:-.5px;overflow-wrap:anywhere;min-width:0}
+  .landing-app .lp-plan-price>span {font-size:14px}
+  .landing-app .lp-plan-periods {gap:6px;margin:0 0 10px}
+  .landing-app .lp-plan-periods button {font-size:16px;padding:7px 10px;min-height:42px}
+  .landing-app .lp-plan-specs {gap:7px;padding:10px 0 12px}
+  .landing-app .lp-plan-specs li {font-size:14px;min-width:0;padding:8px;flex:1 1 100px}
+  .landing-app .lp-plan-description,.landing-app .lp-plan-features {font-size:17px;line-height:1.65;max-height:none;overflow:visible}
+  .landing-app .lp-plan-description h1,.landing-app .lp-plan-description h2,.landing-app .lp-plan-description h3 {font-size:20px}
+  .landing-app .lp-plan-buy {padding:16px 4px 0}
+  .landing-app .lp-plan-buy .lp-button {width:100%;min-height:48px;font-size:18px;padding:11px 14px;gap:12px;white-space:normal}
+  .landing-app .lp-plan-unavailable {font-size:16px;white-space:normal}
+  .landing-app .lp-pricing-note {font-size:13px;line-height:1.6;text-align:center;border-radius:14px;margin-top:22px;padding:7px 12px}
+  .landing-app .lp-features {padding:20px 0 32px}
+  .landing-app .lp-utility-heading {gap:10px;padding:0;margin-bottom:30px;flex-wrap:wrap}
+  .landing-app .lp-utility-bow {width:46px;height:42px}
+  .landing-app .lp-utility-heading h2 {font-size:24px}
+  .landing-app .lp-utility-heading>small {font-size:14px}
+  .landing-app .lp-utility-line {min-width:20px;margin:0}
+  .landing-app .lp-feature-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:32px 24px}
+  .landing-app .lp-feature-grid>.lp-feature,
+  .landing-app .lp-feature-grid>.lp-feature-02 {padding:26px 18px 20px 76px;min-width:0}
+  .landing-app .lp-feature-grid .lp-feature-icon {width:40px;height:40px;left:18px;top:36px;border-radius:12px}
+  .landing-app .lp-feature-grid .lp-feature-icon>.icon {width:24px;height:24px}
+  .landing-app .lp-feature-grid .lp-ticket-number {left:24px;top:94px;font-size:21px}
+  .landing-app .lp-feature-grid .lp-feature>small {font-size:10px;letter-spacing:0}
+  .landing-app .lp-feature-grid .lp-feature>h3 {font-size:21px;line-height:1.5;overflow-wrap:anywhere}
+  .landing-app .lp-feature-grid .lp-feature>p {font-size:16px;line-height:1.65}
+  .landing-app .lp-feature-grid .lp-feature>a {font-size:16px;min-height:44px;gap:8px;padding:9px 10px}
+  .landing-app .lp-feature-grid .lp-feature-sticker {width:46px;height:46px;top:-22px;right:8px}
+  .landing-app .lp-feature-grid .lp-feature-02 .lp-feature-sticker {width:62px;height:50px;top:-24px;right:8px}
+  .landing-app .lp-guide {grid-template-columns:minmax(0,1fr);gap:24px;padding:28px 24px;margin-top:15px}
+  .landing-app .lp-guide-intro h2 {font-size:30px;line-height:1.4}
+  .landing-app .lp-guide-intro>p {font-size:16px}
+  .landing-app .lp-guide-intro .lp-button {font-size:17px;min-height:48px;max-width:100%;white-space:normal}
+  .landing-app .lp-guide-decoration {right:10px;bottom:0;width:70px;opacity:.7}
+  .landing-app .lp-guide-topbow {width:75px;height:64px;left:-13px;top:-27px}
+  .landing-app .lp-guide:after {width:48px;height:48px}
+  .landing-app .lp-guide .lp-corner-heart {width:46px;height:46px;right:-18px;bottom:-18px}
+  .landing-app .lp-steps {gap:14px}
+  .landing-app .lp-steps li {gap:13px;padding:14px 12px;min-width:0}
+  .landing-app .lp-steps li>div {min-width:0}
+  .landing-app .lp-step-number {width:38px;height:38px;font-size:20px}
+  .landing-app .lp-steps h3 {font-size:19px}
+  .landing-app .lp-steps p {font-size:15px}
+  .landing-app .lp-step-mark {font-size:22px}
+  .landing-app .lp-last-note {margin:34px 28px 36px;padding:22px 24px;gap:20px;flex-wrap:wrap;justify-content:space-between}
+  .landing-app .lp-last-note>div:not(.lp-frame-corners) {padding:10px 12px;max-width:100%;min-width:0}
+  .landing-app .lp-last-note h2 {font-size:23px;line-height:1.5}
+  .landing-app .lp-last-note .lp-button {min-height:48px;font-size:17px;white-space:normal;max-width:100%;padding:12px 18px}
+  .landing-app .lp-last-bow {width:70px;height:56px;left:-15px;top:-21px}
+  .landing-app .lp-last-star {width:32px;height:32px;left:40px;top:-12px}
+  .landing-app .lp-last-heart {width:42px;height:42px;right:-9px;bottom:-13px}
+  .nini-app.landing-app footer.lp-footer {padding:24px 28px;gap:20px;flex-wrap:wrap}
+  .landing-app .lp-footer .lp-brand {flex:none}
+  .landing-app .lp-footer .lp-brand strong {font-size:25px}
+  .landing-app .lp-footer p {font-size:14px;overflow-wrap:anywhere}
+  .landing-app .lp-footer-links {justify-content:flex-start;gap:12px 20px;max-width:100%}
+  .landing-app .lp-footer-links>a {font-size:15px;min-height:44px;display:inline-flex;align-items:center}
+  .landing-app .lp-footer-links>span {text-align:left;font-size:12px;overflow-wrap:anywhere}
+
+  #nini-root.nini-app.auth-app,
+  #nini-root.nini-app.auth-app:has(.auth-poster) {
+    grid-template-columns:minmax(0,.85fr) minmax(0,1fr);
+    align-items:center;gap:28px;padding:32px 28px;
+  }
+  .nini-app.auth-app .auth-art.auth-poster {width:100%;min-width:0}
+  .nini-app .auth-poster-top {margin:0 12px 10px;justify-content:center;min-height:32px;gap:0}
+  .nini-app .auth-poster-greeting {font-size:10px;letter-spacing:1px;padding:6px 10px;gap:7px}
+  .nini-app .auth-poster-greeting b {font-size:20px}
+  .nini-app .auth-poster-mini {display:none}
+  .nini-app .auth-poster-stage {height:auto;aspect-ratio:1/1.15;width:100%}
+  .nini-app .auth-poster-paper {left:14%;top:10%;width:73%;height:81%;border-radius:26px;border-width:2px;outline-width:5px}
+  .nini-app .auth-poster-paper:before {inset:8px;border-width:2px;border-radius:18px}
+  .nini-app .auth-poster-backing {left:12%;top:13%;width:76%;height:77%;border-radius:24px;border-width:3px}
+  .nini-app .auth-poster-stage>.auth-poster-mascot {left:9%;top:0;width:82%;height:100%;max-width:100%;object-position:center bottom}
+  .nini-app .auth-poster-bow {left:4%;top:1%;width:70px;height:60px}
+  .nini-app .auth-poster-stamp {right:0;top:17%;width:60px;height:60px;outline-width:3px}
+  .nini-app .auth-poster-stamp small {font-size:6px;letter-spacing:.5px}
+  .nini-app .auth-poster-stamp svg {width:25px;height:23px}
+  .nini-app .auth-poster-stamp b {font-size:6px;letter-spacing:.5px}
+  .nini-app .auth-poster-speech {left:0;top:36%;font-size:14px;padding:9px 11px;outline-width:3px}
+  .nini-app .auth-poster-speech b {font-size:17px}
+  .nini-app .auth-poster-note {display:none}
+  .nini-app .auth-poster-cupcake {left:0;bottom:4%;width:65px;height:70px}
+  .nini-app .auth-poster-rainbow {right:0;bottom:13%;width:74px;height:66px}
+  .nini-app .auth-poster-star-pair {left:0;top:10%;width:42px;height:48px}
+  .nini-app .auth-poster-star-pair>svg:first-child {width:30px;height:30px}
+  .nini-app .auth-poster-star-pair>svg:last-child {width:20px;height:20px}
+  .nini-app .auth-poster-floating {display:none}
+  .nini-app .auth-poster-brand {width:auto;min-width:0;max-width:calc(100% - 34px);margin:18px auto 0;padding:12px 18px;gap:10px}
+  .nini-app .auth-poster-brand-copy>strong {font-size:32px;letter-spacing:0;-webkit-text-stroke:4px white}
+  .nini-app .auth-poster-brand-copy>small {font-size:10px;letter-spacing:1px}
+  .nini-app .auth-poster-brand-heart {width:32px;height:32px}
+  .nini-app .auth-poster-logo {width:44px;max-height:50px}
+  .nini-app .auth-poster-brand-star {width:35px;height:35px;right:-15px;top:4px}
+  .nini-app .auth-brand-bow {width:59px;height:46px;left:-16px;top:-19px}
+  .nini-app .auth-brand-blossom {width:42px;height:37px;right:0;bottom:-16px}
+  .nini-app .auth-brand-sparkles {left:8px;bottom:-15px;font-size:20px}
+  .nini-app .auth-poster-description {max-width:100%;font-size:15px;line-height:1.7;margin-top:23px;padding:0 12px}
+  .nini-app .auth-poster-finish {margin-top:12px}
+  .nini-app.auth-app .auth-card,
+  .nini-app.auth-app:has(.auth-poster) .auth-card {min-width:0;min-height:0;padding:28px 24px 26px;border-radius:25px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card:before {width:78px;height:61px;right:18px;top:-28px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card:after {width:59px;height:52px;left:-15px;bottom:-17px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card>.ribbon-label {font-size:15px;padding:6px 12px;max-width:calc(100% - 50px)}
+  .nini-app.auth-app:has(.auth-poster) .auth-card>h1 {font-size:32px;line-height:1.35;margin:22px 0 8px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card>p.muted {font-size:16px;line-height:1.6}
+  .nini-app.auth-app:has(.auth-poster) .auth-card form {margin-top:23px;gap:19px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card .field {font-size:16px;gap:8px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card .input {min-height:52px;font-size:17px;padding:12px 14px;border-radius:14px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card .input::placeholder {font-size:16px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card button[type=submit] {min-height:54px;font-size:20px;padding:12px 18px;letter-spacing:2px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card button[type=submit] .icon {width:24px;height:24px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card button[data-action=send-code] {font-size:14px;min-height:50px;padding:10px 12px;white-space:normal;flex:0 0 auto;max-width:116px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card form .muted {font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+  .nini-app.auth-app:has(.auth-poster) .auth-card form label.row {flex-wrap:wrap;font-size:14px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card .auth-back-home {min-height:44px;align-items:center;font-size:15px;margin-top:20px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card>.auth-links {margin-top:0;padding:20px 0 12px;gap:10px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card>.auth-links>a {min-height:46px;padding:10px 12px;font-size:16px;border-radius:14px}
+  .nini-app.auth-app .auth-art>img {height:260px}
+}
+@media (max-width:760px) {
+  .landing-app .lp-hero {grid-template-columns:minmax(0,1fr);gap:28px;padding:34px 24px 48px}
+  .landing-app .lp-hero>.lp-art {max-width:350px}
+  .landing-app .lp-copy>h1#lp-title {font-size:clamp(34px,6vw,43px)}
+  .landing-app .lp-hero .lp-small-notes {grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+  .landing-app .lp-hero .lp-small-notes>a {flex-direction:column;align-items:center;padding:10px 6px;gap:6px;text-align:center;background:linear-gradient(180deg,var(--shortcut-tint),white 70%)}
+  .landing-app .lp-hero .lp-small-notes>a>svg {display:none}
+  .landing-app .lp-hero .lp-small-notes small {display:block;line-height:1.5}
+  .landing-app .lp-welcome-ticket strong {font-size:22px}
+  #nini-root.nini-app.auth-app,
+  #nini-root.nini-app.auth-app:has(.auth-poster) {grid-template-columns:minmax(0,1fr);max-width:620px;margin:0 auto;padding:20px 24px 34px;gap:28px;align-items:start}
+  .nini-app.auth-app .auth-art.auth-poster {display:grid;grid-template-columns:minmax(0,1fr) 170px;align-items:center;column-gap:12px;text-align:left}
+  .nini-app .auth-poster-top {grid-column:1;grid-row:1;justify-content:flex-start;margin:0 0 12px 6px}
+  .nini-app .auth-poster-stage {grid-column:2;grid-row:1/4;height:225px;aspect-ratio:auto}
+  .nini-app .auth-poster-brand {grid-column:1;grid-row:2;margin:0 4px 0 5px;max-width:100%;padding:12px 10px;gap:6px;transform:rotate(-2deg)}
+  .nini-app .auth-poster-brand-copy>strong {font-size:29px}
+  .nini-app .auth-poster-brand-heart {width:25px;height:25px}
+  .nini-app .auth-poster-brand-star {width:28px;height:28px;right:-9px;top:1px}
+  .nini-app .auth-poster-description {grid-column:1;grid-row:3;font-size:14px;line-height:1.65;margin:17px 0 0;padding:0 5px}
+  .nini-app .auth-poster-finish {display:none}
+  .nini-app .auth-poster-bow {width:53px;height:46px;left:-2%;top:0}
+  .nini-app .auth-poster-stamp,.nini-app .auth-poster-speech,
+  .nini-app .auth-poster-cupcake,.nini-app .auth-poster-rainbow,
+  .nini-app .auth-poster-photo-label,.nini-app .auth-poster-photo-note,
+  .nini-app .auth-poster-star-pair {display:none}
+  .nini-app .auth-poster-paper {left:11%;top:12%;width:78%;height:76%;border-radius:18px;outline-width:3px;box-shadow:0 0 0 6px #ff91c2,4px 6px 0 #ffc3df}
+  .nini-app .auth-poster-paper:before {inset:5px;border-radius:12px}
+  .nini-app .auth-poster-backing {left:9%;top:14%;width:82%;height:72%;border-radius:18px}
+  .nini-app .auth-poster-stage>.auth-poster-mascot {left:0;top:0;width:100%;height:100%}
+  .nini-app .auth-brand-bow {width:43px;height:37px;top:-16px;left:-9px}
+  .nini-app .auth-brand-blossom {width:30px;height:27px;bottom:-10px}
+  .nini-app .auth-brand-sparkles {display:none}
+  .nini-app.auth-app:has(.auth-poster) .auth-card {padding:27px 24px 25px}
+}
+@media (max-width:600px) {
+  .landing-app .lp-nav {margin:0 14px;padding:14px 8px 10px;gap:12px}
+  .landing-app .lp-brand strong {font-size:25px}
+  .landing-app .lp-brand small {font-size:10px;letter-spacing:.5px}
+  .landing-app .lp-brand>img,.landing-app .lp-brand-sticker {width:38px;height:38px}
+  .landing-app .lp-nav-actions {gap:8px}
+  .landing-app .lp-nav-actions .lp-button {font-size:15px;padding:8px 12px;min-height:42px}
+  .landing-app .lp-nav-actions .lp-button>svg {width:18px;height:18px}
+  .landing-app .lp-nav-actions:has(.lp-login) {width:100%;justify-content:space-between}
+  .landing-app .lp-nav nav {gap:4px}
+  .landing-app .lp-nav nav>a,.landing-app .lp-nav nav>button,
+  .landing-app .lp-nav nav>button:first-child {font-size:14px;padding:7px 10px}
+  .landing-app .lp-nav nav span {padding-left:2px}
+  .landing-app .lp-hero {margin:29px 18px 0;padding:31px 21px 43px;gap:25px;border-radius:27px}
+  .landing-app .lp-kicker {font-size:15px;letter-spacing:.5px;margin-top:23px}
+  .landing-app .lp-copy>.lp-description {font-size:17px;line-height:1.75}
+  .landing-app .lp-hero-actions {display:grid;grid-template-columns:minmax(0,1fr);gap:21px;padding:3px 4px 0}
+  .landing-app .lp-hero-actions>.lp-button {width:100%;justify-content:space-between;min-height:53px;font-size:18px;padding:12px 17px 12px 22px}
+  .landing-app .lp-hero .lp-small-notes {gap:12px}
+  .landing-app .lp-hero .lp-small-notes>a {padding:9px 3px;min-height:99px;min-width:0}
+  .landing-app .lp-hero .lp-small-notes b {font-size:14px;white-space:nowrap}
+  .landing-app .lp-hero .lp-small-notes small {font-size:11px;letter-spacing:0}
+  .landing-app .lp-hero .lp-shortcut-icon {width:33px;height:33px;background-size:33px 33px}
+  .landing-app .lp-hero>.lp-art {max-width:320px}
+  .landing-app .lp-welcome-ticket strong {font-size:19px}
+  .landing-app .lp-hero>.lp-edge-note {left:15px;max-width:calc(100% - 30px);font-size:8px;letter-spacing:.5px;padding:4px 8px}
+  .landing-app .lp-hero>.lp-edge-note:before {padding-right:6px}
+  .landing-app .lp-hero>.lp-edge-note:after {padding-left:6px}
+  .landing-app .lp-section {margin-left:24px;margin-right:24px}
+  .landing-app .lp-section-heading {padding:0 10px 10px;margin-bottom:39px}
+  .landing-app .lp-section-heading>p {font-size:9px;letter-spacing:1.4px}
+  .landing-app .lp-section-heading>h2 {font-size:21px;line-height:1.45;padding:12px 9px}
+  .landing-app .lp-heading-scroll {height:calc(100% - 40px);border-width:3px}
+  .landing-app .lp-section-bow {width:49px;height:43px;left:-12px;top:14px}
+  .landing-app .lp-price-grid,.landing-app .lp-price-grid[data-plan-count="1"] {grid-template-columns:minmax(0,1fr);gap:40px}
+  .landing-app .lp-price-grid>.lp-plan-card,.landing-app .lp-plan-card.lp-feature-02,.landing-app .lp-plan-card.lp-feature-03 {padding:15px 17px 22px}
+  .landing-app .lp-plan-cap>h3 {font-size:25px}
+  .landing-app .lp-plan-description,.landing-app .lp-plan-features {font-size:17px}
+  .landing-app .lp-utility-heading {gap:9px;margin-bottom:29px}
+  .landing-app .lp-utility-heading h2 {font-size:23px}
+  .landing-app .lp-utility-heading>small {width:100%;padding-left:54px;margin-top:-7px}
+  .landing-app .lp-utility-line {display:none}
+  .landing-app .lp-feature-grid {grid-template-columns:minmax(0,1fr);gap:31px}
+  .landing-app .lp-feature-grid>.lp-feature,.landing-app .lp-feature-grid>.lp-feature-02 {padding:24px 17px 20px 73px}
+  .landing-app .lp-feature-grid .lp-feature>small {font-size:10px}
+  .landing-app .lp-guide {margin-left:24px;margin-right:24px;padding:29px 18px 23px}
+  .landing-app .lp-guide-intro h2 {font-size:28px}
+  .landing-app .lp-guide-decoration {display:none}
+  .landing-app .lp-guide-intro .lp-button {font-size:17px;padding:11px 16px}
+  .landing-app .lp-steps li {gap:11px;padding:13px 10px}
+  .landing-app .lp-step-number {width:34px;height:34px;font-size:18px}
+  .landing-app .lp-steps h3 {font-size:18px}
+  .landing-app .lp-steps p {font-size:15px;line-height:1.7}
+  .landing-app .lp-step-mark {display:none}
+  .landing-app .lp-last-note {margin-left:24px;margin-right:24px;padding:23px 18px;justify-content:center;text-align:center}
+  .landing-app .lp-last-note h2 {font-size:22px}
+  .landing-app .lp-last-note .lp-button {width:100%;justify-content:center}
+  .nini-app.landing-app footer.lp-footer {padding:24px;gap:13px}
+  .landing-app .lp-footer-links {gap:5px 18px}
+}
+@media (max-width:400px) {
+  .landing-app .lp-nav .lp-brand strong {font-size:23px}
+  .landing-app .lp-nav nav>a,.landing-app .lp-nav nav>button,
+  .landing-app .lp-nav nav>button:first-child {font-size:13px;padding:7px 8px}
+  .landing-app .lp-hero {padding-left:18px;padding-right:18px}
+  .landing-app .lp-copy>h1#lp-title {font-size:32px}
+  .landing-app .lp-hero .lp-small-notes {gap:11px}
+  .landing-app .lp-hero .lp-small-notes b {font-size:13px}
+  .landing-app .lp-hero .lp-small-notes small {font-size:10px}
+  .landing-app .lp-section {margin-left:21px;margin-right:21px}
+  .landing-app .lp-price-grid>.lp-plan-card,.landing-app .lp-plan-card.lp-feature-02,.landing-app .lp-plan-card.lp-feature-03 {padding-left:13px;padding-right:13px}
+  .landing-app .lp-plan-cap>h3 {font-size:23px}
+  .landing-app .lp-plan-price strong {font-size:34px}
+  .landing-app .lp-plan-periods button {font-size:15px;padding:7px 9px}
+  #nini-root.nini-app.auth-app,
+  #nini-root.nini-app.auth-app:has(.auth-poster) {padding:18px 18px 30px;gap:25px}
+  .nini-app.auth-app .auth-art.auth-poster {grid-template-columns:minmax(0,1fr) 120px;column-gap:9px}
+  .nini-app .auth-poster-stage {height:190px}
+  .nini-app .auth-poster-greeting {font-size:9px;letter-spacing:0;padding:5px 7px}
+  .nini-app .auth-poster-brand-copy>strong {font-size:25px}
+  .nini-app .auth-poster-brand-heart {width:20px;height:20px}
+  .nini-app .auth-poster-brand-copy>small {font-size:9px;letter-spacing:0;padding:2px 5px}
+  .nini-app .auth-poster-description {font-size:13px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card {padding:25px 19px 23px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card>h1 {font-size:30px}
+  .nini-app.auth-app:has(.auth-poster) .auth-card button[data-action=send-code] {max-width:101px;padding:10px 8px;font-size:13px}
+}
+
+/* Let the cropped illustration blend into the mobile header background. */
+@media (max-width: 1024px) {
+  .nini-app .mobile-dashboard-art {
+    height: auto;
+    aspect-ratio: 440 / 296;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 14px), transparent), linear-gradient(180deg, transparent, #000 12px, #000 calc(100% - 22px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 14px), transparent), linear-gradient(180deg, transparent, #000 12px, #000 calc(100% - 22px), transparent);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
+}
+
+/* Keep phone hero lettering inside the decorative inner frame. */
+@media (max-width:760px) {
+  .landing-app .lp-hero > .lp-copy > :is(.lp-kicker, h1#lp-title, .lp-description) {
+    position: relative;
+    left: 20px;
+  }
+  .landing-app .lp-hero > .lp-copy > .lp-description {
+    width: calc(100% - 20px);
+  }
+}
+@media (max-width:360px) {
+  .landing-app .lp-hero > .lp-copy > .lp-kicker .lp-kicker-line {
+    width: 22px;
+  }
+}
+
+/* Let the receipt occupy its full card without stretching the illustration. */
+.nini-app .commerce-page-order .commerce-order-detail {
+  display:flex;
+  flex-direction:column;
+}
+.nini-app .commerce-page-order .commerce-order-detail>.card-head {
+  flex:0 0 auto;
+}
+.nini-app .commerce-page-order .commerce-order-detail>.card-body {
+  display:flex;
+  flex-direction:column;
+  flex:1 0 auto;
+}
+.nini-app .commerce-page-order .commerce-order-detail>.card-body>.commerce-order-stamp,
+.nini-app .commerce-page-order .commerce-order-detail>.card-body>form,
+.nini-app .commerce-page-order .commerce-order-detail>.card-body>.link,
+.nini-app .commerce-page-order .commerce-order-detail>.card-body>.commerce-detail-art {
+  flex:0 0 auto;
+}
+.nini-app .commerce-page-order .commerce-order-detail>.card-body>.commerce-detail-line {
+  flex:1 0 auto;
+  height:auto;
+}
+
+/* Match the native dialog when the browser has no dialog methods. */
+body>.nini-modal-backdrop {
+  position:fixed;
+  top:0;right:0;bottom:0;left:0;
+  z-index:998;
+  background:#62495d65;
+  -webkit-backdrop-filter:blur(4px);
+  backdrop-filter:blur(4px);
+}
+html.nini-fit-viewport body>dialog.nini-app.modal.nini-modal-fallback,
+body>dialog.nini-app.modal.nini-modal-fallback {
+  display:block;
+  position:fixed;
+  z-index:999;
+  top:50%;left:50%;right:auto;bottom:auto;
+  transform:translate(-50%,-50%);
+  margin:0;
+  max-height:calc(100vh - 24px);
+  max-height:calc(100dvh - 24px);
+  -webkit-overflow-scrolling:touch;
+}
+body>dialog.nini-app.modal.nini-modal-fallback.notice-modal[open] {
+  display:flex;
+}

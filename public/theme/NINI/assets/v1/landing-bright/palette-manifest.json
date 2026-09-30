@@ -1,0 +1,1203 @@
+{
+  "replacements": {
+    "#85647b": "#e779af",
+    "#8c7284": "#e779af",
+    "#907788": "#e779af",
+    "#958393": "#a476d1",
+    "#9a8a94": "#a476d1",
+    "#9c7d92": "#e779af",
+    "#9e87aa": "#a476d1",
+    "#a38aad": "#a476d1",
+    "#a38b9f": "#a476d1",
+    "#a38bb1": "#a476d1",
+    "#a47c97": "#e779af",
+    "#a5b9ae": "#70cfac",
+    "#a77f99": "#e779af",
+    "#a87996": "#e779af",
+    "#a87e98": "#e779af",
+    "#a97d96": "#e779af",
+    "#aa7d99": "#e779af",
+    "#aa829a": "#e779af",
+    "#aa91b4": "#a476d1",
+    "#ac829c": "#e779af",
+    "#ad8b9f": "#e779af",
+    "#ae809b": "#e779af",
+    "#ae879e": "#e779af",
+    "#af8897": "#e779af",
+    "#af8db9": "#a476d1",
+    "#af8e8f": "#e779af",
+    "#b08cad": "#a476d1",
+    "#b187a4": "#e779af",
+    "#b2899a": "#e779af",
+    "#b28aa3": "#e779af",
+    "#b29386": "#e779af",
+    "#b39387": "#e779af",
+    "#b39698": "#e779af",
+    "#b68b9e": "#e779af",
+    "#b793a0": "#e779af",
+    "#b8938e": "#e779af",
+    "#b8a8c7": "#a476d1",
+    "#b9a084": "#e779af",
+    "#ba93a0": "#e779af",
+    "#bc8da8": "#e779af",
+    "#bce5f1": "#a5e8ff",
+    "#bd9a81": "#e779af",
+    "#be8ba7": "#e779af",
+    "#bfa092": "#e779af",
+    "#bfe3ed": "#a5e8ff",
+    "#c083a0": "#e779af",
+    "#c27f9f": "#e779af",
+    "#c6abc3": "#a476d1",
+    "#c7e3d5": "#b3f0dc",
+    "#cca0b8": "#e779af",
+    "#cdaa87": "#e779af",
+    "#d494b5": "#e779af",
+    "#d689b0": "#e779af",
+    "#d689b6": "#e779af",
+    "#d7a1ba": "#e779af",
+    "#d8c3ec": "#b78aef",
+    "#ddd0e9": "#b78aef",
+    "#dea1bd": "#e779af",
+    "#decdf0": "#b78aef",
+    "#df9fc6": "#e779af",
+    "#e29abb": "#e779af",
+    "#e3cdce": "#ffc2de",
+    "#e477ae": "#ff408a",
+    "#e5d5e5": "#e8d6ff",
+    "#e6d6f2": "#e8d6ff",
+    "#e7b9cd": "#e779af",
+    "#e7c8d7": "#ffc2de",
+    "#e7d7f4": "#e8d6ff",
+    "#e9abc8": "#e779af",
+    "#e9cdef": "#e8d6ff",
+    "#ebd8de": "#ffc2de",
+    "#eda0c6": "#ff408a",
+    "#edaccb": "#ff408a",
+    "#edd6d3": "#ffc2de",
+    "#eedcd5": "#ffc2de",
+    "#f0e7fa": "#e8d6ff",
+    "#f1a7c9": "#ff408a",
+    "#f2a3c7": "#ff408a",
+    "#f2dce0": "#ffc2de",
+    "#f39fc6": "#ff408a",
+    "#f3abc9": "#ff408a",
+    "#f49fc8": "#ff408a",
+    "#f4adcf": "#ff84ba",
+    "#f4d7a1": "#ffda68",
+    "#f4d8b5": "#fff0b8",
+    "#f59bc3": "#ff408a",
+    "#f5a4cf": "#ff408a",
+    "#f5acce": "#ff408a",
+    "#f5b3d2": "#ff408a",
+    "#f5b5d2": "#ff84ba",
+    "#f689ba": "#ff408a",
+    "#f6b2d1": "#ff84ba",
+    "#f6bed8": "#ff84ba",
+    "#f7acd3": "#ff408a",
+    "#f7afcb": "#ff84ba",
+    "#f7b9d6": "#ff84ba",
+    "#f7bad8": "#ff84ba",
+    "#f7cfdd": "#ffc2de",
+    "#f8b8d5": "#ff84ba",
+    "#f8bed8": "#ff84ba",
+    "#f8c5df": "#ff84ba",
+    "#f8deae": "#ffda68",
+    "#f9a3cc": "#ff84ba",
+    "#f9effd": "#ffffff",
+    "#fbf0fc": "#ffffff",
+    "#fcd1e5": "#ffe6f1",
+    "#ffcddf": "#ff84ba",
+    "#ffd0e2": "#ff84ba",
+    "#ffd1e5": "#ff84ba",
+    "#ffd1e6": "#ff84ba",
+    "#ffd3e6": "#ff84ba",
+    "#ffd4e7": "#ffc2de",
+    "#ffd5e7": "#ff84ba",
+    "#ffd8e8": "#ff84ba",
+    "#ffd9e9": "#ffe6f1",
+    "#ffdc91": "#ffda68",
+    "#ffdceb": "#ffc2de",
+    "#ffdcec": "#ffe6f1",
+    "#ffddec": "#ffc2de",
+    "#ffdfed": "#ffe6f1",
+    "#ffe1ed": "#ffc2de",
+    "#ffe3a0": "#ffda68",
+    "#ffe3a4": "#ffda68",
+    "#ffe4ef": "#ffe6f1",
+    "#ffe4f1": "#ffe6f1",
+    "#ffe5ab": "#ffda68",
+    "#ffe6a9": "#ffda68",
+    "#ffe6ad": "#ffda68",
+    "#ffe7a8": "#ffda68",
+    "#ffe8f1": "#ffe6f1",
+    "#ffe9f2": "#ffe6f1",
+    "#ffeaf4": "#ffe6f1",
+    "#ffeaf5": "#ffe6f1",
+    "#ffeff7": "#ffe6f1",
+    "#fff0bc": "#fff0b8",
+    "#fff0bd": "#fff0b8",
+    "#fff0d8": "#fff0b8",
+    "#fff0f6": "#ffffff",
+    "#fff0f8": "#ffffff",
+    "#fff1ce": "#fff0b8",
+    "#fff1f8": "#ffffff",
+    "#fff2d2": "#fff0b8",
+    "#fff2f8": "#ffffff",
+    "#fff2f9": "#ffffff",
+    "#fff3d9": "#fff0b8",
+    "#fff3fa": "#ffffff",
+    "#fff4fb": "#ffe6f1",
+    "#fff5ea": "#ffffff",
+    "#fff5fa": "#ffffff",
+    "#fff6fb": "#ffffff",
+    "#fff7e7": "#ffffff",
+    "#fff7ee": "#ffffff",
+    "#fff7fc": "#ffffff",
+    "#fff7ff": "#ffffff",
+    "#fff8e9": "#ffffff",
+    "#fff8fb": "#ffffff",
+    "#fff8fc": "#ffffff",
+    "#fff9ef": "#ffffff",
+    "#fff9fc": "#ffffff",
+    "#fff9fd": "#ffffff",
+    "#fffaff": "#ffffff",
+    "#fffbec": "#ffffff",
+    "#fffdf3": "#ffffff",
+    "#fffdf7": "#ffffff",
+    "#fffef5": "#ffffff"
+  },
+  "description": "Bright landing-only SVG variants. Only hexadecimal paint values are replaced; geometry, white contours, IDs, dimensions, stroke widths and all non-color markup are unchanged.",
+  "palette": {
+    "white": "#ffffff",
+    "pink": "#ff408a",
+    "pink_light": "#ff84ba",
+    "pink_tint": "#ffc2de",
+    "pink_pale": "#ffe6f1",
+    "pink_outline": "#e779af",
+    "lilac": "#b78aef",
+    "lilac_pale": "#e8d6ff",
+    "purple_outline": "#a476d1",
+    "lemon": "#ffda68",
+    "lemon_pale": "#fff0b8",
+    "sky": "#a5e8ff",
+    "mint": "#b3f0dc",
+    "mint_detail": "#70cfac"
+  },
+  "asset_count": 12,
+  "assets": [
+    {
+      "file": "landing-bow.svg",
+      "source": "../landing-bow.svg",
+      "viewBox": "0 0 200 156",
+      "source_sha256": "dfc5dd8d7166c2149f42bb2e5a3a5bc3b09b34596d900d4d33607eeecab08ab3",
+      "variant_sha256": "5ce5503e683ce04ed68f67f25424fe63a770288ed5944fb6c7ccdeb0b6956ec2",
+      "geometry_unchanged": true,
+      "white_contours_preserved": true,
+      "xml_valid": true,
+      "replacements": [
+        {
+          "from": "#ac829c",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#d494b5",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#ffd0e2",
+          "to": "#ff84ba",
+          "occurrences": 2
+        },
+        {
+          "from": "#ffe4ef",
+          "to": "#ffe6f1",
+          "occurrences": 1
+        },
+        {
+          "from": "#fff0f6",
+          "to": "#ffffff",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "file": "landing-hero-bow-seal.svg",
+      "source": "../landing-hero-bow-seal.svg",
+      "viewBox": "0 0 240 120",
+      "source_sha256": "be108a399e383dd7a676272b7f31899e26510ab16383f29963702c47780bbd3b",
+      "variant_sha256": "ab85222cf9a4a2eb97c421942dd59b2e2d83cf255b420561ad7bfc7c3a81c457",
+      "geometry_unchanged": true,
+      "white_contours_preserved": true,
+      "xml_valid": true,
+      "replacements": [
+        {
+          "from": "#A38AAD",
+          "to": "#a476d1",
+          "occurrences": 1
+        },
+        {
+          "from": "#A87996",
+          "to": "#e779af",
+          "occurrences": 3
+        },
+        {
+          "from": "#AA7D99",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#B29386",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#B39387",
+          "to": "#e779af",
+          "occurrences": 2
+        },
+        {
+          "from": "#BD9A81",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#CDAA87",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#D689B0",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#DECDF0",
+          "to": "#b78aef",
+          "occurrences": 1
+        },
+        {
+          "from": "#E29ABB",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#F49FC8",
+          "to": "#ff408a",
+          "occurrences": 1
+        },
+        {
+          "from": "#F4ADCF",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFD1E6",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFDCEC",
+          "to": "#ffe6f1",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFE3A0",
+          "to": "#ffda68",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFE6AD",
+          "to": "#ffda68",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF0BC",
+          "to": "#fff0b8",
+          "occurrences": 2
+        },
+        {
+          "from": "#FFF0F8",
+          "to": "#ffffff",
+          "occurrences": 2
+        },
+        {
+          "from": "#FFF1F8",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF7E7",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFFAFF",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFFBEC",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFFDF7",
+          "to": "#ffffff",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "file": "landing-heart-clasp.svg",
+      "source": "../landing-heart-clasp.svg",
+      "viewBox": "0 0 96 88",
+      "source_sha256": "5b4dde9c86f74116e44a02f94787989b7986378a8c67bac53706f3b8f0eb17c1",
+      "variant_sha256": "6fe8ad406f574db9e78494b5de491950027ff6c381f20c863c0b86b728cb0ef3",
+      "geometry_unchanged": true,
+      "white_contours_preserved": true,
+      "xml_valid": true,
+      "replacements": [
+        {
+          "from": "#9C7D92",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#AA829A",
+          "to": "#e779af",
+          "occurrences": 2
+        },
+        {
+          "from": "#BFA092",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#C27F9F",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#DEA1BD",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#F59BC3",
+          "to": "#ff408a",
+          "occurrences": 1
+        },
+        {
+          "from": "#F5B5D2",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#F8DEAE",
+          "to": "#ffda68",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFD8E8",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFD9E9",
+          "to": "#ffe6f1",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF0F6",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF8E9",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF8FB",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF9FD",
+          "to": "#ffffff",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "file": "landing-corner-stitch.svg",
+      "source": "../landing-corner-stitch.svg",
+      "viewBox": "0 0 96 96",
+      "source_sha256": "9ff6e5be96c8a42d1e600c4d351e7c1bbccd3e781f8bdb769ed86b91d7a5ed3e",
+      "variant_sha256": "af1099642208cd1d1bb831f9d096cf50630601b24c78bb13b952a822e5b9a26c",
+      "geometry_unchanged": true,
+      "white_contours_preserved": true,
+      "xml_valid": true,
+      "replacements": [
+        {
+          "from": "#AA829A",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#AE879E",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#CCA0B8",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#E7B9CD",
+          "to": "#e779af",
+          "occurrences": 2
+        },
+        {
+          "from": "#E9ABC8",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#F4D7A1",
+          "to": "#ffda68",
+          "occurrences": 2
+        },
+        {
+          "from": "#FFCDDF",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF8FC",
+          "to": "#ffffff",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "file": "landing-love-letter.svg",
+      "source": "../landing-love-letter.svg",
+      "viewBox": "0 0 224 208",
+      "source_sha256": "1a5ce82a8bf61d6260e0f681045525904eadacd1ad89cb78b40ba9d5c751b93e",
+      "variant_sha256": "598e8481d6146b052f30e61d6225384cfa5375f28c13b6b41d572415a38db981",
+      "geometry_unchanged": true,
+      "white_contours_preserved": true,
+      "xml_valid": true,
+      "replacements": [
+        {
+          "from": "#A77F99",
+          "to": "#e779af",
+          "occurrences": 2
+        },
+        {
+          "from": "#A97D96",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#AA91B4",
+          "to": "#a476d1",
+          "occurrences": 1
+        },
+        {
+          "from": "#AD8B9F",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#AE809B",
+          "to": "#e779af",
+          "occurrences": 3
+        },
+        {
+          "from": "#B08CAD",
+          "to": "#a476d1",
+          "occurrences": 1
+        },
+        {
+          "from": "#BC8DA8",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#BE8BA7",
+          "to": "#e779af",
+          "occurrences": 2
+        },
+        {
+          "from": "#C083A0",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#D7A1BA",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#E6D6F2",
+          "to": "#e8d6ff",
+          "occurrences": 1
+        },
+        {
+          "from": "#E9CDEF",
+          "to": "#e8d6ff",
+          "occurrences": 1
+        },
+        {
+          "from": "#EDACCB",
+          "to": "#ff408a",
+          "occurrences": 1
+        },
+        {
+          "from": "#EDD6D3",
+          "to": "#ffc2de",
+          "occurrences": 1
+        },
+        {
+          "from": "#EEDCD5",
+          "to": "#ffc2de",
+          "occurrences": 1
+        },
+        {
+          "from": "#F1A7C9",
+          "to": "#ff408a",
+          "occurrences": 1
+        },
+        {
+          "from": "#F2A3C7",
+          "to": "#ff408a",
+          "occurrences": 1
+        },
+        {
+          "from": "#F2DCE0",
+          "to": "#ffc2de",
+          "occurrences": 1
+        },
+        {
+          "from": "#F6BED8",
+          "to": "#ff84ba",
+          "occurrences": 2
+        },
+        {
+          "from": "#F7CFDD",
+          "to": "#ffc2de",
+          "occurrences": 1
+        },
+        {
+          "from": "#F9EFFD",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FBF0FC",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFD1E5",
+          "to": "#ff84ba",
+          "occurrences": 2
+        },
+        {
+          "from": "#FFDCEB",
+          "to": "#ffc2de",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFDDEC",
+          "to": "#ffc2de",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFDFED",
+          "to": "#ffe6f1",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFE8F1",
+          "to": "#ffe6f1",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFEFF7",
+          "to": "#ffe6f1",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF2D2",
+          "to": "#fff0b8",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF3FA",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF6FB",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF7FC",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF9EF",
+          "to": "#ffffff",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "file": "landing-shortcut-gift.svg",
+      "source": "../landing-shortcut-gift.svg",
+      "viewBox": "0 0 64 64",
+      "source_sha256": "e809ac36e57f07504c4c6b4da20ef5dbda67981c9ccf63d5a7788fdde1f0d6af",
+      "variant_sha256": "78b94d8cb0d435c889302f20da4a75b3bcf9435c22546a7610779bfcae6c4970",
+      "geometry_unchanged": true,
+      "white_contours_preserved": true,
+      "xml_valid": true,
+      "replacements": [
+        {
+          "from": "#A47C97",
+          "to": "#e779af",
+          "occurrences": 3
+        },
+        {
+          "from": "#AF8897",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#B793A0",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#F7B9D6",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFD3E6",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFE1ED",
+          "to": "#ffc2de",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFEFF7",
+          "to": "#ffe6f1",
+          "occurrences": 2
+        },
+        {
+          "from": "#FFF0D8",
+          "to": "#fff0b8",
+          "occurrences": 2
+        },
+        {
+          "from": "#FFF1CE",
+          "to": "#fff0b8",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF1F8",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF6FB",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF9FC",
+          "to": "#ffffff",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "file": "landing-shortcut-guide.svg",
+      "source": "../landing-shortcut-guide.svg",
+      "viewBox": "0 0 64 64",
+      "source_sha256": "78362475920417c8cc2570602bad9631fd2f14ba0c9d18f09f96821ef3f01600",
+      "variant_sha256": "99099cfd49cc88236508073061713d008c6913d85670a8756180abf6020bc19a",
+      "geometry_unchanged": true,
+      "white_contours_preserved": true,
+      "xml_valid": true,
+      "replacements": [
+        {
+          "from": "#9E87AA",
+          "to": "#a476d1",
+          "occurrences": 1
+        },
+        {
+          "from": "#A38B9F",
+          "to": "#a476d1",
+          "occurrences": 2
+        },
+        {
+          "from": "#B187A4",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#B68B9E",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#B9A084",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#C6ABC3",
+          "to": "#a476d1",
+          "occurrences": 1
+        },
+        {
+          "from": "#D8C3EC",
+          "to": "#b78aef",
+          "occurrences": 1
+        },
+        {
+          "from": "#E5D5E5",
+          "to": "#e8d6ff",
+          "occurrences": 1
+        },
+        {
+          "from": "#F0E7FA",
+          "to": "#e8d6ff",
+          "occurrences": 1
+        },
+        {
+          "from": "#F5ACCE",
+          "to": "#ff408a",
+          "occurrences": 1
+        },
+        {
+          "from": "#F5B3D2",
+          "to": "#ff408a",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFE5AB",
+          "to": "#ffda68",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFEAF5",
+          "to": "#ffe6f1",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF9EF",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFFEF5",
+          "to": "#ffffff",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "file": "landing-shortcut-chat.svg",
+      "source": "../landing-shortcut-chat.svg",
+      "viewBox": "0 0 64 64",
+      "source_sha256": "22a745f275790a4979e474b1e7f29ca2cc5d378439e73e22b6e93efbef5d8088",
+      "variant_sha256": "851bb2f04417c848b3e0b29d2b7a1129887cb3c269e0d10cbc9af72b0fc942b0",
+      "geometry_unchanged": true,
+      "white_contours_preserved": true,
+      "xml_valid": true,
+      "replacements": [
+        {
+          "from": "#A38BB1",
+          "to": "#a476d1",
+          "occurrences": 1
+        },
+        {
+          "from": "#A87E98",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#AF8DB9",
+          "to": "#a476d1",
+          "occurrences": 2
+        },
+        {
+          "from": "#B2899A",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#E7D7F4",
+          "to": "#e8d6ff",
+          "occurrences": 1
+        },
+        {
+          "from": "#F4D8B5",
+          "to": "#fff0b8",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFD5E7",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF2F9",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF3D9",
+          "to": "#fff0b8",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF7FF",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF8FC",
+          "to": "#ffffff",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "file": "landing-cupcake.svg",
+      "source": "../landing-cupcake.svg",
+      "viewBox": "0 0 128 128",
+      "source_sha256": "c884f98fe977a7d096ae2dc248cd89cc0d8d2193aa1a22bae5e21f355661c9c8",
+      "variant_sha256": "5a38784bd0dfbfd4c3d5d2d735f7c270feed949270261b664ce33a29f474ddac",
+      "geometry_unchanged": true,
+      "white_contours_preserved": true,
+      "xml_valid": true,
+      "replacements": [
+        {
+          "from": "#85647B",
+          "to": "#e779af",
+          "occurrences": 8
+        },
+        {
+          "from": "#B8938E",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#DF9FC6",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#E477AE",
+          "to": "#ff408a",
+          "occurrences": 1
+        },
+        {
+          "from": "#E7C8D7",
+          "to": "#ffc2de",
+          "occurrences": 1
+        },
+        {
+          "from": "#F5A4CF",
+          "to": "#ff408a",
+          "occurrences": 1
+        },
+        {
+          "from": "#F689BA",
+          "to": "#ff408a",
+          "occurrences": 1
+        },
+        {
+          "from": "#F9A3CC",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFD4E7",
+          "to": "#ffc2de",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFDC91",
+          "to": "#ffda68",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFEAF4",
+          "to": "#ffe6f1",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF2F8",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF7EE",
+          "to": "#ffffff",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "file": "landing-rainbow.svg",
+      "source": "../landing-rainbow.svg",
+      "viewBox": "0 0 144 128",
+      "source_sha256": "cb37ec580af881581f244857b720bb2943e5876db08f42e19032de86b7d2d00c",
+      "variant_sha256": "10a8acf9c833804c3f74b3e70b1a6a1cde7b6cfe1e95d9df85dd3ef8fe3632c1",
+      "geometry_unchanged": true,
+      "white_contours_preserved": true,
+      "xml_valid": true,
+      "replacements": [
+        {
+          "from": "#8C7284",
+          "to": "#e779af",
+          "occurrences": 3
+        },
+        {
+          "from": "#B28AA3",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#B39698",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#BA93A0",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#BFE3ED",
+          "to": "#a5e8ff",
+          "occurrences": 1
+        },
+        {
+          "from": "#EBD8DE",
+          "to": "#ffc2de",
+          "occurrences": 2
+        },
+        {
+          "from": "#F7AFCB",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#F8B8D5",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFE3A4",
+          "to": "#ffda68",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFE4EF",
+          "to": "#ffe6f1",
+          "occurrences": 2
+        },
+        {
+          "from": "#FFE6A9",
+          "to": "#ffda68",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF9EF",
+          "to": "#ffffff",
+          "occurrences": 2
+        }
+      ]
+    },
+    {
+      "file": "landing-lollipop.svg",
+      "source": "../landing-lollipop.svg",
+      "viewBox": "0 0 128 144",
+      "source_sha256": "fd94e4fbccbf1e4ddf8e679e42038023ccc32dc3a8f7208300e72a3b685c67fa",
+      "variant_sha256": "56e5f3daad20c0c3dbbc55c38e8cb8d59d3c98b6dc906b9cc61e53dd739ee4d1",
+      "geometry_unchanged": true,
+      "white_contours_preserved": true,
+      "xml_valid": true,
+      "replacements": [
+        {
+          "from": "#85647B",
+          "to": "#e779af",
+          "occurrences": 7
+        },
+        {
+          "from": "#BCE5F1",
+          "to": "#a5e8ff",
+          "occurrences": 1
+        },
+        {
+          "from": "#D689B6",
+          "to": "#e779af",
+          "occurrences": 1
+        },
+        {
+          "from": "#E3CDCE",
+          "to": "#ffc2de",
+          "occurrences": 1
+        },
+        {
+          "from": "#EDA0C6",
+          "to": "#ff408a",
+          "occurrences": 1
+        },
+        {
+          "from": "#F39FC6",
+          "to": "#ff408a",
+          "occurrences": 1
+        },
+        {
+          "from": "#F6B2D1",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#F7ACD3",
+          "to": "#ff408a",
+          "occurrences": 1
+        },
+        {
+          "from": "#F7BAD8",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#F8C5DF",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#FCD1E5",
+          "to": "#ffe6f1",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFE4F1",
+          "to": "#ffe6f1",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF5EA",
+          "to": "#ffffff",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF5FA",
+          "to": "#ffffff",
+          "occurrences": 2
+        }
+      ]
+    },
+    {
+      "file": "landing-blossom.svg",
+      "source": "../landing-blossom.svg",
+      "viewBox": "0 0 96 80",
+      "source_sha256": "7e448c5181b21b17f8b812e27e41d1f0558fb95857c5d21be60202fad48fcadf",
+      "variant_sha256": "cf627687774ce26b64950bf8e4cbc81f7b76f14b6622b05d2e8c03d93d40d7f2",
+      "geometry_unchanged": true,
+      "white_contours_preserved": true,
+      "xml_valid": true,
+      "replacements": [
+        {
+          "from": "#907788",
+          "to": "#e779af",
+          "occurrences": 2
+        },
+        {
+          "from": "#958393",
+          "to": "#a476d1",
+          "occurrences": 2
+        },
+        {
+          "from": "#9A8A94",
+          "to": "#a476d1",
+          "occurrences": 1
+        },
+        {
+          "from": "#A5B9AE",
+          "to": "#70cfac",
+          "occurrences": 1
+        },
+        {
+          "from": "#AF8E8F",
+          "to": "#e779af",
+          "occurrences": 2
+        },
+        {
+          "from": "#B8A8C7",
+          "to": "#a476d1",
+          "occurrences": 1
+        },
+        {
+          "from": "#C7E3D5",
+          "to": "#b3f0dc",
+          "occurrences": 1
+        },
+        {
+          "from": "#DDD0E9",
+          "to": "#b78aef",
+          "occurrences": 1
+        },
+        {
+          "from": "#F3ABC9",
+          "to": "#ff408a",
+          "occurrences": 1
+        },
+        {
+          "from": "#F8BED8",
+          "to": "#ff84ba",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFE7A8",
+          "to": "#ffda68",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFE9F2",
+          "to": "#ffe6f1",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFF0BD",
+          "to": "#fff0b8",
+          "occurrences": 1
+        },
+        {
+          "from": "#FFFDF3",
+          "to": "#ffffff",
+          "occurrences": 1
+        }
+      ]
+    }
+  ]
+}

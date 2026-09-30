@@ -1,0 +1,12 @@
+/* Separate mascot ornaments drift on compositor transforms. The illustration,
+   lettering and interactive controls do not participate in the animation. */
+.nini-app [data-parallax-scene] [data-parallax-depth] {
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.nini-app [data-decoration-drifting] {
+  will-change: transform;
+  backface-visibility: hidden;
+}

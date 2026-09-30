@@ -1,0 +1,106 @@
+{
+  "name": "NINI",
+  "description": "NINI 粉色二次元用户主题，动态设置与十页功能适配",
+  "version": "1.2.0",
+  "images": "/theme/NINI/assets/art/gift.png",
+  "configs": [
+    {
+      "label": "看板娘装饰随机飘动",
+      "field_name": "decoration_motion",
+      "field_type": "select",
+      "select_options": {
+        "auto": "跟随系统",
+        "on": "开启",
+        "off": "关闭"
+      },
+      "default_value": "auto"
+    },
+    {
+      "label": "主题主色",
+      "placeholder": "请选择主题主色",
+      "field_name": "accent_color",
+      "field_type": "select",
+      "select_options": {
+        "sakura": "樱粉",
+        "coral": "珊瑚粉",
+        "berry": "莓果粉"
+      },
+      "default_value": "sakura"
+    },
+    {
+      "label": "背景图片 URL",
+      "placeholder": "可选，自定义全局背景图 URL",
+      "field_name": "background_url",
+      "field_type": "input"
+    },
+    {
+      "label": "自定义页脚 HTML",
+      "placeholder": "可以加入客服 JS、统计代码等",
+      "field_name": "custom_html",
+      "field_type": "textarea"
+    },
+    {
+      "label": "品牌副标题",
+      "placeholder": "留空不显示副标题",
+      "field_name": "brand_tagline",
+      "field_type": "input"
+    },
+    {
+      "label": "首页欢迎语",
+      "placeholder": "留空使用原稿欢迎语",
+      "field_name": "welcome_title",
+      "field_type": "input"
+    },
+    {
+      "label": "未登录落地页",
+      "field_name": "landing_enabled",
+      "field_type": "select",
+      "select_options": {
+        "on": "开启",
+        "off": "关闭"
+      },
+      "default_value": "on"
+    },
+    {
+      "label": "落地页顶部贴标",
+      "field_name": "landing_eyebrow",
+      "field_type": "input",
+      "placeholder": "HELLO, SWEET WORLD!"
+    },
+    {
+      "label": "落地页标题上方短句",
+      "field_name": "landing_kicker",
+      "field_type": "input",
+      "placeholder": "欢迎来到你的小小世界"
+    },
+    {
+      "label": "落地页主标题",
+      "field_name": "landing_heading",
+      "field_type": "textarea",
+      "placeholder": "换行可分开显示标题",
+      "default_value": "把每一次连接，\n变成心动时刻。"
+    },
+    {
+      "label": "落地页简介",
+      "field_name": "landing_description",
+      "field_type": "textarea",
+      "placeholder": "留空使用站点描述"
+    },
+    {
+      "label": "落地页页脚短句",
+      "field_name": "landing_footer",
+      "field_type": "input",
+      "placeholder": "愿每一次相遇，都有一点甜。"
+    },
+    {
+      "label": "落地页展示后台在售套餐",
+      "field_name": "landing_plans_enabled",
+      "field_type": "select",
+      "select_options": {
+        "on": "展示",
+        "off": "隐藏"
+      },
+      "default_value": "on"
+    }
+  ]
+}

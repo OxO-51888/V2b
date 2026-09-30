@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="44" viewBox="0 0 96 44" fill="none">
+  <defs>
+    <path id="lace-fabric" d="M0 .75H96V12C96 16 94 19 90 20C91 25 87 29 82 28C81 34 76 38 72 35C68 38 63 34 62 28C57 29 53 25 54 20C50 19 48 16 48 12C48 16 46 19 42 20C43 25 39 29 34 28C33 34 28 38 24 35C20 38 15 34 14 28C9 29 5 25 6 20C2 19 0 16 0 12Z"/>
+    <g id="lace-petals">
+      <path d="M14.8 20.8C11.5 21 8.4 18.8 8.8 16.7C9.5 14.3 13.5 15.7 14.8 20.8Z"/>
+      <path d="M33.2 20.8C36.5 21 39.6 18.8 39.2 16.7C38.5 14.3 34.5 15.7 33.2 20.8Z"/>
+      <path d="M17.5 29.7C13.7 29.5 11.7 26.7 13.1 25.2C14.6 23.5 17.3 26 17.5 29.7Z"/>
+      <path d="M30.5 29.7C34.3 29.5 36.3 26.7 34.9 25.2C33.4 23.5 30.7 26 30.5 29.7Z"/>
+      <path d="M24 29C20 26 17.8 23.8 18.1 21.6C18.5 18.4 22.2 18.1 24 21C25.8 18.1 29.5 18.4 29.9 21.6C30.2 23.8 28 26 24 29Z"/>
+      <circle cx="24" cy="32.6" r="1.15"/>
+    </g>
+    <mask id="lace-openwork" x="0" y="0" width="96" height="44" maskUnits="userSpaceOnUse" style="mask-type:luminance">
+      <use href="#lace-fabric" fill="white"/>
+      <g fill="black">
+        <use href="#lace-petals"/>
+        <use href="#lace-petals" x="48"/>
+      </g>
+    </mask>
+  </defs>
+  <use href="#lace-fabric" fill="white" mask="url(#lace-openwork)"/>
+  <g stroke="#ed83b5" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 .75H96"/>
+    <path d="M0 12C0 16 2 19 6 20C5 25 9 29 14 28C15 34 20 38 24 35C28 38 33 34 34 28C39 29 43 25 42 20C46 19 48 16 48 12C48 16 50 19 54 20C53 25 57 29 62 28C63 34 68 38 72 35C76 38 81 34 82 28C87 29 91 25 90 20C94 19 96 16 96 12"/>
+    <path d="M0 4.5H96M0 9H96" stroke-dasharray="1.5 4.5"/>
+    <use href="#lace-petals" stroke-width="1"/>
+    <use href="#lace-petals" x="48" stroke-width="1"/>
+    <path d="M24 35.5V38.2M72 35.5V38.2"/>
+  </g>
+  <g fill="#fff4d4" stroke="#dfb277" stroke-width="1">
+    <circle cx="24" cy="40" r="1.75"/>
+    <circle cx="72" cy="40" r="1.75"/>
+    <circle cx="48" cy="14" r="1.5"/>
+  </g>
+  <g fill="white" stroke="#ed83b5" stroke-width="1">
+    <circle cx="6.5" cy="26" r="1.4"/>
+    <circle cx="41.5" cy="26" r="1.4"/>
+    <circle cx="54.5" cy="26" r="1.4"/>
+    <circle cx="89.5" cy="26" r="1.4"/>
+  </g>
+</svg>
