@@ -9,19 +9,7 @@
             return trim(preg_replace('/\s+/u', ' ', strip_tags(html_entity_decode((string) $value, ENT_QUOTES | ENT_HTML5, 'UTF-8'))));
         };
         $metaTitle = $metaPlainText($title);
-        $metaIntro = $metaPlainText($description);
-        $metaDetails = $metaIntro;
-        if (preg_match('/^(先试用\s*再购买\s*|.+?机场\s+)?(\d+(?:\.\d+)?)\s*元\s*(\d+)\s*G$/iu', $metaIntro, $metaOffer)) {
-            $metaDetails = $metaOffer[2] . '元' . $metaOffer[3] . 'G，小小预算，装下更多好奇。';
-            if (strpos($metaOffer[1], '先试用') !== false) {
-                $metaDetails .= '先试用，喜欢再订阅。';
-            }
-        } elseif ($metaIntro === '' || preg_match('/^欢迎使用.+机场$/u', $metaIntro)) {
-            $metaDetails = '从日常的小小好奇出发，看看新鲜事，也找找新的心头好。';
-        } elseif (!preg_match('/[。！？.!?]$/u', $metaDetails)) {
-            $metaDetails .= '。';
-        }
-        $metaDescription = $metaTitle . ' · 世界很大，喜欢的内容值得多看一点。' . $metaDetails;
+        $metaDescription = $metaTitle . '提供快速、稳定的网络加速服务，支持手机、电脑等多种设备，满足日常浏览、影音娱乐和跨境办公需求。先试用，再选购适合自己的套餐，轻松连接更大的世界。';
         $metaUrlParts = parse_url((string) config('v2board.app_url', ''));
         if (!is_array($metaUrlParts) || empty($metaUrlParts['host']) || !in_array(strtolower($metaUrlParts['scheme'] ?? ''), ['http', 'https'], true)) {
             $metaUrlParts = parse_url(url('/'));
