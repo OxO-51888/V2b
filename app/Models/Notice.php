@@ -10,6 +10,7 @@ class Notice extends Model
     protected $dateFormat = 'U';
     protected $guarded = ['id'];
     protected $casts = [
+        'community_show' => 'integer',
         'created_at' => 'timestamp',
         'updated_at' => 'timestamp',
         'tags' => 'array'

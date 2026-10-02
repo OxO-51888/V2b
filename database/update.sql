@@ -861,6 +861,9 @@ CHANGE `action_value` `action_value` text NULL AFTER `action`;
 ALTER TABLE `v2_giftcard`
 ADD `redeem_limit` tinyint(1) NOT NULL DEFAULT '1' AFTER `limit_use`;
 
+ALTER TABLE `v2_notice`
+ADD `community_show` tinyint(1) NOT NULL DEFAULT '0' AFTER `show`;
+
 CREATE TABLE IF NOT EXISTS `v2_giftcard_redemption` (
                                         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                                         `giftcard_id` int(11) NOT NULL,

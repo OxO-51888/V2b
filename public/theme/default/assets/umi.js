@@ -45311,7 +45311,7 @@
                     className: "default-community-main"
                 }, o.a.createElement("iframe", {
                     className: "default-community-frame",
-                    src: "/community/index.html?client=default&embedded=1",
+                    src: "/community/index.html?client=default&embedded=1&v=a3096fe11cfe",
                     title: "\u552e\u540e\u7fa4\u804a",
                     referrerPolicy: "same-origin"
                 })))

@@ -33107,12 +33107,13 @@
                     dataIndex: "id",
                     key: "id"
                 }, {
-                    title: "\u663e\u793a",
+                    title: "\u4eea\u8868\u76d8\u663e\u793a",
                     dataIndex: "show",
                     key: "show",
                     render: (e,t)=>{
                         return g.a.createElement(f["a"], {
                             size: "small",
+                            "aria-label": "\u4eea\u8868\u76d8\u663e\u793a " + t.id,
                             onChange: ()=>this.props.dispatch({
                                 type: "notice/show",
                                 id: t.id
@@ -33120,6 +33121,22 @@
                             checked: e
                         })
                     }
+                }, {
+                    title: "\u7fa4\u804a\u663e\u793a",
+                    dataIndex: "community_show",
+                    key: "community_show",
+                    render: (e,t)=>g.a.createElement(f["a"], {
+                        size: "small",
+                        "aria-label": "\u7fa4\u804a\u663e\u793a " + t.id,
+                        loading: this.props.notice.communitySaving === t.id,
+                        disabled: this.props.notice.communitySaving != null,
+                        checked: Number(e) === 1,
+                        onChange: e=>this.props.dispatch({
+                            type: "notice/communityShow",
+                            id: t.id,
+                            community_show: e ? 1 : 0
+                        })
+                    })
                 }, {
                     title: "\u6807\u9898",
                     dataIndex: "title",
@@ -87352,6 +87369,7 @@
         }
         var s = {
             notices: [],
+            communitySaving: null,
             fetchLoading: !1
         };
         t["default"] = {
@@ -87364,6 +87382,18 @@
                 }
             },
             effects: {
+                *communityShow(action, {put}) {
+                    yield put({type: "setState", payload: {communitySaving: action.id}});
+                    try {
+                        const result = yield Object(o["b"])("/" + window.settings.secure_path + "/notice/communityShow", {
+                            id: action.id,
+                            community_show: action.community_show
+                        });
+                        if (result.code === 200) yield put({type: "fetch"});
+                    } finally {
+                        yield put({type: "setState", payload: {communitySaving: null}});
+                    }
+                },
                 fetch(e, t) {
                     var n = t.put;
                     return a().mark(function e() {

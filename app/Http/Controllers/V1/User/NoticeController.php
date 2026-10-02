@@ -10,11 +10,11 @@ class NoticeController extends Controller
 {
     public function fetch(Request $request)
     {
+        $visibility = $request->boolean('community') ? 'community_show' : 'show';
+        $model = Notice::where($visibility, 1);
         if ($request->has('id')) {
             $id = $request->input('id');
-            $notice = Notice::where('id', $id)
-                ->where('show', 1)
-                ->first();
+            $notice = $model->where('id', $id)->first();
     
             if (!$notice) {
                 return response([
@@ -32,8 +32,7 @@ class NoticeController extends Controller
     
         $pageSize = min(max($pageSize, 1), 100);
     
-        $model = Notice::orderBy('created_at', 'DESC')
-            ->where('show', 1);
+        $model->orderBy('created_at', 'DESC')->orderBy('id', 'DESC');
     
         $total = $model->count();
         $res = $model->forPage($current, $pageSize)->get();

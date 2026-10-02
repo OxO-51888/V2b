@@ -95,7 +95,7 @@
   }
   function supportHeader(key, extra) {
     const brand = N.settings && N.settings.title || '';
-    if (key === 'community') return '<header class="support-header support-community-header">' + continuousArt('community', 309, 87, 1206, 141, [], 'community-continuous-header', { background: 'surface' }) + '<div class="support-heading"><span class="support-chat-emblem"></span><div><div class="row wrap"><h1 class="community-original-title"><span class="sr-only">售后群聊</span></h1><span id="support-chat-status" class="support-chat-status" role="status">' + (window.NINI_PREVIEW ? '本地演示' : '正在连接') + '</span></div><p>' + (window.NINI_PREVIEW ? '演示消息仅显示在本页，不会发送到服务器～' : '在这里与客服团队交流，记录您的问题与回复～') + '</p></div>' + N.button(N.icon('refresh') + ' 刷新', 'community-reload', '', 'secondary') + '</div>' + '</header>';
+    if (key === 'community') return '<header class="community-page-heading"><span class="community-page-icon" aria-hidden="true">' + N.icon('chat') + '</span><div class="community-page-copy"><h1>售后群聊 <span aria-hidden="true">✦</span></h1><p>' + (window.NINI_PREVIEW ? '在这里预览聊天，消息不会发送到服务器。' : '有问题，随时聊聊。常用公告与下载也在这里。') + '</p></div><span id="support-chat-status" class="community-status-pill" role="status">' + (window.NINI_PREVIEW ? '本地演示' : '正在连接') + '</span></header>';
     if (key === 'knowledge') return '<header class="support-header support-knowledge-header approved-art-header">' + decor('knowledge', 309, 103, 1206, 130, 'knowledge-approved-banner') + decor('knowledge', 1001, 86, 275, 17, 'knowledge-approved-overlap') + '<h1 class="sr-only">使用文档</h1>' + (brand !== 'Keke' ? '<span class="knowledge-seal-custom"><small>' + N.e(brand) + '</small><b>Docs</b></span>' : '') + '</header>';
     if (key === 'ticket') return '<header class="support-header support-ticket-header approved-art-header">' + decor('ticket', 309, 102, 1206, 191, 'ticket-approved-banner') + decor('ticket', 1037, 85, 389, 17, 'ticket-approved-overlap') + '<h1 class="sr-only">我的工单</h1></header>';
     if (key === 'node') return '<header class="support-header support-node-header">' + continuousArt('node', 309, 99, 1206, 220, [], 'node-continuous-header', { background: 'surface' }) + '<h1 class="sr-only">节点状态</h1>' + extra + '</header>';
@@ -115,18 +115,63 @@
   function communityEnabled() {
     return N.communityEnabled ? N.communityEnabled() : N.on((window.settings || {}).community_enabled);
   }
-  const communityURL = () => window.NINI_PREVIEW === true ? 'assets/v1/preview-community.html' : '/community/index.html?client=nini&embedded=1&v=6';
+  const communityURL = () => window.NINI_PREVIEW === true ? 'assets/v1/preview-community.html' : '/community/index.html?client=nini&embedded=1&v=a3096fe11cfe';
   const ticketCreationEnabled = () => Number((window.settings || {}).ticket_status) !== 2;
   N.pages.community = {
     load: async function () { return { enabled: communityEnabled() }; },
     render: function (route, data) {
-      return '<div class="support-page support-community-page">' + supportHeader('community') + (data.enabled
-        ? '<section class="card community-card"><iframe id="nini-community" class="community-frame" title="站内售后群聊" src="' + N.e(communityURL()) + '" referrerpolicy="same-origin"></iframe><div id="nini-community-error" class="notice" hidden>群聊页面暂时无法载入，请重试或通过工单联系支持。</div></section>'
+      return '<div class="support-page support-community-page community-hub">' + supportHeader('community') + (data.enabled
+        ? '<section class="community-embed"><iframe id="nini-community" class="community-frame" title="站内售后群聊" src="' + N.e(communityURL()) + '" referrerpolicy="same-origin"></iframe><div id="nini-community-error" class="notice" hidden>群聊页面暂时无法载入，请重试或通过工单联系支持。</div></section>'
         : N.card('售后群聊', N.empty('当前站点尚未开启群聊') + link('ticket', '我的工单'))) + '</div>';
     },
     mounted: function () {
       const frame = document.getElementById('nini-community');
       if (!frame) return;
+      let sizeObserver = null, anchorObserver = null, statusObserver = null, observedWindow = null, resizeTask = 0;
+      const fitMobileContent = function () {
+        try {
+          const doc = frame.contentDocument, layout = doc && doc.querySelector('.community-layout');
+          if (!frame.isConnected || !layout || frame.contentWindow.innerWidth > 900) return;
+          const height = Math.ceil(layout.getBoundingClientRect().height);
+          if (height > 0 && Math.abs(frame.clientHeight - height) > 1) frame.style.height = height + 'px';
+        } catch (_) {}
+      };
+      const resizeFrame = function () {
+        try {
+          const doc = frame.contentDocument, layout = doc && doc.querySelector('.community-layout');
+          if (!frame.isConnected) { disconnect(); return; }
+          if (!layout) return;
+          if (frame.contentWindow.innerWidth <= 900) { fitMobileContent(); return; }
+          // The fixed-size sidebar artwork is the desktop bottom edge, independent of chat height.
+          const rect = frame.getBoundingClientRect();
+          const scale = frame.clientWidth > 0 ? rect.width / frame.clientWidth : 1;
+          const mascot = document.querySelector('.sidebar .sidebar-decoration');
+          const anchor = window.innerWidth > 1024 && mascot && mascot.getBoundingClientRect();
+          const aligned = anchor && anchor.height > 0 && anchor.bottom > rect.top;
+          const available = ((aligned ? anchor.bottom : window.innerHeight - 20) - rect.top) / (scale > 0 ? scale : 1);
+          const chatHeight = aligned ? Math.round(available) : Math.max(400, Math.min(840, Math.floor(available)));
+          doc.documentElement.style.setProperty('--community-chat-height', chatHeight + 'px');
+          const height = Math.max(chatHeight, Math.ceil(layout.getBoundingClientRect().height));
+          if (Math.abs(frame.clientHeight - height) > 1) frame.style.height = height + 'px';
+        } catch (_) {}
+      };
+      const scheduleFrameResize = function () {
+        if (resizeTask) window.cancelAnimationFrame(resizeTask);
+        resizeTask = window.requestAnimationFrame(function () { resizeTask = 0; resizeFrame(); });
+      };
+      const disconnect = function () {
+        if (sizeObserver) sizeObserver.disconnect();
+        if (anchorObserver) anchorObserver.disconnect();
+        if (statusObserver) statusObserver.disconnect();
+        if (observedWindow) {
+          observedWindow.removeEventListener('resize', fitMobileContent);
+          observedWindow.removeEventListener('unload', disconnect);
+        }
+        window.removeEventListener('resize', scheduleFrameResize);
+        if (resizeTask) window.cancelAnimationFrame(resizeTask);
+        resizeTask = 0;
+        sizeObserver = null; anchorObserver = null; statusObserver = null; observedWindow = null;
+      };
       const styleFrame = function () {
         // The existing same-origin chat owns authentication, polling and uploads.
         // Only its presentation is adapted; no chat controls or status are duplicated.
@@ -139,23 +184,26 @@
             return;
           }
           if (error) error.hidden = true;
-          doc.body.classList.add('nini-community-skin');
-          doc.body.dataset.accent = N.theme && N.theme.accent_color || 'sakura';
-          if (!doc.getElementById('nini-chat-theme')) {
-            // The embedded client enforces style-src 'self', so use a real same-origin
-            // stylesheet rather than an inline style that its CSP would reject.
-            const style = doc.createElement('link');
-            style.id = 'nini-chat-theme'; style.rel = 'stylesheet';
-            const parentStyle = document.querySelector('link[href*="/assets/v1/support.css"]');
-            style.href = parentStyle ? parentStyle.href : new URL((N.settings.assets_path || '/theme/NINI/assets') + '/v1/support.css', window.location.href).href;
-            doc.head.appendChild(style);
+          disconnect();
+          // The chat document loads its own scoped skin; never inject page-wide theme CSS.
+          const layout = doc.querySelector('.community-layout');
+          if (layout && window.ResizeObserver) { sizeObserver = new ResizeObserver(scheduleFrameResize); sizeObserver.observe(layout); }
+          if (window.ResizeObserver) {
+            anchorObserver = new ResizeObserver(scheduleFrameResize);
+            document.querySelectorAll('.sidebar .brand, .sidebar nav, .sidebar .sidebar-decoration, .community-page-heading').forEach(function (item) { anchorObserver.observe(item); });
           }
+          observedWindow = frame.contentWindow; observedWindow.addEventListener('resize', fitMobileContent);
+          observedWindow.addEventListener('unload', disconnect, { once: true });
+          window.addEventListener('resize', scheduleFrameResize, { passive: true });
+          resizeFrame();
+          if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () {
+            if (frame.isConnected && observedWindow === frame.contentWindow) scheduleFrameResize();
+          });
           if (!window.NINI_PREVIEW) {
             const source = doc.getElementById('status'), target = document.getElementById('support-chat-status');
             if (source && target) {
               const sync = () => { target.textContent = source.textContent; target.classList.toggle('connected', /已连接|连接正常/.test(source.textContent)); };
-              sync(); const observer = new MutationObserver(sync); observer.observe(source, { childList: true, subtree: true, characterData: true });
-              frame.contentWindow.addEventListener('unload', () => observer.disconnect(), { once: true });
+              sync(); statusObserver = new MutationObserver(sync); statusObserver.observe(source, { childList: true, subtree: true, characterData: true });
             }
           }
         } catch (_) { /* The iframe remains functional when styling is unavailable. */ }

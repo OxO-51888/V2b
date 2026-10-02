@@ -62,6 +62,21 @@ class NoticeController extends Controller
         ]);
     }
 
+    public function communityShow(Request $request)
+    {
+        $data = $request->validate([
+            'id' => 'required|integer|min:1',
+            'community_show' => 'required|boolean',
+        ]);
+        $notice = Notice::find($data['id']);
+        abort_unless($notice, 404, '公告不存在');
+        // Set the requested state so retries cannot invert the switch twice.
+        $notice->community_show = (int)$data['community_show'];
+        abort_unless($notice->save(), 500, '保存失败');
+
+        return response(['data' => true]);
+    }
+
     public function drop(Request $request)
     {
         if (empty($request->input('id'))) {

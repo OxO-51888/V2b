@@ -41,6 +41,78 @@
     const node = element("button", "icon-button"); node.title = title; node.setAttribute("aria-label", title);
     const symbol = element("i"); symbol.dataset.lucide = icon; node.append(symbol); node.addEventListener("click", click); return node;
   }
+  function setupScrollChaining() {
+    if (!nini || !new URLSearchParams(location.search).has("embedded")) return;
+    const messages = $("messages");
+    if (!messages) return;
+    function pathFromMessages() {
+      const path = [];
+      let doc = messages.ownerDocument, first = messages, scale = 1;
+      while (doc && first) {
+        const view = doc.defaultView;
+        for (let node = first; node; node = node.parentElement) {
+          const css = view.getComputedStyle(node);
+          if (node === doc.scrollingElement || /^(auto|scroll|overlay)$/.test(css.overflowY)) {
+            path.push({ node, scale, max: Math.max(0, node.scrollHeight - node.clientHeight), top: node.scrollTop });
+          }
+          if (/^(contain|none)$/.test(css.overscrollBehaviorY)) return path;
+        }
+        try {
+          const frame = view.frameElement;
+          if (!frame) break;
+          const frameScale = frame.getBoundingClientRect().height / (frame.offsetHeight || frame.clientHeight);
+          if (Number.isFinite(frameScale) && frameScale > 0) scale *= frameScale;
+          doc = frame.ownerDocument;
+          first = frame.parentElement;
+        } catch (_) { break; }
+      }
+      return path;
+    }
+    function moveInstantly(step, amount) {
+      const node = step.node, before = node.scrollTop;
+      let fallback = false;
+      try { node.scrollBy({ top: amount, behavior: "instant" }); }
+      catch (_) { fallback = true; }
+      if (fallback || Math.abs(node.scrollTop - before) < 0.001) {
+        const original = node.style.getPropertyValue("scroll-behavior");
+        const priority = node.style.getPropertyPriority("scroll-behavior");
+        try {
+          node.style.setProperty("scroll-behavior", "auto", "important");
+          node.scrollTop = before + amount;
+        } finally {
+          if (original) node.style.setProperty("scroll-behavior", original, priority);
+          else node.style.removeProperty("scroll-behavior");
+        }
+      }
+      return (node.scrollTop - before) / step.scale;
+    }
+    messages.addEventListener("wheel", function (event) {
+      if (!event.cancelable || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || event.deltaX !== 0 || !event.deltaY) return;
+      if (event.target && event.target.closest && event.target.closest("input,textarea,select,[contenteditable]")) return;
+      let delta = event.deltaY;
+      if (event.deltaMode === 1) {
+        const css = messages.ownerDocument.defaultView.getComputedStyle(messages);
+        delta *= parseFloat(css.lineHeight) || (parseFloat(css.fontSize) || 16) * 1.5;
+      } else if (event.deltaMode === 2) delta *= messages.clientHeight;
+      if (!Number.isFinite(delta)) return;
+      const down = delta > 0;
+      const maximum = Math.max(0, messages.scrollHeight - messages.clientHeight), top = messages.scrollTop;
+      if (top < -1 || top > maximum + 1 || Math.abs(delta) <= Math.max(0, down ? maximum - top : top)) return;
+      const path = pathFromMessages();
+      if (!path.length || path[0].node !== messages || path.some(step => step.top < -1 || step.top > step.max + 1)) return;
+      const capacity = step => Math.max(0, down ? step.max - Math.max(0, step.top) : Math.min(step.max, step.top));
+      if (!path.slice(1).some(step => capacity(step) > 0)) return;
+      // Ordinary scrolling stays native. Transfer only a boundary-crossing gesture.
+      event.preventDefault();
+      if (!event.defaultPrevented) return;
+      let remaining = delta;
+      for (const step of path) {
+        const amount = (down ? 1 : -1) * Math.min(Math.abs(remaining) * step.scale, capacity(step));
+        if (amount) remaining -= moveInstantly(step, amount);
+        if (Math.abs(remaining) < 0.001 || (down ? remaining <= 0 : remaining >= 0)) break;
+      }
+    }, { passive: false });
+  }
   function nearBottom() { return $("messages").scrollHeight - $("messages").scrollTop - $("messages").clientHeight < 80; }
   async function read() {
     if (!state.me || document.hidden || !nearBottom() || Date.now() - state.readAt < 5000) return;
@@ -55,6 +127,7 @@
     }).catch(e => { state.urls.delete(id); throw e; }));
     return state.urls.get(id);
   }
+  function displayName(member) { return member.moderator ? "客服小姐姐" : member.name; }
   function display(rows, reset) {
     const stick = nearBottom(), oldHeight = $("messages").scrollHeight, oldTop = $("messages").scrollTop;
     const previous = new Set(state.rows.keys());
@@ -68,22 +141,21 @@
     const fragment = document.createDocumentFragment();
     ordered.forEach(row => {
       const node = element("article", "message" + (row.user_id === state.me.id ? " own" : "")); node.dataset.postId = row.id;
-      node.append(element("div", "avatar", row.moderator ? "管" : row.name.slice(-2)));
-      const body = element("div"), meta = element("div", "meta"); meta.append(element("span", "name", row.name));
-      if (row.moderator) meta.append(element("span", "staff", "管理员"));
+      node.append(element("div", "avatar", row.moderator ? "客服" : row.name.slice(-2)));
+      const body = element("div", "message-body"), meta = element("div", "meta"); meta.append(element("span", "name", displayName(row)));
       const date = element("time", "", new Date(row.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })); date.dateTime = new Date(row.created_at).toISOString(); meta.append(date);
       const actions = element("div", "message-actions");
-      actions.append(button("reply", "回复", () => { state.reply = row; state.pending = null; $("reply-text").textContent = "回复 " + row.name + "：" + row.message; $("reply").hidden = false; $("message").focus(); }));
+      actions.append(button("reply", "回复", () => { state.reply = row; state.pending = null; $("reply-text").textContent = "回复 " + displayName(row) + "：" + row.message; $("reply").hidden = false; $("message").focus(); }));
       if (state.me.moderator || row.user_id === state.me.id) actions.append(button("trash-2", "删除消息", async () => {
         if (!confirm("删除这条消息？")) return;
         try { await api("delete", { post_id: row.id }); state.rows.delete(row.id); await poll(true); } catch (e) { error(e.message); }
       }));
-      if (state.me.moderator && row.user_id !== state.me.id) actions.append(button(row.muted ? "volume-2" : "volume-x", row.muted ? "解除禁言" : "禁言", async () => {
-        if (!confirm((row.muted ? "解除禁言：" : "禁言：") + row.name + "？")) return;
+      if (state.me.moderator && row.user_id !== state.me.id) actions.append(button(row.muted ? "volume-x" : "volume-2", row.muted ? "当前已禁言，点击解除禁言" : "当前可发言，点击禁言", async () => {
+        if (!confirm((row.muted ? "解除禁言：" : "禁言：") + displayName(row) + "？")) return;
         try { await api("mute", { target_id: row.user_id, muted: !row.muted }); await poll(true); } catch (e) { error(e.message); }
       }));
       meta.append(actions); body.append(meta);
-      if (row.root_id) { const root = state.rows.get(row.root_id); body.append(element("div", "quote", root ? "回复 " + root.name + "：" + (root.message || "图片") : "回复较早的消息")); }
+      if (row.root_id) { const root = state.rows.get(row.root_id); body.append(element("div", "quote", root ? "回复 " + displayName(root) + "：" + (root.message || "图片") : "回复较早的消息")); }
       if (row.message) body.append(element("div", "message-text", row.message));
       if (row.file_ids && row.file_ids.length) {
         const images = element("div", "images");
@@ -149,17 +221,18 @@
   $("message").addEventListener("compositionend", () => {
     composing = false; compositionEnterGuard = true;
     clearTimeout(compositionGuardTimer);
-    // Some IMEs end composition before delivering the candidate-confirmation Enter.
-    compositionGuardTimer = setTimeout(() => { compositionEnterGuard = false; }, 250);
+    // Protect a confirmation Enter delivered in this event turn, not the next deliberate keypress.
+    compositionGuardTimer = setTimeout(() => { compositionEnterGuard = false; }, 0);
   });
-  $("message").addEventListener("keyup", event => { if (!composing && (event.key === "Enter" || event.code === "Enter" || event.code === "NumpadEnter")) { compositionEnterGuard = false; clearTimeout(compositionGuardTimer); } });
+  $("message").addEventListener("keyup", () => { if (!composing) { compositionEnterGuard = false; clearTimeout(compositionGuardTimer); } });
   $("message").addEventListener("keydown", event => {
     const enter = event.key === "Enter" || event.code === "Enter" || event.code === "NumpadEnter";
     if (composing || event.isComposing || event.keyCode === 229 || event.which === 229) return;
     if (!enter) { compositionEnterGuard = false; return; }
-    if (compositionEnterGuard || event.repeat || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
-    if (!composerReady() || (!$("message").value.trim() && !state.attachments.length)) return;
-    event.preventDefault(); sendMessage();
+    if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
+    if (compositionEnterGuard) { event.preventDefault(); return; }
+    event.preventDefault();
+    if (!event.repeat) sendMessage();
   });
   $("message").addEventListener("paste", event => {
     const clipboard = event.clipboardData; if (!clipboard) return;
@@ -200,10 +273,11 @@
   async function connect() {
     if (state.connecting || !state.active) return;
     state.connecting = true;
-    try { const data = await api("bootstrap"); state.me = data.me; $("identity").textContent = state.me.name; controls(); error(""); await poll(true); }
+    try { const data = await api("bootstrap"); state.me = data.me; $("identity").textContent = displayName(state.me); controls(); error(""); await poll(true); }
     catch (e) { $("status").textContent = "暂不可用"; error(e.message, "connection"); }
     finally { state.connecting = false; }
   }
+  setupScrollChaining();
   connect();
   setInterval(() => state.me ? poll() : connect(), 3500);
 })();

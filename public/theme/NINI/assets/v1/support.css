@@ -382,3 +382,34 @@ body.nini-community-skin .attachment button{width:25px;height:25px;min-width:25p
   .nini-app .support-page .node-table td:first-child { padding-left: 12px; }
   .nini-app .support-page .node-table td:first-child > .row { gap: 10px; }
 }
+
+/* Community keeps its own compact chrome; the embedded document owns the chat skin. */
+.nini-app .community-hub{min-width:0;color:#594150}
+.nini-app .community-hub .community-page-heading{display:flex;align-items:center;gap:10px;min-height:44px;margin:0 0 8px;padding:0 2px 5px;border-bottom:1px solid #f1dbe4;background:none;position:relative}
+.nini-app .community-hub .community-page-icon{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border:1px solid #f2cada;border-radius:12px;background:#fff0f6;color:#ce648f;box-shadow:inset 0 0 0 2px #fff9fc;transform:rotate(-5deg)}
+.nini-app .community-hub .community-page-icon .icon{width:20px;height:20px;stroke-width:1.7;transform:rotate(5deg)}
+.nini-app .community-hub .community-page-copy{flex:1;min-width:0}
+.nini-app .community-hub .community-page-copy h1{font-size:24px;line-height:1.35;letter-spacing:1px;margin:0;color:#614156;font-family:var(--nini-ui-font);font-weight:700;text-shadow:none}
+.nini-app .community-hub .community-page-copy h1 span{display:inline-block;margin-left:5px;font-size:20px;color:#e8b961;vertical-align:middle}
+.nini-app .community-hub .community-page-copy p{display:none}
+.nini-app .community-hub .community-status-pill{display:inline-flex;align-items:center;gap:7px;flex:none;max-width:220px;border:1px solid #ebdbe4;border-radius:999px;padding:5px 10px;background:#fffafc;color:#937888;font:12px/1.4 var(--nini-content-font,"Microsoft YaHei",system-ui,sans-serif);white-space:normal;overflow-wrap:anywhere}
+.nini-app .community-hub .community-status-pill:before{content:"";width:7px;height:7px;flex:none;background:#c5aebb;border-radius:50%}
+.nini-app .community-hub .community-status-pill.connected{background:#f1fbf7;border-color:#cce8db;color:#378168}
+.nini-app .community-hub .community-status-pill.connected:before{background:#52b28d;box-shadow:0 0 0 3px #e3f5ed}
+.nini-app .community-hub .community-embed{position:relative;min-width:0;min-height:0;border:0;background:none;margin:0;padding:0;border-radius:0;overflow:visible;box-shadow:none}
+.nini-app .community-hub .community-frame{display:block;width:100%;height:740px;height:clamp(620px,calc(100dvh - 190px),840px);min-height:0;max-height:none;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.nini-app .community-hub #nini-community-error{margin:10px 0 0;padding:13px 16px;border:1px solid #edcbd7;border-radius:12px;background:#fff4f7;color:#98596d;font-size:14px}
+@media(max-width:1024px){
+  .nini-app .community-hub .community-page-heading{gap:9px;min-height:44px;margin-bottom:8px;padding-bottom:5px}
+  .nini-app .community-hub .community-page-copy h1{font-size:23px}
+  .nini-app .community-hub .community-status-pill{max-width:160px;padding:5px 9px}
+}
+@media(max-width:600px){
+  .nini-app .community-hub .community-page-heading{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:0 8px;padding:0 0 5px;margin-bottom:8px;min-height:42px}
+  .nini-app .community-hub .community-page-icon{width:32px;height:32px;flex-basis:32px;border-radius:11px;grid-column:1;grid-row:1}
+  .nini-app .community-hub .community-page-icon .icon{width:19px;height:19px}
+  .nini-app .community-hub .community-page-copy{grid-column:2;grid-row:1;display:contents}
+  .nini-app .community-hub .community-page-copy h1{grid-column:2;grid-row:1;font-size:21px;letter-spacing:0}
+  .nini-app .community-hub .community-page-copy h1 span{font-size:16px;margin-left:1px}
+  .nini-app .community-hub .community-status-pill{grid-column:3;grid-row:1;max-width:100px;padding:4px 7px;font-size:11px;gap:5px}
+}

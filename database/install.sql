@@ -150,6 +150,7 @@ CREATE TABLE `v2_notice` (
                              `title` varchar(255) NOT NULL,
                              `content` text NOT NULL,
                              `show` tinyint(1) NOT NULL DEFAULT '0',
+                             `community_show` tinyint(1) NOT NULL DEFAULT '0',
                              `img_url` varchar(255) DEFAULT NULL,
                              `tags` varchar(255) DEFAULT NULL,
                              `created_at` int(11) NOT NULL,
