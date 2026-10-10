@@ -1048,3 +1048,93 @@ body>dialog.nini-app.modal.nini-modal-fallback {
 body>dialog.nini-app.modal.nini-modal-fallback.notice-modal[open] {
   display:flex;
 }
+
+/* Use a complete illustration crop in a separate mobile plan-header column. */
+.nini-app .commerce-mobile-plan-art {display:none}
+@media (max-width:1024px) {
+  .nini-app .commerce-page-plan .commerce-hero-plan {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,44%);
+    grid-template-rows:auto auto;
+    align-content:center;
+    column-gap:10px;
+    row-gap:8px;
+    padding:20px 16px;
+  }
+  .nini-app .commerce-page-plan .commerce-hero-plan>.commerce-semantic-heading {
+    grid-column:1;
+    max-width:none;
+    margin:0;
+  }
+  .nini-app .commerce-page-plan .commerce-hero-plan>.commerce-static-hero-art {display:none}
+  .nini-app .commerce-page-plan .commerce-hero-plan>.commerce-mobile-plan-art {
+    display:block;
+    position:relative;
+    grid-column:2;
+    grid-row:1 / 3;
+    align-self:center;
+    width:100%;
+    height:auto;
+    aspect-ratio:455 / 220;
+    pointer-events:none;
+  }
+}
+/* Secondary actions retain a visible button surface on desktop and phones. */
+.nini-app .commerce-page-order .commerce-order-detail .button[data-action="commerce-order-cancel"] {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:fit-content;
+  min-width:136px;
+  max-width:100%;
+  height:auto;
+  min-height:44px!important;
+  margin:14px auto 0;
+  padding:10px 22px;
+  border:1.5px solid #e7a1bf;
+  border-radius:999px;
+  background:#fff5fa;
+  color:#af4f7a;
+  box-shadow:none;
+  font-size:16px;
+  font-weight:600;
+  line-height:1.4;
+  cursor:pointer;
+}
+.nini-app .commerce-page-order .commerce-order-detail .button[data-action="commerce-order-cancel"]:before,
+.nini-app .commerce-page-order .commerce-order-detail .button[data-action="commerce-order-cancel"]:after {
+  display:none;
+}
+.landing-app .lp-nav-actions>.lp-login {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:44px;
+  max-width:100%;
+  padding:10px 18px;
+  border:1.5px solid #e7a1bf;
+  border-radius:999px;
+  background:#fff5fa;
+  color:#af4f7a;
+  font-size:16px;
+  font-weight:600;
+  line-height:1.4;
+  text-decoration:none;
+  cursor:pointer;
+}
+.nini-app .commerce-page-order .commerce-order-detail .button[data-action="commerce-order-cancel"]:hover,
+.landing-app .lp-nav-actions>.lp-login:hover {
+  background:#ffeaf4;
+  border-color:#d981a8;
+}
+.nini-app .commerce-page-order .commerce-order-detail .button[data-action="commerce-order-cancel"]:focus-visible,
+.landing-app .lp-nav-actions>.lp-login:focus-visible {
+  outline:2px solid #c96594;
+  outline-offset:3px;
+}
+@media (max-width:760px) {
+  .landing-app .lp-nav-actions>.lp-login {
+    padding:9px 14px;
+    font-size:14px;
+  }
+}

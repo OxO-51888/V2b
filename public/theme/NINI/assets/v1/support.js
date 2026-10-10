@@ -115,7 +115,7 @@
   function communityEnabled() {
     return N.communityEnabled ? N.communityEnabled() : N.on((window.settings || {}).community_enabled);
   }
-  const communityURL = () => window.NINI_PREVIEW === true ? 'assets/v1/preview-community.html' : '/community/index.html?client=nini&embedded=1&v=a3096fe11cfe';
+  const communityURL = () => window.NINI_PREVIEW === true ? 'assets/v1/preview-community.html' : '/community/index.html?client=nini&embedded=1&v=a90ef24080f2';
   const ticketCreationEnabled = () => Number((window.settings || {}).ticket_status) !== 2;
   N.pages.community = {
     load: async function () { return { enabled: communityEnabled() }; },
@@ -127,7 +127,7 @@
     mounted: function () {
       const frame = document.getElementById('nini-community');
       if (!frame) return;
-      let sizeObserver = null, anchorObserver = null, statusObserver = null, observedWindow = null, resizeTask = 0;
+      let sizeObserver = null, statusObserver = null, observedWindow = null, resizeTask = 0;
       const fitMobileContent = function () {
         try {
           const doc = frame.contentDocument, layout = doc && doc.querySelector('.community-layout');
@@ -142,16 +142,8 @@
           if (!frame.isConnected) { disconnect(); return; }
           if (!layout) return;
           if (frame.contentWindow.innerWidth <= 900) { fitMobileContent(); return; }
-          // The fixed-size sidebar artwork is the desktop bottom edge, independent of chat height.
-          const rect = frame.getBoundingClientRect();
-          const scale = frame.clientWidth > 0 ? rect.width / frame.clientWidth : 1;
-          const mascot = document.querySelector('.sidebar .sidebar-decoration');
-          const anchor = window.innerWidth > 1024 && mascot && mascot.getBoundingClientRect();
-          const aligned = anchor && anchor.height > 0 && anchor.bottom > rect.top;
-          const available = ((aligned ? anchor.bottom : window.innerHeight - 20) - rect.top) / (scale > 0 ? scale : 1);
-          const chatHeight = aligned ? Math.round(available) : Math.max(400, Math.min(840, Math.floor(available)));
-          doc.documentElement.style.setProperty('--community-chat-height', chatHeight + 'px');
-          const height = Math.max(chatHeight, Math.ceil(layout.getBoundingClientRect().height));
+          // Desktop chat stretches to the cards; the iframe follows their natural height.
+          const height = Math.ceil(layout.getBoundingClientRect().height);
           if (Math.abs(frame.clientHeight - height) > 1) frame.style.height = height + 'px';
         } catch (_) {}
       };
@@ -161,7 +153,6 @@
       };
       const disconnect = function () {
         if (sizeObserver) sizeObserver.disconnect();
-        if (anchorObserver) anchorObserver.disconnect();
         if (statusObserver) statusObserver.disconnect();
         if (observedWindow) {
           observedWindow.removeEventListener('resize', fitMobileContent);
@@ -170,7 +161,7 @@
         window.removeEventListener('resize', scheduleFrameResize);
         if (resizeTask) window.cancelAnimationFrame(resizeTask);
         resizeTask = 0;
-        sizeObserver = null; anchorObserver = null; statusObserver = null; observedWindow = null;
+        sizeObserver = null; statusObserver = null; observedWindow = null;
       };
       const styleFrame = function () {
         // The existing same-origin chat owns authentication, polling and uploads.
@@ -188,10 +179,6 @@
           // The chat document loads its own scoped skin; never inject page-wide theme CSS.
           const layout = doc.querySelector('.community-layout');
           if (layout && window.ResizeObserver) { sizeObserver = new ResizeObserver(scheduleFrameResize); sizeObserver.observe(layout); }
-          if (window.ResizeObserver) {
-            anchorObserver = new ResizeObserver(scheduleFrameResize);
-            document.querySelectorAll('.sidebar .brand, .sidebar nav, .sidebar .sidebar-decoration, .community-page-heading').forEach(function (item) { anchorObserver.observe(item); });
-          }
           observedWindow = frame.contentWindow; observedWindow.addEventListener('resize', fitMobileContent);
           observedWindow.addEventListener('unload', disconnect, { once: true });
           window.addEventListener('resize', scheduleFrameResize, { passive: true });

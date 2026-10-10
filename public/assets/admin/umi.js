@@ -8155,7 +8155,7 @@
                     key: "telegram"
                 }, f.a.createElement("div", {
                     className: ""
-                }, f.a.createElement(m, {
+                }, !window.PanelModules && f.a.createElement(m, {
                     title: "\u673a\u5668\u4ebaToken",
                     description: "\u8bf7\u8f93\u5165\u7531Botfather\u63d0\u4f9b\u7684token\u3002"
                 }, f.a.createElement("input", {
@@ -8164,7 +8164,7 @@
                     placeholder: "0000000000:xxxxxxxxx_xxxxxxxxxxxxxxx",
                     defaultValue: y.telegram_bot_token,
                     onChange: e=>this.set("telegram", "telegram_bot_token", e.target.value)
-                })), y.telegram_bot_token && f.a.createElement(m, {
+                })), !window.PanelModules && y.telegram_bot_token && f.a.createElement(m, {
                     title: "\u8bbe\u7f6eWebhook",
                     description: "\u5bf9\u673a\u5668\u4eba\u8fdb\u884cWebhook\u8bbe\u7f6e\uff0c\u4e0d\u8bbe\u7f6e\u5c06\u65e0\u6cd5\u6536\u5230Telegram\u901a\u77e5\u3002"
                 }, f.a.createElement(o["a"], {
@@ -8177,7 +8177,7 @@
                     ,
                     loading: b,
                     disabled: b
-                }, "\u4e00\u952e\u8bbe\u7f6e")), f.a.createElement(m, {
+                }, "\u4e00\u952e\u8bbe\u7f6e")), !window.PanelModules && f.a.createElement(m, {
                     title: "\u5f00\u542f\u673a\u5668\u4eba\u901a\u77e5",
                     description: "\u5f00\u542f\u540ebot\u5c06\u4f1a\u5bf9\u7ed1\u5b9a\u4e86telegram\u7684\u7ba1\u7406\u5458\u548c\u7528\u6237\u8fdb\u884c\u57fa\u7840\u901a\u77e5\u3002"
                 }, f.a.createElement(l["a"], {
@@ -8192,7 +8192,7 @@
                     placeholder: "https://t.me/xxxxxx",
                     defaultValue: y.telegram_discuss_link,
                     onChange: e=>this.set("telegram", "telegram_discuss_link", e.target.value)
-                })))), f.a.createElement(s["a"].TabPane, {
+                }))), window.PanelModules && window.PanelModules.section(f.a, "telegram")), f.a.createElement(s["a"].TabPane, {
                     tab: "APP",
                     key: "app"
                 }, f.a.createElement("div", {
@@ -8207,53 +8207,59 @@
                 }, f.a.createElement("p", {
                     className: "mb-0"
                 }, "\u7528\u4e8e\u81ea\u6709\u5ba2\u6237\u7aef(APP)\u7684\u7248\u672c\u7ba1\u7406\u53ca\u66f4\u65b0"))))), f.a.createElement("div", {
-                    className: ""
+                    className: "pm-app-settings"
                 }, f.a.createElement(m, {
                     title: "Windows",
                     description: "Windows\u7aef\u7248\u672c\u53f7\u53ca\u4e0b\u8f7d\u5730\u5740"
-                }, f.a.createElement("input", {
+                }, f.a.createElement("div", { className: "pm-app-downloads" }, f.a.createElement("input", {
                     type: "text",
                     className: "form-control",
+                    "aria-label": "Windows 版本号",
                     placeholder: "1.0.0",
                     defaultValue: w.windows_version,
                     onChange: e=>this.set("app", "windows_version", e.target.value)
                 }), f.a.createElement("input", {
                     type: "text",
-                    className: "form-control mt-1",
+                    className: "form-control",
+                    "aria-label": "Windows 下载地址",
                     placeholder: "https://xxxx.com/xxx.exe",
-                    defaultValue: w.windows_download_url,
+                    defaultValue: window.PanelModules && window.PanelModules.displayDownloadUrl ? window.PanelModules.displayDownloadUrl(w.windows_download_url) : w.windows_download_url,
                     onChange: e=>this.set("app", "windows_download_url", e.target.value)
-                })), f.a.createElement(m, {
+                }))), f.a.createElement(m, {
                     title: "macOS",
                     description: "macOS\u7aef\u7248\u672c\u53f7\u53ca\u4e0b\u8f7d\u5730\u5740"
-                }, f.a.createElement("input", {
+                }, f.a.createElement("div", { className: "pm-app-downloads" }, f.a.createElement("input", {
                     type: "text",
                     className: "form-control",
+                    "aria-label": "macOS 版本号",
                     placeholder: "1.0.0",
                     defaultValue: w.macos_version,
                     onChange: e=>this.set("app", "macos_version", e.target.value)
                 }), f.a.createElement("input", {
                     type: "text",
-                    className: "form-control mt-1",
+                    className: "form-control",
+                    "aria-label": "macOS 下载地址",
                     placeholder: "https://xxxx.com/xxx.dmg",
-                    defaultValue: w.macos_download_url,
+                    defaultValue: window.PanelModules && window.PanelModules.displayDownloadUrl ? window.PanelModules.displayDownloadUrl(w.macos_download_url) : w.macos_download_url,
                     onChange: e=>this.set("app", "macos_download_url", e.target.value)
-                })), f.a.createElement(m, {
+                }))), f.a.createElement(m, {
                     title: "Android",
                     description: "Android\u7aef\u7248\u672c\u53f7\u53ca\u4e0b\u8f7d\u5730\u5740"
-                }, f.a.createElement("input", {
+                }, f.a.createElement("div", { className: "pm-app-downloads" }, f.a.createElement("input", {
                     type: "text",
                     className: "form-control",
+                    "aria-label": "Android 版本号",
                     placeholder: "1.0.0",
                     defaultValue: w.android_version,
                     onChange: e=>this.set("app", "android_version", e.target.value)
                 }), f.a.createElement("input", {
                     type: "text",
-                    className: "form-control mt-1",
+                    className: "form-control",
+                    "aria-label": "Android 下载地址",
                     placeholder: "https://xxxx.com/xxx.apk",
-                    defaultValue: w.android_download_url,
+                    defaultValue: window.PanelModules && window.PanelModules.displayDownloadUrl ? window.PanelModules.displayDownloadUrl(w.android_download_url) : w.android_download_url,
                     onChange: e=>this.set("app", "android_download_url", e.target.value)
-                })))))))
+                })))), window.PanelModules && window.PanelModules.section(f.a, "gateway")))))
             }
         }
         t["default"] = Object(p["c"])(e=>{

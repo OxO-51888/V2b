@@ -31,6 +31,10 @@
 <div id="root"></div>
 <script src="/assets/admin/vendors.async.js?v={{$version}}"></script>
 <script src="/assets/admin/components.async.js?v={{$version}}"></script>
+@if(config('panel_modules.enabled'))
+<link rel="stylesheet" href="/assets/admin/panel-modules.css?v={{filemtime(public_path('assets/admin/panel-modules.css'))}}">
+<script src="/assets/admin/panel-modules.js?v={{filemtime(public_path('assets/admin/panel-modules.js'))}}"></script>
+@endif
 <script src="/assets/admin/umi.js?v={{$version}}-{{filemtime(public_path('assets/admin/umi.js'))}}"></script>
 </body>
 

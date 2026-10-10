@@ -28,11 +28,12 @@ class Kernel extends ConsoleKernel
     {
         Cache::put(CacheKey::get('SCHEDULE_LAST_CHECK_AT', null), time());
         // traffic
-        $schedule->command('traffic:update')->everyMinute()->withoutOverlapping();
+        // These commands hold process-owned locks while their actual work is running.
+        $schedule->command('traffic:update')->everyMinute();
         // v2board
         $schedule->command('v2board:statistics')->dailyAt('0:10');
         // check
-        $schedule->command('check:order')->everyMinute()->withoutOverlapping();
+        $schedule->command('check:order')->everyMinute();
         $schedule->command('check:commission')->everyFifteenMinutes();
         $schedule->command('check:ticket')->everyMinute();
         $schedule->command('check:renewal')->dailyAt('22:30');

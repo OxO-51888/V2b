@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env
+*.sqlite3*
+state.json
+panel-management.json
+panel-sites.json
+pending_message_deletions.json
+member_departures.json
+panel-receiver.lock

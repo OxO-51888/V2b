@@ -186,7 +186,7 @@ return [
                     1,
                     min(
                         (int)ceil($parser->getRam()['total'] / 1024 / 1024 / 1024 * 6),
-                        (int)env('HORIZON_MAX_PROCESSES', 128)
+                        (int)env('HORIZON_MAX_PROCESSES', 19)
                     )
                 ),
                 'tries' => 1,

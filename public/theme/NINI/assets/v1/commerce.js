@@ -15,7 +15,7 @@
     return periodNames[aliases[period] || period] || period;
   }
   var orderStatuses = { 0: ['待支付', 'pending'], 1: ['开通中', 'pending'], 2: ['已取消', 'muted'], 3: ['已完成', 'success'], 4: ['已折抵', 'muted'] };
-  function initialState() { return { filter: 'all', coupon: null, couponCode: '', couponSequence: 0, period: '', plan: null, orders: null, orderFilter: 'all', orderPage: 1, invite: null, invitePage: 1, pending: {}, poll: null, stripe: null }; }
+  function initialState() { return { filter: 'all', coupon: null, couponCode: '', couponSequence: 0, period: '', plan: null, orders: null, orderFilter: 'all', orderPage: 1, invite: null, invitePage: 1, pending: {}, poll: null, orderWatch: null, stripe: null }; }
   var M = initialState();
   function sameAccount(version) { return N.accountVersion() === version; }
   N.onAccountReset(function () {
@@ -80,7 +80,8 @@
     // value and control, including the plan filters below, remains a live DOM node.
     if (page !== 'profile') {
       var staticArt = page === 'plan' ? fragment(page,309,85,1206,201,'commerce-static-hero-art',{background:'surface',parallax:true}) : fragment(page,309,page === 'order' ? 91 : 86,1206,page === 'order' ? 232 : 300,'commerce-static-hero-art',{parallax:true});
-      return '<header class="commerce-fidelity-hero commerce-hero-' + page + ' commerce-static-hero"><h1 class="commerce-semantic-heading">' + titles[page] + '</h1><p class="commerce-semantic-heading">' + subtitles[page] + '</p>' + staticArt + '</header>';
+      var mobileArt = page === 'plan' ? fragment(page,1060,75,455,220,'commerce-mobile-plan-art',{background:'surface',parallax:true}) : '';
+      return '<header class="commerce-fidelity-hero commerce-hero-' + page + ' commerce-static-hero"><h1 class="commerce-semantic-heading">' + titles[page] + '</h1><p class="commerce-semantic-heading">' + subtitles[page] + '</p>' + staticArt + mobileArt + '</header>';
     }
     if (page === 'profile') return '<header class="commerce-fidelity-hero commerce-hero-profile"><h1 class="commerce-semantic-heading">个人中心</h1><p class="commerce-semantic-heading">管理您的账户信息与安全设置</p></header>';
   }
@@ -285,7 +286,7 @@
       if (M.filter === 'traffic') list = list.filter(function (p) { return p.onetime_price != null; });
       return '<div class="commerce-page commerce-page-plan"><div class="commerce-plan-hero">' + fidelityHero('plan') +
         '<div class="tabs commerce-tabs" aria-label="套餐分类">' + [['all', '全部'], ['period', '按周期'], ['traffic', '按流量']].map(function (x) { return action(x[1], 'commerce-plan-filter', 'data-filter="' + x[0] + '" aria-pressed="' + (M.filter === x[0]) + '"', M.filter === x[0] ? 'active' : ''); }).join('') + '</div>' +
-        '</div>' + (renewal ? '<div class="commerce-renewal"><span>当前订阅：<strong>' + text(renewal.name) + '</strong></span><a class="button secondary" href="#/plan/' + text(encodeURIComponent(renewal.id)) + '">续费当前订阅</a></div>' : '') + '<div class="plan-grid">' + (list.length ? list.map(planCard).join('') : N.empty('当前分类暂无可购买的套餐')) + '</div>' + planPurchase(activePlan()) + '</div>';
+        '</div>' + (renewal ? '<div class="commerce-renewal"><span>当前订阅：<strong>' + text(renewal.name) + '</strong></span><a class="button secondary" data-action="commerce-plan-renew" href="#/plan/' + text(encodeURIComponent(renewal.id)) + '">续费当前订阅</a></div>' : '') + '<div class="plan-grid">' + (list.length ? list.map(planCard).join('') : N.empty('当前分类暂无可购买的套餐')) + '</div>' + planPurchase(activePlan()) + '</div>';
     },
     mounted: function () { M.planGridSignature = planGridSignature(); mountPlanFeatures(); },
     patch: function () {
@@ -310,9 +311,10 @@
         if (renewal) {
           renewal.querySelector('strong').textContent = plan.name;
           renewal.querySelector('a').setAttribute('href', '#/plan/' + encodeURIComponent(plan.id));
+          renewal.querySelector('a').setAttribute('data-action', 'commerce-plan-renew');
         } else {
           renewal = document.createElement('div'); renewal.className = 'commerce-renewal';
-          renewal.innerHTML = '<span>当前订阅：<strong>' + text(plan.name) + '</strong></span><a class="button secondary" href="#/plan/' + text(encodeURIComponent(plan.id)) + '">续费当前订阅</a>';
+          renewal.innerHTML = '<span>当前订阅：<strong>' + text(plan.name) + '</strong></span><a class="button secondary" data-action="commerce-plan-renew" href="#/plan/' + text(encodeURIComponent(plan.id)) + '">续费当前订阅</a>';
           page.querySelector('.plan-grid').before(renewal);
         }
       }
@@ -328,28 +330,51 @@
     card.querySelector('.commerce-feature-list').scrollTop = 0;
     syncPlanFeatures();
   });
-  registerAction('commerce-plan-select', function (el) {
+  function selectPlanForPurchase(plan, renewal) {
     var page = document.querySelector('.commerce-page-plan');
     var purchase = page && page.querySelector('.commerce-purchase');
-    var plan = M.plan && M.plan.list.find(function (item) { return String(item.id) === el.dataset.id; });
-    if (!purchase || !plan || !canBuy(plan) || !options(plan, false).length) return;
-    if (activePlan() && String(activePlan().id) === String(plan.id)) { if (N.revealMobileDetail) N.revealMobileDetail('plan'); return; }
-    // A new context invalidates pending coupon/order checks for the previous plan.
-    M.plan = { list: M.plan.list, selected: plan };
-    M.coupon = null; M.couponCode = '';
-    M.period = options(plan, canReset(plan))[0] || '';
+    var available = plan ? options(plan, false) : [];
+    if (!page || !M.plan || !plan || !canBuy(plan) || !available.length || (!renewal && !purchase)) {
+      if (renewal) throw new Error('当前订阅暂无可用续费周期，请刷新页面确认套餐状态');
+      return;
+    }
+    var samePlan = activePlan() && String(activePlan().id) === String(plan.id);
+    if (samePlan && !renewal) { if (N.revealMobileDetail) N.revealMobileDetail('plan'); return; }
+    var period = samePlan && available.indexOf(M.period) >= 0 ? M.period : available[0];
+    var changed = !samePlan || M.period !== period;
+    var inserted = !M.plan.list.some(function (item) { return String(item.id) === String(plan.id); });
+    if (inserted) M.plan.list.unshift(plan);
+    if (changed) {
+      // Switching plans or leaving reset invalidates prior coupon and purchase checks.
+      M.plan = { list: M.plan.list, selected: plan };
+      M.couponSequence++; M.coupon = null; M.couponCode = ''; M.period = period;
+    }
     var route = '#/plan/' + encodeURIComponent(plan.id) + (M.period ? '?period=' + encodeURIComponent(M.period) : '');
-    window.history.pushState(null, '', route);
+    if (window.location.hash !== route) window.history.pushState(null, '', route);
     N.state.route = N.route();
-    page.querySelectorAll('[data-action="commerce-plan-select"]').forEach(function (button) {
-      var selected = button.dataset.id === String(plan.id);
-      button.closest('.commerce-plan').classList.toggle('selected', selected);
-      button.classList.toggle('primary', selected);
-      button.classList.toggle('secondary', !selected);
-      button.setAttribute('aria-pressed', String(selected));
-    });
-    purchase.outerHTML = planPurchase(plan);
-    if (N.revealMobileDetail) N.revealMobileDetail('plan');
+    if (inserted || !purchase) N.renderCurrent();
+    else if (changed) {
+      page.querySelectorAll('[data-action="commerce-plan-select"]').forEach(function (button) {
+        var selected = button.dataset.id === String(plan.id);
+        button.closest('.commerce-plan').classList.toggle('selected', selected);
+        button.classList.toggle('primary', selected);
+        button.classList.toggle('secondary', !selected);
+        button.setAttribute('aria-pressed', String(selected));
+      });
+      purchase.outerHTML = planPurchase(plan);
+    }
+    if (renewal && N.revealDetail) N.revealDetail('plan');
+    else if (N.revealMobileDetail) N.revealMobileDetail('plan');
+  }
+  registerAction('commerce-plan-select', function (el) {
+    var plan = M.plan && M.plan.list.find(function (item) { return String(item.id) === el.dataset.id; });
+    selectPlanForPurchase(plan, false);
+  });
+  registerAction('commerce-plan-renew', function () {
+    var ownPlan = renewablePlan();
+    if (!N.state.auth || !ownPlan) throw new Error('当前订阅暂不支持续费，请刷新页面确认套餐状态');
+    var listed = M.plan && M.plan.list.find(function (item) { return String(item.id) === String(ownPlan.id); });
+    selectPlanForPurchase(listed || ownPlan, true);
   });
   registerAction('commerce-period', function (el) {
     if (M.period === el.dataset.period) return;
@@ -406,37 +431,75 @@
     });
   }
   function stopPolling() { if (M.poll) window.clearTimeout(M.poll); M.poll = null; }
-  function schedulePoll() {
-    stopPolling();
-    var order = selectedOrder();
-    if (!order || [0, 1].indexOf(num(order.status)) < 0 || N.route().key !== 'order') return;
-    var trade = order.trade_no, session = M.orders, version = N.accountVersion(), sequence = M.orderSequence;
-    var current = function () { return sameAccount(version) && M.orders === session && M.orderSequence === sequence && N.route().key === 'order' && selectedOrder() && selectedOrder().trade_no === trade; };
+  function canPollOrder() {
+    var route = N.route();
+    return N.state.auth && !document.hidden && ['login', 'register', 'forgetpassword', 'landing'].indexOf(route.key) < 0 && !(N.pages[route.key] && N.pages[route.key].public);
+  }
+  function watchOrder(order) {
+    if (!N.state.auth || !order || !order.trade_no || [0, 1].indexOf(num(order.status)) < 0) return;
+    if (!M.orderWatch || M.orderWatch.order.trade_no !== order.trade_no) {
+      stopPolling();
+      M.orderWatch = { order: order, version: N.accountVersion(), busy: false, errors: 0 };
+    }
+    schedulePoll();
+  }
+  function schedulePoll(delay) {
+    var watch = M.orderWatch;
+    if (M.poll || !watch || watch.busy || !canPollOrder()) return;
+    var trade = watch.order.trade_no;
+    var current = function () { return sameAccount(watch.version) && M.orderWatch === watch; };
     M.poll = window.setTimeout(async function () {
-      if (!current()) return;
+      M.poll = null;
+      if (!current() || !canPollOrder()) return;
+      watch.busy = true;
       try {
         var result = N.data(await N.api.get('/user/order/check', { trade_no: trade }));
         if (!current()) return;
-        if (num(result) !== num(order.status)) {
+        if (result == null || !Object.prototype.hasOwnProperty.call(orderStatuses, result)) throw new Error('订单状态暂时无法确认');
+        if (num(result) !== num(watch.order.status)) {
           var detail = N.data(await N.api.get('/user/order/detail', { trade_no: trade }));
           if (!current()) return;
-          M.orders.selected = detail;
-          M.orders.list = M.orders.list.map(function (item) { return item.trade_no === trade ? M.orders.selected : item; });
-          if (num(result) !== 0) N.closeModal();
-          await N.refreshCore();
+          if (!detail || detail.trade_no !== trade) throw new Error('订单详情暂时无法确认');
+          // Keep the old status until account refresh succeeds, so failures remain retryable.
+          await N.refreshCore(true);
           if (!current()) return;
-          N.renderCurrent();
-          N.toast(num(result) === 3 ? '订单已完成' : '订单状态已更新');
+          watch.order = detail;
+          if (M.orders) {
+            if (selectedOrder() && selectedOrder().trade_no === trade) M.orders.selected = detail;
+            M.orders.list = M.orders.list.map(function (item) { return item.trade_no === trade ? detail : item; });
+          }
+          if ([0, 1].indexOf(num(detail.status)) < 0) M.orderWatch = null;
+          var route = N.route(), host = document.getElementById('page-content'), root = document.getElementById('nini-root');
+          if (host && !host.hasAttribute('aria-busy') && root.dataset.page === route.key && N.state.route.key === route.key && ['order', 'dashboard'].indexOf(route.key) >= 0) {
+            if (route.key === 'order' && selectedOrder() && selectedOrder().trade_no === trade) N.closeModal();
+            N.renderCurrent();
+            N.toast(num(detail.status) === 3 ? '订单已完成' : '订单状态已更新');
+          }
         }
-        schedulePoll();
+        watch.errors = 0;
       } catch (err) {
         if (!current()) return;
+        watch.errors++;
         var element = document.querySelector('[data-commerce-payment-status]');
-        if (element) element.textContent = '支付状态暂时无法刷新，请点击“刷新状态”重试。';
+        if (element) element.textContent = '支付状态暂时无法刷新，正在自动重试。';
+      } finally {
+        watch.busy = false;
+        if (current()) schedulePoll(watch.errors ? Math.min(5000 * Math.pow(2, Math.min(watch.errors - 1, 3)), 30000) : 5000);
       }
-    }, 5000);
+    }, delay == null ? 5000 : delay);
   }
-  window.addEventListener('hashchange', function () { stopPolling(); if (N.route().key !== 'order') destroyStripe(); if (N.route().key !== 'plan') stopPlanFeatures(); });
+  function resumeOrderPolling() { stopPolling(); schedulePoll(0); }
+  window.addEventListener('focus', resumeOrderPolling);
+  document.addEventListener('visibilitychange', resumeOrderPolling);
+  window.addEventListener('hashchange', function () { if (!canPollOrder()) stopPolling(); else schedulePoll(); if (N.route().key !== 'order') destroyStripe(); if (N.route().key !== 'plan') stopPlanFeatures(); });
+  var loadDashboard = N.pages.dashboard.load;
+  N.pages.dashboard.load = function (route) {
+    var version = N.accountVersion();
+    N.api.get('/user/order/fetch').then(function (result) {
+      if (sameAccount(version)) watchOrder(N.list(result).find(function (order) { return [0, 1].indexOf(num(order.status)) >= 0; }));
+    }).catch(function () {});
+    return loadDashboard(route);
+  };
   function orderDetails(order) {
     if (!order) return N.card('订单详情', N.empty('选择一个订单查看详情'), 'commerce-order-detail');
     var pending = num(order.status) === 0, payment = selectedPayment(), fee = handling(payment, order), transfer = isCommissionTransfer(order);
@@ -481,7 +544,6 @@
       if (needsPaymentMethods(candidate)) await N.api.get('/user/order/getPaymentMethod');
     },
     load: async function (route) {
-      stopPolling();
       var sequence = M.orderSequence = (M.orderSequence || 0) + 1, version = N.accountVersion();
       var initial = await Promise.all([N.api.get('/user/order/fetch'), route.id ? N.api.get('/user/order/detail', { trade_no: route.id }) : null]);
       if (!sameAccount(version) || sequence !== M.orderSequence) return null;
@@ -502,6 +564,7 @@
       if (!sameAccount(version) || sequence !== M.orderSequence) return null;
       var oldMethod = M.orders && M.orders.method;
       M.orders = { list: list, selected: order, methods: methods, method: methods.some(function (p) { return String(p.id) === String(oldMethod); }) ? oldMethod : methods[0] && methods[0].id, paymentError: paymentError };
+      watchOrder(order);
       return M.orders;
     },
     render: function () {
@@ -717,7 +780,7 @@
       security += '<div class="commerce-setting-row"><span class="commerce-setting-icon">' + profileIcon('reset') + '</span><div><strong>重置订阅信息</strong><p class="muted small">重置后需重新导入客户端</p></div>' + action('重置', 'commerce-reset-security', '', 'secondary') + '</div>';
       var hasActivePlan = num(user.plan_id) > 0 && (user.expired_at === null || num(user.expired_at) * 1000 > Date.now());
       var telegramGroup = hasActivePlan ? N.safeURL(N.state.config.telegram_discuss_link) : '';
-      if (telegramGroup) security += '<div class="commerce-setting-row commerce-telegram-group"><span class="commerce-setting-icon">' + profileIcon('arrow') + '</span><div><strong>TG 交流群</strong><p class="muted small">交流使用心得，获取最新消息</p></div><a class="button secondary" href="' + text(telegramGroup) + '" target="_blank" rel="noopener noreferrer">加入群聊</a></div>';
+      if (telegramGroup) security += '<div class="commerce-setting-row commerce-telegram-group" style="height:auto;min-height:76px"><span class="commerce-setting-icon">' + profileIcon('arrow') + '</span><div><strong>TG 售后群</strong><p class="muted small" style="overflow-wrap:anywhere">如果验证机器人未主动私聊，请搜索 @dadaninibot 私聊后，再次点击加群按钮绑定邮箱</p></div><a class="button secondary" href="' + text(telegramGroup) + '" target="_blank" rel="noopener noreferrer">加入群聊</a></div>';
       security += '<section class="commerce-notifications"><header><span class="commerce-setting-icon">' + profileIcon('mail') + '</span><div><h3>邮件通知</h3><p class="muted small">及时接收账户提醒</p></div></header>' + settingSwitch('remind_traffic', '流量邮件提醒', '') + settingSwitch('remind_expire', '到期邮件提醒', '') + '</section>';
       return '<div class="commerce-page commerce-page-profile"><div class="commerce-profile-intro">' + fragment('profile',309,86,1206,334,'commerce-profile-surface',{background:'surface',parallax:true,hideLettering:[[904,315,172,78]]}) + fidelityHero('profile') + identity + '</div><div class="grid two commerce-profile-grid"><div class="stack">' + fidelityCard('profile', '我的钱包', '账户余额可用于购买订阅、续费套餐等', [326, 439, 57, 61], wallet, 'commerce-wallet-card') + fidelityCard('profile', '礼品卡兑换', '输入礼品卡码兑换余额或套餐', [326, 699, 56, 57], gift, 'commerce-gift-card') + '</div>' + fidelityCard('profile', '安全设置', '保护您的账户安全', [936, 440, 61, 64], security, 'commerce-security') + '</div></div>';
     },

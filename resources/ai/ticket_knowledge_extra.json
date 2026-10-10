@@ -107,7 +107,7 @@
     "answer_points": [
       "只说小火箭证书无效时，先确认是在更新订阅还是连接节点时出现；没有阶段证据不能认定订阅入口或版本太旧",
       "订阅更新失败检查订阅HTTPS证书；订阅成功、连接才失败检查节点连接证书。均可能涉及信任链、有效期或地址匹配，不得跳过校验",
-      "已给的名称版本和报错不再索要；不能换软件就不重复推荐。旧iOS需先核实兼容性，不编造可安装客户端或承诺修复"
+      "iOS弹窗的中文证书无效就是真实原文，不索要未出现的x509或英文；已给信息不重问，不能换软件就不重复推荐，不编造旧iOS可装软件或承诺修复"
     ]
   },
   {
@@ -938,30 +938,41 @@
       "SSL",
       "TLS",
       "域名不匹配",
-      "证书无效"
+      "证书无效",
+      "certificate has expired",
+      "not yet valid",
+      "certificate is valid for",
+      "证书过期"
     ],
     "answer_points": [
-      "证书校验失败与TLS握手超时不同；未说明阶段时只问更新订阅还是连接节点出错，不先认定订阅入口或旧客户端",
-      "订阅下载阶段核对下载端HTTPS证书，订阅成功连接失败则核对节点连接证书；用户已升级换网仍失败不重复要求",
+      "必须看完整错误：certificate has expired/not yet valid指证书过期或未生效，certificate is valid for指域名匹配问题；即使以x509开头也不是旧版Meta导入方案",
+      "URL保存、Get订阅地址或导入失败已说明订阅阶段；没有适用已知原因时核对下载端HTTPS证书，订阅成功连接失败核对节点证书；已按教程升级仍失败不重复升级",
       "保留原地址，不改IP或HTTP，不关闭校验；已给出的版本错误不再索要，也不索要截图或完整链接"
     ]
   },
   {
     "id": "proxy_ip_certificate_warning",
-    "title": "Meta类客户端证书错误与升级适用条件",
+    "title": "本站旧版Clash Meta导入订阅报x509或Trust anchor：去教程页下载新版",
     "keywords": [
       "x509",
+      "×509",
       "certificate signed by unknown authority",
+      "failed to verify certificate",
       "tls failed to verify certificate",
+      "Trust anchor",
+      "CertPathValidatorException",
+      "certification path not found",
+      "certification path notfound",
       "Clash Meta",
-      "Mihomo",
-      "Meta",
-      "Hiddify"
+      "ClashMeta",
+      "Clash.Meta",
+      "Clash meat",
+      "Clashmeat"
     ],
     "answer_points": [
-      "已确认是旧版 Meta、Mihomo 或 Hiddify 且出现 x509 信任错误时，可先建议教程页新版；报错本身不能证明版本旧，不能套到 TestFlight 或小火箭安装问题",
-      "已升级或多个客户端同报错不重复升级重导；先确认下载订阅还是连接节点发生错误，再核对对应端的证书链、有效期及地址匹配",
-      "不要让用户信任不可信证书、关闭校验、改用 HTTP 或重置订阅；版本和错误已给出就不再索要，也不能无证据声称攻击或服务器安全无误"
+      "仅适用unknown authority/Trust anchor：本站已确认旧版Clash Meta在导入、更新或URL保存订阅时这样报错是版本过低；直接引导教程页下载新版后用原订阅重试，不改答证书兼容问题",
+      "仅写Clash但导入场景符合时也可先引导教程页新版，不编造具体软件名或最低版本；已按教程升级仍失败、其他客户端、订阅成功连接失败、证书过期或域名不匹配不套此结论，按实际问题核对",
+      "不以关闭VPN、换网、重置订阅或等待人工查证书代替本场景升级；不要求删除可用配置、不索要已有信息；不关闭校验或改HTTP。先前AI误导查证书时纠正方向，已有人工请求仍停止自动回复"
     ]
   },
   {

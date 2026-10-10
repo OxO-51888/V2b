@@ -16,7 +16,7 @@ class CommunityConsoleController extends Controller
         $admin = $console->authenticate($request);
         $input = $request->validate(['action' => 'required|string', 'data' => 'present|array']);
         $action = $input['action'];
-        $write = in_array($action, ['post', 'upload', 'delete', 'mute'], true);
+        $write = in_array($action, ['post', 'edit', 'upload', 'delete', 'mute'], true);
         $bucket = $action === 'events' ? 'events' : ($write ? 'write' : 'read');
         $limit = $action === 'events' ? 90 : ($write ? 30 : 150);
         $key = 'community_console:' . $admin->id . ':' . $bucket;
@@ -28,7 +28,7 @@ class CommunityConsoleController extends Controller
             : $community->call($admin, $action, $data);
         if ($action === 'bootstrap') $result['me']['can_view_accounts'] = true;
         if ($action === 'history') $result['can_view_accounts'] = true;
-        if (in_array($action, ['account', 'post', 'delete', 'mute'], true)) {
+        if (in_array($action, ['account', 'post', 'edit', 'delete', 'mute'], true)) {
             Log::info('community_console_action', ['admin_id' => $admin->id, 'action' => $action,
                 'target_id' => $data['target_id'] ?? $data['post_id'] ?? null]);
         }

@@ -16221,10 +16221,13 @@
                 }, l.a.createElement("div", {
                     className: "block-header block-header-default"
                 }, l.a.createElement("h3", {
-                    className: "block-title"
-                }, Object(m["formatMessage"])({
-                    id: "Telegram \u8ba8\u8bba\u7ec4"
-                })), l.a.createElement("div", {
+                    className: "block-title",
+                    style: {display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "6px 24px", minWidth: 0}
+                }, l.a.createElement("span", {
+                    style: {whiteSpace: "nowrap"}
+                }, "Telegram \u552e\u540e\u7fa4"), l.a.createElement("span", {
+                    style: {fontSize: "inherit", fontWeight: 400, lineHeight: 1.6, overflowWrap: "anywhere"}
+                }, "\u5982\u679c\u9a8c\u8bc1\u673a\u5668\u4eba\u672a\u4e3b\u52a8\u79c1\u804a\uff0c\u8bf7\u641c\u7d22 @dadaninibot \u79c1\u804a\u540e\uff0c\u518d\u6b21\u70b9\u51fb\u52a0\u7fa4\u6309\u94ae\u7ed1\u5b9a\u90ae\u7bb1")), l.a.createElement("div", {
                     className: "block-options"
                 }, l.a.createElement("a", {
                     href: r.telegram_discuss_link,
@@ -45311,7 +45314,7 @@
                     className: "default-community-main"
                 }, o.a.createElement("iframe", {
                     className: "default-community-frame",
-                    src: "/community/index.html?client=default&embedded=1&v=a3096fe11cfe",
+                    src: "/community/index.html?client=default&embedded=1&v=a90ef24080f2",
                     title: "\u552e\u540e\u7fa4\u804a",
                     referrerPolicy: "same-origin"
                 })))

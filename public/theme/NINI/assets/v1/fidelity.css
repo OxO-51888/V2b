@@ -394,6 +394,32 @@ body:has(> #nini-root.nini-app:not(.auth-app):not(.landing-app)):after{display:n
 @supports not selector(::-webkit-scrollbar){.nini-app .fidelity-dashboard-right>.subscription-status-card>.card-body{scrollbar-color:#ff79b2 #fff0f7}}
 .nini-app .fidelity-dashboard-right>.subscription-status-card>.card-body:focus-visible{outline:2px solid var(--pink);outline-offset:-3px}
 
+/* Used/total traffic follows the original theme's GB ceiling and precision. */
+.nini-app .traffic-card.traffic-usage .fidelity-ring>b,.nini-app .traffic-ring.traffic-usage>strong{font-size:20px;white-space:nowrap;letter-spacing:-.4px}
+.nini-app .traffic-card.traffic-usage .fidelity-ring>b.traffic-percent-wide,.nini-app .traffic-ring.traffic-usage>strong.traffic-percent-wide{font-size:18px}
+.nini-app .traffic-card.traffic-usage .fidelity-ring>b.traffic-percent-full,.nini-app .traffic-ring.traffic-usage>strong.traffic-percent-full{font-size:16px}
+.nini-app .traffic-usage-row{display:block;white-space:nowrap}
+@media(min-width:1025px){
+  .nini-app .fidelity-metrics>.traffic-card.traffic-usage{min-height:210px}
+  .nini-app .traffic-card.traffic-usage .metric-interior>p{left:16px;right:16px;bottom:8px;line-height:21px;text-align:center}
+}
+
 /* Keep the complete subscription name readable, including unusually long names. */
 .nini-app .fidelity-metrics>.fidelity-metric{height:auto;min-height:183px}
 .nini-app .current-plan-card .metric-number{font-size:26px;line-height:1.35;min-height:54px;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+
+/* A stitched brand plaque, confined to the navigation header. */
+.nini-app .sidebar>.brand.brand-dynamic{height:149px;min-height:149px;flex-shrink:0;justify-content:center;align-items:center;gap:3px;padding:18px 36px 22px;isolation:isolate;border-bottom:5px double #f3c5d9;background:repeating-conic-gradient(#ffe3ef 0 25%,#fff3f8 0 50%) 0 0/32px 32px}
+.nini-app .sidebar>.brand.brand-dynamic:before{content:"";position:absolute;inset:18px 22px 22px;border:3px double #edb4ce;border-radius:25px;background:url("/theme/NINI/assets/v1/brand-motifs.svg?v=a9ae12a92cfa") center/84px 60px repeat,linear-gradient(135deg,#fffdfef5,#fff5faf5);z-index:0;pointer-events:none}
+.nini-app .sidebar>.brand.brand-dynamic:after{content:"";position:absolute;inset:25px 29px 29px;border:1px dashed #edbfd3;border-radius:19px;z-index:1;pointer-events:none}
+.nini-app .sidebar>.brand.brand-dynamic strong{font-size:var(--brand-title-size,48px)!important;max-width:100%;line-height:1.15;letter-spacing:-1px;transform:none;color:#ed4b89;-webkit-text-stroke:4px #fff;paint-order:stroke fill;text-shadow:0 2px 0 #e99dbb;filter:none;z-index:4}
+.nini-app .sidebar>.brand.brand-dynamic small{max-width:100%;margin:0;font-size:14px;line-height:1.45;font-weight:600;letter-spacing:.5px;white-space:normal;overflow-wrap:anywhere;text-align:center;color:#bb658c;-webkit-text-stroke:0;text-shadow:none;transform:none;z-index:4}
+.nini-app .sidebar>.brand.brand-dynamic .brand-config-logo{max-width:100%;max-height:80px;transform:none;z-index:4}
+.nini-app .sidebar>.brand.brand-dynamic .brand-original-star{width:36px;height:36px;left:11px;top:9px;transform:rotate(-4deg);z-index:3}
+.nini-app .sidebar>.brand.brand-dynamic .brand-original-bow{width:46px;height:42px;right:10px;top:7px;transform:rotate(4deg);z-index:3}
+.nini-app .sidebar>.brand.brand-dynamic .brand-original-heart{width:34px;height:32px;left:12px;top:auto;bottom:13px;transform:rotate(-4deg);z-index:3}
+.nini-app .sidebar>.brand.brand-dynamic .brand-original-sparkle{width:26px;height:30px;right:13px;top:auto;bottom:15px;transform:rotate(4deg);z-index:3}
+
+/* Corner ornaments are standalone vectors, with no artwork crop or text layer. */
+.nini-app .brand.brand-dynamic>.brand-corner-art{position:absolute;display:block;overflow:visible;clip-path:none;transform:none;pointer-events:none;z-index:3}
+@media(max-width:1024px){.nini-app .sidebar>.brand.brand-dynamic .brand-original-bow{width:38px;height:35px;right:48px;top:6px;transform:none}}

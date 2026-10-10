@@ -68,17 +68,17 @@
     <link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/theme.css?v={{$version}}-nini-1.2.0-731d0bfb5302">
     <link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/commerce.css?v={{$version}}-nini-1.2.0-850a158ff3fd">
     <link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/support.css?v={{$version}}-nini-1.2.0-7652bf48b92f">
-<link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/fidelity.css?v={{$version}}-nini-1.2.0-b5c812267dc0"><link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/motion.css?v={{$version}}-nini-1.2.0-a153b55f1664"><link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/landing.css?v={{$version}}-nini-1.2.0-0254623e7372"><link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/viewport.css?v={{$version}}-nini-1.2.0-1b6ed23ad8e7"><script src="/theme/{{$theme}}/assets/v1/viewport.js?v={{$version}}-nini-1.2.0-1e9365ed5634"></script></head>
+<link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/fidelity.css?v={{$version}}-nini-1.2.0-147dc42179fa"><link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/motion.css?v={{$version}}-nini-1.2.0-a153b55f1664"><link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/landing.css?v={{$version}}-nini-1.2.0-0254623e7372"><link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/viewport.css?v={{$version}}-nini-1.2.0-1b6ed23ad8e7"><script src="/theme/{{$theme}}/assets/v1/viewport.js?v={{$version}}-nini-1.2.0-1e9365ed5634"></script></head>
 <body>
     <div id="nini-root"><div class="boot-screen">正在加载 {{$title}}…</div></div>
     <script src="/theme/{{$theme}}/assets/vendor/purify.min.js?v=3.2.6"></script>
     <script src="/theme/{{$theme}}/assets/vendor/marked.umd.js?v=15.0.12"></script>
     <script src="/theme/{{$theme}}/assets/vendor/qrcode.min.js?v=1.0.0"></script>
-    <script src="/theme/{{$theme}}/assets/v1/core.js?v={{$version}}-nini-1.2.0-a9206ccdca96"></script>
-    <script src="/theme/{{$theme}}/assets/v1/commerce.js?v={{$version}}-nini-1.2.0-8e312840ca00"></script>
-    <script src="/theme/{{$theme}}/assets/v1/support.js?v={{$version}}-nini-1.2.0-233e61269da7"></script>
+    <script src="/theme/{{$theme}}/assets/v1/core.js?v={{$version}}-nini-1.2.0-4e2cdf211871"></script>
+    <script src="/theme/{{$theme}}/assets/v1/commerce.js?v={{$version}}-nini-1.2.0-2927dbff98a5"></script>
+    <script src="/theme/{{$theme}}/assets/v1/support.js?v={{$version}}-nini-1.2.0-7bc07dbc5a79"></script>
     <script src="/theme/{{$theme}}/assets/v1/reference-lettering.js?v={{$version}}-nini-1.2.0-c7923f48a634"></script>
-    <script src="/theme/{{$theme}}/assets/v1/fidelity.js?v={{$version}}-nini-1.2.0-02f899cef6fa"></script>
+    <script src="/theme/{{$theme}}/assets/v1/fidelity.js?v={{$version}}-nini-1.2.0-1a78c0c3b420"></script>
     <script src="/theme/{{$theme}}/assets/v1/motion.js?v={{$version}}-nini-1.2.0-4c8fd705ce04"></script><script src="/theme/{{$theme}}/assets/v1/landing.js?v={{$version}}-nini-1.2.0-26ca8e1eeca2"></script>
     <script>Nini.boot();</script>
     {!! $theme_config['custom_html'] ?? '' !!}

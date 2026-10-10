@@ -1,7 +1,7 @@
 (function () {
   "use strict";
   const $ = id => document.getElementById(id);
-  const state = { me: null, rows: new Map(), urls: new Map(), attachments: [], reply: null, busy: false, operation: null, polling: false, pending: null, unread: 0, readAt: 0, active: true };
+  const state = { me: null, rows: new Map(), urls: new Map(), attachments: [], reply: null, busy: false, operation: null, polling: false, pending: null, failedSend: null, inFlight: null, retentionCutoff: 0, unread: 0, readAt: 0, active: true };
   const nini = new URLSearchParams(location.search).get("client") === "nini";
   if (new URLSearchParams(location.search).has("embedded")) document.querySelector('.chat-header > a').hidden = true;
   const auth = () => (nini ? localStorage.getItem("nini_auth_data") || localStorage.getItem("auth_data") : localStorage.getItem("authorization")) || "";
@@ -10,17 +10,18 @@
   const icons = () => lucide.createIcons();
   function error(message, scope) { state.errorScope = scope || "action"; $("error").textContent = message || ""; $("error").hidden = !message; }
   function controls() {
-    const disabled = !state.me || state.me.muted || state.busy || !state.active;
-    $("message").disabled = disabled; $("attach").disabled = disabled || state.attachments.length >= 2;
-    $("send").disabled = disabled || (!$("message").value.trim() && !state.attachments.length);
+    const disabled = !composerInputReady() || state.busy;
+    $("message").disabled = !composerInputReady(); $("attach").disabled = disabled || state.attachments.length >= 2;
+    $("send").disabled = disabled || !!state.failedSend || (!$("message").value.trim() && !state.attachments.length);
     $("send").querySelector("span").textContent = state.busy ? state.operation === "upload" ? "上传中" : "发送中" : "发送";
     $("send").dataset.state = state.busy ? state.operation === "upload" ? "uploading" : "sending" : "idle";
     $("send").setAttribute("aria-busy", String(state.busy));
     $("attachments").querySelectorAll("button").forEach(node => { node.disabled = disabled; });
+    showFailedSend();
     if (state.me && state.me.muted) $("status").textContent = "当前已被禁言";
   }
   async function api(action, data) {
-    if (!auth() || auth() !== startingAuth || !state.active) { state.active = false; controls(); throw new Error("登录已变化，请返回面板重新进入"); }
+    if (!auth() || auth() !== startingAuth || !state.active) { deactivateComposer(); throw new Error("登录已变化，请返回面板重新进入"); }
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 25000);
     try {
       const multipart = data instanceof FormData;
@@ -30,7 +31,7 @@
       });
       let result;
       try { result = await response.json(); } catch (_) { throw new Error("群聊暂时不可用，请稍后重试"); }
-      if (response.status === 401) { state.active = false; controls(); }
+      if (response.status === 401) deactivateComposer();
       if (!response.ok) throw new Error(result.message || "操作失败，请稍后重试");
       return result.data;
     } catch (e) { if (e.name === "AbortError") throw new Error("请求超时，可重试；重复提交不会重复发送"); throw e; }
@@ -128,7 +129,15 @@
     return state.urls.get(id);
   }
   function displayName(member) { return member.moderator ? "客服小姐姐" : member.name; }
-  function display(rows, reset) {
+  function pruneExpiredRows(cutoff) {
+    if (typeof cutoff === "number" && Number.isFinite(cutoff) && cutoff > 0) state.retentionCutoff = Math.max(state.retentionCutoff || 0, cutoff);
+    let changed = false;
+    if (state.retentionCutoff) for (const [id, row] of state.rows) if (row.created_at < state.retentionCutoff) { state.rows.delete(id); changed = true; }
+    return changed;
+  }
+  function display(rows, reset, cutoff) {
+    pruneExpiredRows(cutoff);
+    rows = rows.filter(row => !state.retentionCutoff || !(row.created_at < state.retentionCutoff));
     const stick = nearBottom(), oldHeight = $("messages").scrollHeight, oldTop = $("messages").scrollTop;
     const previous = new Set(state.rows.keys());
     if (reset) {
@@ -177,8 +186,8 @@
     state.polling = true;
     try {
       const data = await api("history"); state.me.muted = data.muted;
-      const signature = JSON.stringify(data.messages);
-      if (signature !== state.signature) { display(data.messages, true); state.signature = signature; }
+      const expired = pruneExpiredRows(data.retention_cutoff), signature = JSON.stringify(data.messages);
+      if (expired || signature !== state.signature) { display(data.messages, true); state.signature = signature; }
       $("older").hidden = !data.has_more; $("status").textContent = state.me.muted ? "当前已被禁言" : "已连接"; if (state.errorScope === "connection") error(""); controls(); read();
     } catch (e) { $("status").textContent = "连接中断"; error(e.message, "connection"); }
     finally { state.polling = false; }
@@ -187,9 +196,10 @@
     $("attachments").replaceChildren();
     state.attachments.forEach(file => { const wrap = element("div", "attachment"), img = element("img"); img.src = file.url; img.alt = "待发送图片"; wrap.append(img, button("x", "移除图片", () => { if (state.busy || !state.active || !state.me || state.me.muted) return; state.attachments = state.attachments.filter(x => x !== file); URL.revokeObjectURL(file.url); state.pending = null; showAttachments(); })); $("attachments").append(wrap); }); icons(); controls();
   }
+  function composerInputReady() { return !!state.me && !state.me.muted && state.active && !!startingAuth && auth() === startingAuth; }
   function composerReady() {
-    if (!state.active || !startingAuth || auth() !== startingAuth) { state.active = false; controls(); error("登录已变化，请返回面板重新进入"); return false; }
-    return !!state.me && !state.me.muted && !state.busy;
+    if (!state.active || !startingAuth || auth() !== startingAuth) { deactivateComposer(); error("登录已变化，请返回面板重新进入"); return false; }
+    return composerInputReady() && !state.busy;
   }
   async function uploadImages(files) {
     if (!files.length || !composerReady()) return;
@@ -198,14 +208,14 @@
     const failures = [];
     try {
       for (const file of files) {
-        if (!state.active || auth() !== startingAuth) { state.active = false; failures.push("登录已变化，请返回面板重新进入"); break; }
+        if (!state.active || auth() !== startingAuth) { deactivateComposer(); failures.push("登录已变化，请返回面板重新进入"); break; }
         if (!state.me || state.me.muted) { failures.push("当前已被禁言，无法上传图片"); break; }
         if (state.attachments.length >= 2) { failures.push("最多添加 2 张图片，超出的图片未添加"); break; }
         if (file.size > 3 * 1024 * 1024 || !["image/png", "image/jpeg", "image/webp"].includes(file.type)) { failures.push("请选择 3 MB 以内的 PNG、JPEG 或 WebP 图片"); continue; }
         try {
           const data = new FormData(); data.append("image", file);
           const uploaded = await api("upload", data);
-          if (!state.active || auth() !== startingAuth) { state.active = false; failures.push("登录已变化，请返回面板重新进入"); break; }
+          if (!state.active || auth() !== startingAuth) { deactivateComposer(); failures.push("登录已变化，请返回面板重新进入"); break; }
           if (!state.me || state.me.muted) { failures.push("当前已被禁言，无法继续添加图片"); break; }
           state.attachments.push({ id: uploaded.id, url: URL.createObjectURL(file) }); state.pending = null; showAttachments();
         } catch (e) { failures.push(e.message); }
@@ -216,7 +226,8 @@
       if (!$("message").disabled) $("message").focus();
     }
   }
-  $("message").addEventListener("input", () => { $("count").textContent = $("message").value.length + " / 2000"; state.pending = null; controls(); });
+  function updateDraft() { $("count").textContent = $("message").value.length + " / 2000"; state.pending = null; controls(); }
+  $("message").addEventListener("input", updateDraft);
   $("message").addEventListener("compositionstart", () => { clearTimeout(compositionGuardTimer); composing = true; compositionEnterGuard = true; });
   $("message").addEventListener("compositionend", () => {
     composing = false; compositionEnterGuard = true;
@@ -240,35 +251,92 @@
     if (!files.length) files = Array.from(clipboard.files || []);
     const images = files.filter(file => file.type.startsWith("image/"));
     if (!images.length) return;
-    event.preventDefault(); uploadImages(images);
+    event.preventDefault();
+    if (!composerInputReady()) return;
+    const text = clipboard.getData ? clipboard.getData("text/plain").replace(/\r\n?/g, "\n") : "";
+    if (text) {
+      const input = $("message"), start = input.selectionStart, end = input.selectionEnd;
+      const limit = input.maxLength >= 0 ? input.maxLength : 2000;
+      const room = Math.max(0, limit - input.value.length + end - start);
+      let insertion = text.slice(0, room);
+      if (/[\uD800-\uDBFF]$/.test(insertion)) insertion = insertion.slice(0, -1);
+      if (insertion) { input.setRangeText(insertion, start, end, "end"); updateDraft(); }
+    }
+    if (state.busy) { error(state.operation === "post" ? "消息正在发送，请稍后再添加图片" : "图片正在上传，请稍后再添加"); return; }
+    uploadImages(images);
   });
   $("cancel-reply").onclick = () => { state.reply = null; state.pending = null; $("reply").hidden = true; };
   $("attach").onclick = () => $("file").click();
   $("file").onchange = () => {
     const files = Array.from($("file").files || []); $("file").value = ""; return uploadImages(files);
   };
-  async function sendMessage() {
-    if (!composerReady() || (!$("message").value.trim() && !state.attachments.length)) return;
-    state.busy = true; state.operation = "post"; controls(); error("");
-    const data = { message: $("message").value.trim(), root_id: state.reply ? state.reply.id : "", file_ids: state.attachments.map(file => file.id), client_id: state.pending || crypto.randomUUID() }; state.pending = data.client_id;
+  function releaseSubmission(submission) {
+    if (!submission) return;
+    submission.attachments.forEach(file => URL.revokeObjectURL(file.url)); submission.attachments = [];
+  }
+  function deactivateComposer() {
+    state.active = false;
+    releaseSubmission(state.inFlight); releaseSubmission(state.failedSend); state.failedSend = null;
+    state.attachments.forEach(file => URL.revokeObjectURL(file.url)); state.attachments = [];
+    state.reply = null; state.pending = null; $("reply").hidden = true; showAttachments();
+  }
+  function showFailedSend() {
+    let panel = $("failed-send");
+    if (!panel && !state.failedSend) return;
+    if (!panel) {
+      panel = element("section", "failed-send"); panel.id = "failed-send"; panel.setAttribute("aria-label", "待重试消息");
+      const copy = element("div", "failed-send-copy"), status = element("strong"), preview = element("p");
+      status.id = "failed-send-status"; status.setAttribute("role", "status"); preview.id = "failed-send-preview"; copy.append(status, preview);
+      const actions = element("div", "failed-send-actions"), retry = element("button", "", "重试发送"), discard = element("button", "", "不再重试");
+      retry.id = "retry-send"; retry.type = "button"; discard.id = "discard-send"; discard.type = "button";
+      retry.onclick = () => { if (state.failedSend) postSubmission(state.failedSend); };
+      discard.onclick = () => { if (state.busy) return; releaseSubmission(state.failedSend); state.failedSend = null; controls(); };
+      actions.append(retry, discard); panel.append(copy, actions); $("message").before(panel);
+    }
+    const submission = state.failedSend; panel.hidden = !submission;
+    if (!submission) return;
+    $("failed-send-status").textContent = "上一条未确认发送：" + (submission.error || "请重试");
+    $("failed-send-preview").textContent = (submission.data.message || "图片消息") + (submission.data.file_ids.length ? "（" + submission.data.file_ids.length + " 张图片）" : "") + " · 下方草稿已保留";
+    $("retry-send").disabled = !composerInputReady() || state.busy; $("discard-send").disabled = state.busy;
+  }
+  async function postSubmission(submission) {
+    if (!composerReady() || submission.user !== state.me.id) return;
+    const current = () => state.active && auth() === startingAuth && state.me && submission.user === state.me.id;
+    state.inFlight = submission; state.busy = true; state.operation = "post"; controls(); error("");
+    $("message").focus();
     try {
-      const sent = await api("post", data); state.rows.set(sent.id, sent); state.signature = null; $("message").value = ""; $("count").textContent = "0 / 2000";
-      state.attachments.forEach(file => URL.revokeObjectURL(file.url)); state.attachments = []; state.pending = null; state.reply = null; $("reply").hidden = true; showAttachments(); await poll(true); bottom();
-    } catch (e) { error(e.message); } finally { state.busy = false; state.operation = null; controls(); if (!$("message").disabled) $("message").focus(); }
+      const sent = await api("post", submission.data); if (!current()) return;
+      if (state.failedSend === submission) state.failedSend = null;
+      releaseSubmission(submission); state.rows.set(sent.id, sent); state.signature = null; display([], false); bottom();
+      // History refresh runs independently so its latency cannot lock the next draft.
+      poll(true);
+    } catch (e) { if (current()) { submission.error = e.message; state.failedSend = submission; } }
+    finally {
+      if (state.inFlight === submission) { state.inFlight = null; state.busy = false; state.operation = null; controls(); }
+      if (!current()) { deactivateComposer(); releaseSubmission(submission); }
+    }
+  }
+  async function sendMessage() {
+    if (!composerReady() || state.failedSend || (!$("message").value.trim() && !state.attachments.length)) return;
+    const submission = { user: state.me.id, attachments: state.attachments.slice(),
+      data: { message: $("message").value.trim(), root_id: state.reply ? state.reply.id : "", file_ids: state.attachments.map(file => file.id), client_id: state.pending || crypto.randomUUID() } };
+    $("message").value = ""; $("count").textContent = "0 / 2000";
+    state.attachments = []; state.pending = null; state.reply = null; $("reply").hidden = true; showAttachments();
+    return postSubmission(submission);
   }
   $("send").onclick = sendMessage;
   $("older").onclick = async () => {
     const rows = Array.from(state.rows.values()).sort((a, b) => a.created_at - b.created_at); if (!rows.length) return;
     $("older").disabled = true;
-    try { const data = await api("history", { before: rows[0].id }); display(data.messages, false); $("older").hidden = !data.has_more; } catch (e) { error(e.message); }
+    try { const data = await api("history", { before: rows[0].id }); display(data.messages, false, data.retention_cutoff); $("older").hidden = !data.has_more; } catch (e) { error(e.message); }
     finally { $("older").disabled = false; }
   };
   $("refresh").onclick = () => { error(""); state.signature = null; connect(); };
   $("unread").onclick = bottom; $("messages").addEventListener("scroll", read);
   $("close-viewer").onclick = () => $("viewer").close();
-  window.addEventListener("storage", () => { if (auth() !== startingAuth) { state.active = false; error("登录已变化，请返回面板重新进入"); controls(); } });
+  window.addEventListener("storage", () => { if (auth() !== startingAuth) { deactivateComposer(); error("登录已变化，请返回面板重新进入"); } });
   document.addEventListener("visibilitychange", () => poll());
-  window.addEventListener("pagehide", () => { state.active = false; state.urls.forEach(p => p.then(URL.revokeObjectURL).catch(() => {})); });
+  window.addEventListener("pagehide", () => { deactivateComposer(); state.urls.forEach(p => p.then(URL.revokeObjectURL).catch(() => {})); });
   icons();
   async function connect() {
     if (state.connecting || !state.active) return;

@@ -224,4 +224,54 @@ class TicketAiReplyTest extends TestCase
         }
         $this->assertStringContainsString('更新订阅还是连接节点', implode(' ', $byId['shadowrocket_vpn_cert_warning']['answer_points']));
     }
+
+    public function test_known_meta_import_error_is_retrieved_for_error_and_client_variants(): void
+    {
+        $config = ['ticket_ai_knowledge_path' => dirname(__DIR__, 2) . '/resources/ai/ticket_knowledge_extra.json'];
+        $cases = [
+            ['clash meta 2.11.25导入订阅失败', '保存订阅时显示java.security.cert.certpathvalidatorexception: Trust anchor for certification path notfound.'],
+            ['添加不了配置', 'Clash URL保存时报x509: certificate signed by unknown authority'],
+            ['导入失败', 'clashmeat 导入订阅 ×509 certificate signed by unknown authority'],
+            ['无法保存', 'ClashMetaForAndroid 导入订阅 tls: failed to verify certificate'],
+            ['无法保存', 'clash.meta URL保存时报Trust anchor for certification path not found']
+        ];
+        foreach ($cases as [$subject, $question]) {
+            $items = $this->invoke('selectTicketKnowledge', [['question' => $question, 'ticket' => ['subject' => $subject]], $config, 4]);
+            $this->assertSame('proxy_ip_certificate_warning', $items[0]['id'], $question);
+            $points = implode(' ', $items[0]['answer_points']);
+            $this->assertStringContainsString('版本过低', $points);
+            $this->assertStringContainsString('教程页下载新版', $points);
+            $this->assertStringContainsString('已按教程升级仍失败', $points);
+            $this->assertStringContainsString('不关闭校验', $points);
+        }
+    }
+
+    public function test_known_meta_knowledge_survives_followup_without_using_old_ai_diagnosis(): void
+    {
+        $context = ['question' => '关闭clash之后还是提示这个。怎么核对你后面说的那些？', 'ticket' => ['subject' => '添加不了配置', 'messages' => [
+            ['from' => 'user', 'message' => 'clash配置URL粘贴订阅链接后保存失败'],
+            ['from' => 'user', 'message' => 'Get订阅地址 x509: certificate signed by unknown authority'],
+            ['from' => 'staff', 'is_ai' => true, 'message' => '必须人工核对服务端证书链。']
+        ]]];
+        $items = $this->invoke('selectTicketKnowledge', [$context, ['ticket_ai_knowledge_path' => dirname(__DIR__, 2) . '/resources/ai/ticket_knowledge_extra.json'], 4]);
+        $this->assertSame('proxy_ip_certificate_warning', $items[0]['id']);
+        $this->assertStringContainsString('先前AI误导查证书时纠正方向', implode(' ', $items[0]['answer_points']));
+    }
+
+    public function test_different_tls_failures_keep_their_specific_knowledge(): void
+    {
+        $config = ['ticket_ai_knowledge_path' => dirname(__DIR__, 2) . '/resources/ai/ticket_knowledge_extra.json'];
+        $cases = [
+            ['Shadowrocket 小火箭订阅证书无效，无法换客户端', 'shadowrocket_vpn_cert_warning'],
+            ['Clash Meta 导入订阅 TLS handshake timeout', 'subscription_tls_handshake_timeout'],
+            ['v2rayN 提示allowInsecure被移除，拒绝不安全配置', 'tls_security_option_removed'],
+            ['TestFlight提示beta版已满额', 'testflight_beta_full'],
+            ['Clash Meta 导入订阅 x509: certificate has expired or is not yet valid', 'cert_domain_mismatch_user'],
+            ['Clash Meta 更新订阅 x509: certificate is valid for a.example, not b.example', 'cert_domain_mismatch_user']
+        ];
+        foreach ($cases as [$question, $expected]) {
+            $items = $this->invoke('selectTicketKnowledge', [['question' => $question], $config, 4]);
+            $this->assertContains($expected, array_column($items, 'id'), $question);
+        }
+    }
 }

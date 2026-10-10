@@ -17,7 +17,7 @@
   N.data = r => r && r.data;
   N.list = r => Array.isArray(N.data(r)) ? r.data : [];
   N.money = cents => `${S.config.currency_symbol || S.config.currency || '¥'}${(Number(cents || 0) / 100).toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
-  N.bytes = value => {let n = Number(value || 0), i = 0; const units = ['B','KB','GB','TB']; units[2] = 'MB'; units.push('PB'); const u = ['B','KB','MB','GB','TB','PB']; while (Math.abs(n) >= 1024 && i < 5) {n /= 1024; i++;} return `${n.toLocaleString('zh-CN', {maximumFractionDigits:2})} ${u[i]}`;};
+  N.bytes = value => {const parsed=parseInt(value||0,10),n=Number.isFinite(parsed)?Math.max(0,parsed):0;return n>1073741824?(n/1073741824).toFixed(2)+' GB':n>1048576?(n/1048576).toFixed(2)+' MB':n>1024?(n/1024).toFixed(2)+' KB':n.toFixed(2)+' B';};
   N.date = (ts, time = false) => ts == null || ts === '' ? '—' : (!Number(ts) ? '—' : new Date(Number(ts)*1000).toLocaleString('zh-CN', {year:'numeric',month:'2-digit',day:'2-digit',...(time ? {hour:'2-digit',minute:'2-digit'} : {})}).replaceAll('/', '-'));
   N.safeURL = value => {if(value==null||!String(value).trim())return '';try {const u = new URL(String(value).trim(), location.href); return ['https:','http:'].includes(u.protocol) ? u.href : '';} catch (_) {return '';}};
   N.art = name => `${settings.assets_path || '/theme/NINI/assets'}/art/${['mascot','gift','headset'].includes(name) ? name : 'mascot'}.png`;
@@ -78,7 +78,47 @@
   N.formValues = form => Object.fromEntries(new FormData(form));
   N.error = error => N.toast(error.message || '请求失败，请稍后重试');
   N.toast = text => {const el=document.createElement('div'); el.className='nini-toast'; el.setAttribute('role','status'); el.textContent=text; document.body.append(el); setTimeout(()=>el.remove(),4500);};
-  N.copy = async (text,message='已复制') => {if (!text) throw new Error('暂无可复制的内容'); if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(String(text)); else {const a=document.createElement('textarea'); a.value=String(text); a.style.position='fixed'; a.style.opacity='0'; document.body.append(a); a.select(); const copied=document.execCommand('copy'); a.remove(); if (!copied) throw new Error('复制失败，请手动选择复制');} N.toast(message);};
+  function selectCopyText(input) {
+    if (!input) return false;
+    try {input.focus({preventScroll:true});input.select();input.setSelectionRange(0,input.value.length);return true;} catch (_) {return false;}
+  }
+  function legacyCopy(value) {
+    const input=document.createElement('textarea'),active=document.activeElement;
+    const selection=typeof window.getSelection==='function'?window.getSelection():null,ranges=[];
+    if(selection)for(let i=0;i<selection.rangeCount;i++)ranges.push(selection.getRangeAt(i).cloneRange());
+    let inputSelection;
+    try {if(active&&typeof active.selectionStart==='number')inputSelection=[active.selectionStart,active.selectionEnd,active.selectionDirection];} catch (_) {}
+    input.value=value;input.readOnly=true;input.tabIndex=-1;
+    input.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;padding:0;border:0;opacity:0;pointer-events:none;font-size:16px';
+    try {
+      // A native dialog makes the rest of the document inert; copy inside that dialog.
+      (document.querySelector('dialog.nini-app.modal[open]')||document.body).append(input);
+      if(!selectCopyText(input)||typeof document.execCommand!=='function')return false;
+      return document.execCommand('copy')===true;
+    } catch (_) {return false;}
+    finally {
+      input.remove();
+      try {if(active&&active.isConnected&&typeof active.focus==='function'){active.focus({preventScroll:true});if(inputSelection)active.setSelectionRange(...inputSelection);}} catch (_) {}
+      try {if(selection){selection.removeAllRanges();ranges.forEach(range=>selection.addRange(range));}} catch (_) {}
+    }
+  }
+  N.actions['select-copy']=el=>{if(!selectCopyText(el.closest('.modal')?.querySelector('[data-manual-copy]')))N.toast('请长按下方内容，选择复制');};
+  N.copy = async (text,message='已复制') => {
+    if (!text) throw new Error('暂无可复制的内容');
+    const value=String(text),account=sessionID;
+    try {
+      if(window.isSecureContext&&typeof navigator.clipboard?.writeText==='function'){
+        await navigator.clipboard.writeText(value);
+        if(account!==sessionID)return false;
+        N.toast(message);return true;
+      }
+    } catch (_) {}
+    if(account!==sessionID)return false;
+    if(legacyCopy(value)){N.toast(message);return true;}
+    const modal=N.modal('手动复制',`<div class="stack"><p class="muted">浏览器限制了自动复制。手机请长按下方内容选择“复制”，电脑可全选后按 Ctrl+C / ⌘C。</p><textarea class="input" rows="4" readonly spellcheck="false" autocapitalize="off" aria-label="待复制内容" data-manual-copy></textarea><div class="row wrap">${N.button('全选内容','select-copy','','secondary')}${N.button('关闭','close-modal','','secondary')}</div></div>`);
+    const input=modal.querySelector('[data-manual-copy]');input.value=value;selectCopyText(input);
+    return false;
+  };
   let closeActiveModal = null;
   N.modal = (title,body,contentTitle=false) => {
     setMobileMenu(false);N.closeModal();
@@ -185,7 +225,8 @@
     const controller=new AbortController(), timeout=setTimeout(()=>controller.abort(),25000), session=sessionID, authorization=S.auth;
     try {
       const q=new URLSearchParams(); if(method==='GET')Object.entries(payload||{}).forEach(([k,v])=>{if(v!=null)q.set(k,v);});
-      const res=await fetch(`/api/v1${path}${q.size ? '?'+q : ''}`,{method,signal:controller.signal,headers:{Accept:'application/json',...(authorization?{Authorization:authorization}:{}),...(method==='POST'?{'Content-Type':'application/json'}:{})},...(method==='POST'?{body:JSON.stringify(payload||{})}:{})});
+      const queryString=q.toString();
+      const res=await fetch(`/api/v1${path}${queryString ? '?'+queryString : ''}`,{method,signal:controller.signal,headers:{Accept:'application/json',...(authorization?{Authorization:authorization}:{}),...(method==='POST'?{'Content-Type':'application/json'}:{})},...(method==='POST'?{body:JSON.stringify(payload||{})}:{})});
       let data; try {data=await res.json();} catch(_){throw new Error('服务返回异常，请稍后重试');}
       if(path.startsWith('/user/')&&session!==sessionID)throw new Error('登录已变化，请重试');
       if((res.status===401||res.status===403)&&path.startsWith('/user/')){N.authExpired(true);throw new Error('登录已过期，请重新登录');}
@@ -197,15 +238,23 @@
   N.authExpired = (returnToPage=false) => {const destination=typeof returnToPage==='string'?safeRedirect(returnToPage):returnToPage?safeRedirect(location.hash):'';S.auth='';clearAccount();if(window.NINI_PREVIEW!==true)for(const k of ['nini_auth_data','auth_data','authorization','token'])localStorage.removeItem(k);N.closeModal();N.go('login'+(destination?'?redirect='+encodeURIComponent(destination):''));};
   function bridgeAuth(){if(window.NINI_PREVIEW!==true)for(const k of ['nini_auth_data','auth_data','authorization'])localStorage.setItem(k,S.auth);}
   N.saveAuth = data => {if(!data||!data.auth_data)throw new Error('登录数据不完整');clearAccount();S.auth=data.auth_data;bridgeAuth();if(data.token&&window.NINI_PREVIEW!==true)localStorage.setItem('token',data.token);};
-  N.refreshCore = () => {
-    if(coreSync)return coreSync;
+  N.refreshCore = (fresh=false) => {
+    if(coreSync){
+      if(fresh!==true)return coreSync;
+      const previous=coreSync,session=sessionID;
+      return previous.catch(()=>{}).then(()=>{
+        if(session!==sessionID)throw new Error('登录已变化，请重试');
+        if(coreSync===previous)coreSync=null;
+        return N.refreshCore();
+      });
+    }
     invalidateReads();
     const session=sessionID,authorization=S.auth;
     const pending=(async()=>{
       const [user,sub,stat,config,guest]=await Promise.all([N.api.get('/user/info'),N.api.get('/user/getSubscribe'),N.api.get('/user/getStat'),N.api.get('/user/comm/config'),N.api.get('/guest/comm/config')]);
       if(session!==sessionID||authorization!==S.auth)throw new Error('登录已变化，请重试');
       Object.assign(S,{user:N.data(user)||{},sub:N.data(sub)||{},stat:N.data(stat)||[],config:N.data(config)||{},guest:N.data(guest)||{}});
-      bridgeAuth();coreLoaded=true;coreSyncedAt=Date.now();
+      bridgeAuth();coreLoaded=true;coreSyncedAt=Date.now();updateChrome();
     })();
     coreSync=pending;
     return pending.finally(()=>{if(coreSync===pending)coreSync=null;});
@@ -216,17 +265,18 @@
   function safeRedirect(value){const v=String(value||'').replace(/^#?\//,'');return /^[a-z]+(?:\/[A-Za-z0-9_-]+)?(?:\?[^#]*)?$/.test(v)&&nav.some(x=>x[0]===v.split(/[/?]/)[0])?v:'dashboard';}
   N.go = route => {const path=String(route).replace(/^#?\/?/,'');if(location.hash==='#/'+path)N.refresh();else location.hash='/'+path;};
   const mobileDetailTargets={plan:'.commerce-purchase',order:'.commerce-order-detail',knowledge:'.knowledge-detail',ticket:'.ticket-detail'};
-  N.revealMobileDetail = key => {
-    if(!window.matchMedia('(max-width:1024px)').matches||N.route().key!==key||!mobileDetailTargets[key])return;
+  N.revealDetail = (key,mobileOnly=false) => {
+    if((mobileOnly&&!window.matchMedia('(max-width:1024px)').matches)||N.route().key!==key||!mobileDetailTargets[key])return;
     const target=document.querySelector(mobileDetailTargets[key]),hash=location.hash,session=sessionID,page=renderID;
     if(!target)return;
     // Wait for route patching and focus restoration before revealing the stacked detail.
     window.requestAnimationFrame(()=>{
-      if(!window.matchMedia('(max-width:1024px)').matches||!target.isConnected||location.hash!==hash||session!==sessionID||page!==renderID)return;
+      if((mobileOnly&&!window.matchMedia('(max-width:1024px)').matches)||!target.isConnected||location.hash!==hash||session!==sessionID||page!==renderID)return;
       target.setAttribute('tabindex','-1');target.focus({preventScroll:true});
       window.scrollTo({top:Math.max(0,window.scrollY+target.getBoundingClientRect().top-16),behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
     });
   };
+  N.revealMobileDetail = key => N.revealDetail(key,true);
   N.refresh = () => {invalidateReads();return render(true);};
   N.renderCurrent = () => {const route=S.route; const page=N.pages[route.key];let patched=false;if(page){const host=page.public?root:document.getElementById('page-content');if(!host)return;patched=!!(page.patch&&page.patch(route,routeData)===true);if(!patched){host.innerHTML=page.render(route,routeData);if(page.mounted)Promise.resolve(page.mounted(route,routeData)).catch(N.error);}}updateChrome();if(N.fitArtworkTypography)N.fitArtworkTypography();if(!patched&&N.refreshParallax)N.refreshParallax();};
   function brand(){if(N.brand)return N.brand();return `<a class="brand" href="#/dashboard">${settings.logo ? `<img src="${N.e(N.safeURL(settings.logo))}" alt="${N.e(settings.title)}">` : `<span class="brand-star">✦</span><strong>${N.e(settings.title || '用户中心')}</strong>`}<span class="brand-bow" aria-hidden="true">୨୧</span></a>`;}
@@ -395,9 +445,9 @@
   N.actions['import-sub']=()=>{if(!clientSubscriptionURL())return N.toast('暂无可用订阅，请先购买订阅');N.modal('一键订阅',`<p class="muted">选择设备系统，点击已安装的客户端导入订阅。</p>${N.clientPicker()}`);};
   N.actions['new-period']=()=>N.confirm('提前开启周期','此操作将扣除订阅剩余时长并重置流量，服务器将检查是否符合条件。',async()=>{await N.api.post('/user/newPeriod');await N.refreshCore();N.renderCurrent();N.toast('已开启新周期');});
   N.pages.dashboard={load:async()=>N.list(await N.api.get('/user/notice/fetch',{current:1,pageSize:3})),render:(_route,notices)=>{
-    const s=S.sub, total=Number(s.transfer_enable||0),used=Number(s.u||0)+Number(s.d||0),left=Math.max(0,total-used),pct=total?Math.max(0,Math.min(100,Math.round(left/total*100))):0,active=s.plan_id&&(s.expired_at===null||Number(s.expired_at)*1000>Date.now());
+    const s=S.sub, total=Number(s.transfer_enable||0),used=Number(s.u||0)+Number(s.d||0),left=Math.max(0,total-used),pct=total>0?Math.max(0,Math.min(100,Math.round(used/total*10000)/100)):0,active=s.plan_id&&(s.expired_at===null||Number(s.expired_at)*1000>Date.now());
     const plan=s.plan||{},hasSub=!!s.plan_id;
-    return `<header class="hero dashboard-hero"><div class="hero-copy"><span class="ribbon-label">DASHBOARD ${N.icon('star')}</span><h1>欢迎回来 <span>♡</span></h1><p>订阅、流量与服务状态，一眼掌握</p><div class="row wrap">${hasSub?N.button(N.icon('crown')+' 一键订阅','import-sub'):''}<a href="#/plan" class="button ${hasSub?'secondary':'primary'}">${N.icon('cart')} 购买订阅</a></div></div><img class="hero-art" src="${N.e(N.art('mascot'))}" alt=""><span class="hero-seal" aria-hidden="true">♡<small>HAVE A<br>NICE DAY</small></span></header><div class="grid four metrics">${N.card(N.icon('chart')+' 剩余流量',`<div class="traffic-ring" style="--progress:${pct}%"><strong>${pct}%</strong><small>剩余</small></div><p class="small"><b>${N.bytes(left)}</b> / ${N.bytes(total)}</p>`)}${N.card(N.icon('calendar')+' 到期时间',`<div class="metric-value">${expiry()}</div><div class="pretty-rule"></div><p>${s.expired_at===null&&hasSub?'长期有效':N.date(s.expired_at)}</p>${N.badge(active?'有效':'未生效',active?'success':'')}`)}${N.card(N.icon('device')+' 在线设备',`<div class="metric-value">${s.alive_ip==null?'—':N.e(s.alive_ip)} <small>台</small></div><div class="pretty-rule"></div><p>设备上限 ${s.device_limit?N.e(s.device_limit):'不限'}</p>`)}${N.card(N.icon('crown')+' 当前套餐',`<div class="metric-value plan-name">${N.e(plan.name||'暂无订阅')}</div><div class="pretty-rule"></div><p>${s.reset_day!=null?`${N.e(s.reset_day)} 天后流量重置`:'暂无周期重置'}</p>`)}</div><div class="action-strip">${active&&!N.on(S.user.banned)&&Number(S.user.transfer_enable)>0&&plan.reset_price!=null?`<a href="#/plan/${N.e(s.plan_id)}?period=reset_price">${N.icon('refresh')}<span><b>流量重置</b><small>${N.e(N.money(plan.reset_price))}</small></span>${N.icon('arrow')}</a>`:''}${N.on(s.allow_new_period)&&hasSub?N.button(N.icon('clock')+' 提前开启周期','new-period','','secondary'):''}<a href="#/order">${N.icon('order')}<span><b>待支付订单 ${N.badge(S.stat[0]||0)}</b><small>查看订单与支付状态</small></span>${N.icon('arrow')}</a><a href="#/ticket">${N.icon('support')}<span><b>处理中工单 ${N.badge(S.stat[1]||0)}</b><small>查看客服回复</small></span>${N.icon('arrow')}</a></div><div class="grid dashboard-bottom"><div>${N.card(N.icon('gift')+' 订阅快捷操作',hasSub?`<p class="muted">复制链接或导入客户端</p><div class="row"><input class="input" readonly aria-label="订阅链接" value="${N.e(s.subscribe_url||'')}">${N.button(N.icon('copy'),'copy-sub','aria-label="复制订阅链接"')}</div>${N.clientPicker(false)}`:N.empty('购买订阅后，即可在这里导入客户端'), 'stitched')}</div><div class="stack">${N.communityEnabled()?`<a href="#/community" class="community-banner"><img src="${N.e(N.art('headset'))}" alt=""><div><h2>售后群聊</h2><p>交流使用问题，获取售后帮助</p></div><span class="button primary">进入群聊 ${N.icon('arrow')}</span></a>`:''}${N.card(N.icon('bell')+' 最新公告',(notices||[]).map((n)=>`<button class="notice" data-action="notice-detail" data-id="${N.e(n.id)}"><span><strong>${N.e(n.title)}</strong><small>${N.date(n.created_at)}</small></span>${N.icon('arrow')}</button>`).join('')||N.empty('暂无公告'))}</div></div>${N.subscriptionExplanations(s.subscription_rule_explanations)}`;
+    return `<header class="hero dashboard-hero"><div class="hero-copy"><span class="ribbon-label">DASHBOARD ${N.icon('star')}</span><h1>欢迎回来 <span>♡</span></h1><p>订阅、流量与服务状态，一眼掌握</p><div class="row wrap">${hasSub?N.button(N.icon('crown')+' 一键订阅','import-sub'):''}<a href="#/plan" class="button ${hasSub?'secondary':'primary'}">${N.icon('cart')} 购买订阅</a></div></div><img class="hero-art" src="${N.e(N.art('mascot'))}" alt=""><span class="hero-seal" aria-hidden="true">♡<small>HAVE A<br>NICE DAY</small></span></header><div class="grid four metrics">${N.card(N.icon('chart')+' 已用流量',`<div class="traffic-ring traffic-usage" style="--progress:${pct}%"><strong class="${pct>=100?'traffic-percent-full':pct>=10?'traffic-percent-wide':''}">${pct.toFixed(2)}%</strong><small>已用</small></div><p class="small"><span class="traffic-usage-row">已用 <b>${N.bytes(used)}</b></span><span class="traffic-usage-row">总计 <b>${N.bytes(total)}</b></span></p>`)}${N.card(N.icon('calendar')+' 到期时间',`<div class="metric-value">${expiry()}</div><div class="pretty-rule"></div><p>${s.expired_at===null&&hasSub?'长期有效':N.date(s.expired_at)}</p>${N.badge(active?'有效':'未生效',active?'success':'')}`)}${N.card(N.icon('device')+' 在线设备',`<div class="metric-value">${s.alive_ip==null?'—':N.e(s.alive_ip)} <small>台</small></div><div class="pretty-rule"></div><p>设备上限 ${s.device_limit?N.e(s.device_limit):'不限'}</p>`)}${N.card(N.icon('crown')+' 当前套餐',`<div class="metric-value plan-name">${N.e(plan.name||'暂无订阅')}</div><div class="pretty-rule"></div><p>${s.reset_day!=null?`${N.e(s.reset_day)} 天后流量重置`:'暂无周期重置'}</p>`)}</div><div class="action-strip">${active&&!N.on(S.user.banned)&&Number(S.user.transfer_enable)>0&&plan.reset_price!=null?`<a href="#/plan/${N.e(s.plan_id)}?period=reset_price">${N.icon('refresh')}<span><b>流量重置</b><small>${N.e(N.money(plan.reset_price))}</small></span>${N.icon('arrow')}</a>`:''}${N.on(s.allow_new_period)&&hasSub?N.button(N.icon('clock')+' 提前开启周期','new-period','','secondary'):''}<a href="#/order">${N.icon('order')}<span><b>待支付订单 ${N.badge(S.stat[0]||0)}</b><small>查看订单与支付状态</small></span>${N.icon('arrow')}</a><a href="#/ticket">${N.icon('support')}<span><b>处理中工单 ${N.badge(S.stat[1]||0)}</b><small>查看客服回复</small></span>${N.icon('arrow')}</a></div><div class="grid dashboard-bottom"><div>${N.card(N.icon('gift')+' 订阅快捷操作',hasSub?`<p class="muted">复制链接或导入客户端</p><div class="row"><input class="input" readonly aria-label="订阅链接" value="${N.e(s.subscribe_url||'')}">${N.button(N.icon('copy'),'copy-sub','aria-label="复制订阅链接"')}</div>${N.clientPicker(false)}`:N.empty('购买订阅后，即可在这里导入客户端'), 'stitched')}</div><div class="stack">${N.communityEnabled()?`<a href="#/community" class="community-banner"><img src="${N.e(N.art('headset'))}" alt=""><div><h2>售后群聊</h2><p>交流使用问题，获取售后帮助</p></div><span class="button primary">进入群聊 ${N.icon('arrow')}</span></a>`:''}${N.card(N.icon('bell')+' 最新公告',(notices||[]).map((n)=>`<button class="notice" data-action="notice-detail" data-id="${N.e(n.id)}"><span><strong>${N.e(n.title)}</strong><small>${N.date(n.created_at)}</small></span>${N.icon('arrow')}</button>`).join('')||N.empty('暂无公告'))}</div></div>${N.subscriptionExplanations(s.subscription_rule_explanations)}`;
   }};
   N.actions['notice-detail']=el=>{const n=(routeData||[]).find(x=>String(x.id)===el.dataset.id);if(n)N.modal(n.title,`<article class="article">${N.rich(n.content,true)}</article>`,true).classList.add('notice-modal');};
   let captchaPromise;
@@ -415,7 +465,7 @@
     else if(route?.query?.has('invite_code'))storeInvite(route.query.get('invite_code'));
     return pendingInvite.code;
   };
-  N.authHref=(path,redirect)=>{const query=new URLSearchParams(),code=N.inviteCode();if(code&&['register','landing'].includes(path))query.set('code',code);if(redirect&&safeRedirect(redirect)!=='dashboard')query.set('redirect',safeRedirect(redirect));return '#/'+path+(query.size?'?'+query:'');};
+  N.authHref=(path,redirect)=>{const query=new URLSearchParams(),code=N.inviteCode();if(code&&['register','landing'].includes(path))query.set('code',code);if(redirect&&safeRedirect(redirect)!=='dashboard')query.set('redirect',safeRedirect(redirect));const queryString=query.toString();return '#/'+path+(queryString?'?'+queryString:'');};
   function replaceAuthURL(path,redirect){const href=N.authHref(path,redirect);history.replaceState(history.state,'',location.pathname+location.search+href);}
   document.addEventListener('input',event=>{const field=event.target;if(field.name!=='invite_code'||!field.closest('form[data-form="auth"][data-mode="register"]'))return;storeInvite(field.value);replaceAuthURL('register',field.closest('form').dataset.redirect);document.querySelectorAll('a[data-auth-path]').forEach(link=>{link.href=N.authHref(link.dataset.authPath,link.dataset.authRedirect);});});
   function captchaMessage(error){const text=document.querySelector('[data-captcha-error]'),retry=document.querySelector('[data-action="retry-captcha"]');if(text)text.textContent=error?.message||'';if(retry)retry.hidden=!error;}

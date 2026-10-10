@@ -875,3 +875,25 @@ CREATE TABLE IF NOT EXISTS `v2_giftcard_redemption` (
                                         KEY `idx_user_created` (`user_id`,`created_at`),
                                         KEY `idx_giftcard_created` (`giftcard_id`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `community_identities` (
+    `site` varchar(32) NOT NULL,
+    `user_id` bigint unsigned NOT NULL,
+    `chat_id` varchar(66) NOT NULL,
+    PRIMARY KEY (`site`, `user_id`),
+    UNIQUE KEY `community_identity_chat` (`chat_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `v2_client_gateway` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `panel_id` varchar(32) NOT NULL,
+    `record_type` varchar(24) NOT NULL,
+    `record_key` varchar(180) COLLATE utf8mb4_bin NOT NULL,
+    `data` longtext NOT NULL,
+    `expires_at` varchar(24) DEFAULT NULL,
+    `updated_at` int unsigned NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `client_gateway_record` (`panel_id`, `record_type`, `record_key`),
+    KEY `client_gateway_expiry` (`panel_id`, `record_type`, `expires_at`),
+    KEY `client_gateway_list` (`panel_id`, `record_type`, `id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

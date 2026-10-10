@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use App\Services\ScheduledTaskLock;
 
 class TrafficUpdate extends Command
 {
@@ -39,6 +40,13 @@ class TrafficUpdate extends Command
      * @return mixed
      */
     public function handle()
+    {
+        return app(ScheduledTaskLock::class)->run('traffic:update', function () {
+            return $this->runTask();
+        });
+    }
+
+    protected function runTask()
     {
         ini_set('memory_limit', -1);
         if (Redis::exists('traffic_reset_lock')) {

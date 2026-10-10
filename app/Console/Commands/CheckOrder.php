@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Jobs\OrderHandleJob;
 use Illuminate\Console\Command;
 use App\Models\Order;
+use App\Services\ScheduledTaskLock;
 
 class CheckOrder extends Command
 {
@@ -38,6 +39,13 @@ class CheckOrder extends Command
      * @return mixed
      */
     public function handle()
+    {
+        return app(ScheduledTaskLock::class)->run('check:order', function () {
+            return $this->runTask();
+        });
+    }
+
+    protected function runTask()
     {
         ini_set('memory_limit', -1);
         $orders = Order::whereIn('status', [0, 1])

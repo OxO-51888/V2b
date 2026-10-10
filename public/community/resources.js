@@ -132,11 +132,12 @@
   }
   async function loadClients() {
     try {
-      const downloads = $('client-list').dataset;
-      const config = {windows_download_url: downloads.windowsDownloadUrl, windows_version: downloads.windowsVersion};
+      const result = await get('/user/comm/config');
+      const config = result && result.data;
+      if (!config || typeof config !== 'object' || Array.isArray(config)) throw new Error('Invalid client configuration');
       if (!active) return;
       const fragment = document.createDocumentFragment();
-      [['windows', 'Windows', 'monitor'], ['macos', 'macOS', 'laptop'], ['android', 'Android', 'smartphone']].forEach(([key, name, symbol]) => {
+      [['windows', 'Windows', 'monitor'], ['android', 'Android', 'smartphone'], ['macos', 'macOS', 'laptop']].forEach(([key, name, symbol]) => {
         const href = safeURL(config[key + '_download_url']);
         const card = node('section', 'client-platform client-platform-' + key + (href ? ' is-available' : ' is-unavailable'));
         card.setAttribute('aria-label', name + ' 客户端');
@@ -149,10 +150,16 @@
           const action = node('a', 'client-platform-action');
           action.href = href; action.target = '_blank'; action.rel = 'noopener noreferrer';
           action.setAttribute('aria-label', '下载本站 ' + name + ' 客户端');
-          action.append(icon('download'), node('span', '', key === 'windows' ? '下载 Windows 版' : '下载'));
+          action.append(icon('download'), node('span', '', key === 'windows' ? '下载 Windows 版' : key === 'android' ? '下载 Android 版' : '下载'));
+          card.append(action);
+        } else if (key === 'android') {
+          const action = node('button', 'client-platform-action');
+          action.append(icon('download'), node('span', '', '安装包待上传'));
+          action.type = 'button'; action.disabled = true;
+          action.setAttribute('aria-label', 'Android 安装包待上传');
           card.append(action);
         } else {
-          card.append(node('p', 'client-platform-state', key === 'windows' ? '暂未提供' : '敬请期待'));
+          card.append(node('p', 'client-platform-state', '暂未提供'));
         }
         fragment.append(card);
       });
