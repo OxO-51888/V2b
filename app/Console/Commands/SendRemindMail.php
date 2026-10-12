@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\MailService;
+use App\Services\UserBatchService;
 use Illuminate\Console\Command;
 use App\Models\User;
 
@@ -39,14 +40,14 @@ class SendRemindMail extends Command
      */
     public function handle()
     {
-        ini_set('memory_limit', -1);
-        $users = User::all();
         $mailService = new MailService();
-        foreach ($users as $user) {
+        UserBatchService::each(User::query(), [
+            'id', 'email', 'remind_expire', 'remind_traffic', 'expired_at', 'u', 'd', 'transfer_enable',
+        ], function ($user) use ($mailService) {
             if ($user->remind_expire) $mailService->remindExpire($user);
             if (!($user->expired_at !== NULL && $user->expired_at < time()) && $user->remind_traffic) {
                 $mailService->remindTraffic($user);
             }
-        }
+        });
     }
 }

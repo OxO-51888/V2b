@@ -15,6 +15,7 @@ use App\Models\Plan;
 use App\Models\TicketMessage;
 use App\Models\User;
 use App\Services\AuthService;
+use App\Services\UserBatchService;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,8 +64,8 @@ class UserController extends Controller
 
     public function fetch(UserFetch $request)
     {
-        $current = $request->input('current') ? $request->input('current') : 1;
-        $pageSize = $request->input('pageSize') >= 10 ? $request->input('pageSize') : 10;
+        $current = max(1, (int) $request->input('current', 1));
+        $pageSize = min(150, max(10, (int) $request->input('pageSize', 10)));
         $sortType = in_array($request->input('sort_type'), ['ASC', 'DESC']) ? $request->input('sort_type') : 'DESC';
         $sort = $request->input('sort') ? $request->input('sort') : 'created_at';
         $userModel = User::select(
@@ -76,17 +77,17 @@ class UserController extends Controller
         $total = $userModel->count();
         $res = $userModel->forPage($current, $pageSize)
             ->get();
-        $plan = Plan::get();
+        $plan = Plan::pluck('name', 'id');
+        $aliveKeys = $res->map(function ($user) { return 'ALIVE_IP_USER_' . $user->id; })->all();
+        $alive = $aliveKeys ? Cache::many($aliveKeys) : [];
         for ($i = 0; $i < count($res); $i++) {
-            for ($k = 0; $k < count($plan); $k++) {
-                if ($plan[$k]['id'] == $res[$i]['plan_id']) {
-                    $res[$i]['plan_name'] = $plan[$k]['name'];
-                }
+            if ($plan->has($res[$i]['plan_id'])) {
+                $res[$i]['plan_name'] = $plan[$res[$i]['plan_id']];
             }
             //统计在线设备
             $countalive = 0;
             $ips = [];
-            $ips_array = Cache::get('ALIVE_IP_USER_'. $res[$i]['id']);
+            $ips_array = $alive['ALIVE_IP_USER_' . $res[$i]['id']] ?? null;
             if ($ips_array) {
                 $countalive = $ips_array['alive_ip'];
                 foreach($ips_array as $nodetypeid => $data) {
@@ -175,30 +176,24 @@ class UserController extends Controller
     {
         $userModel = User::orderBy('id', 'asc');
         $this->filter($request, $userModel);
-        $res = $userModel->get();
-        $plan = Plan::get();
-        for ($i = 0; $i < count($res); $i++) {
-            for ($k = 0; $k < count($plan); $k++) {
-                if ($plan[$k]['id'] == $res[$i]['plan_id']) {
-                    $res[$i]['plan_name'] = $plan[$k]['name'];
-                }
-            }
-        }
-
-        $data = "邮箱,余额,推广佣金,总流量,设备数限制,剩余流量,套餐到期时间,订阅计划,订阅地址\r\n";
-        foreach($res as $user) {
-            $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
-            $balance = $user['balance'] / 100;
-            $commissionBalance = $user['commission_balance'] / 100;
-            $transferEnable = $user['transfer_enable'] ? $user['transfer_enable'] / 1073741824 : 0;
-            $deviceLimit = $user['devce_limit'] ? $user['devce_limit'] : NULL;
-            $notUseFlow = (($user['transfer_enable'] - ($user['u'] + $user['d'])) / 1073741824) ?? 0;
-            $planName = $user['plan_name'] ?? '无订阅';
-            $subscribeUrl =  Helper::getSubscribeUrl($user['token']);
-            $data .= "{$user['email']},{$balance},{$commissionBalance},{$transferEnable}, {$deviceLimit}, {$notUseFlow},{$expireDate},{$planName},{$subscribeUrl}\r\n";
-
-        }
-        echo "\xEF\xBB\xBF" . $data;
+        $plan = Plan::pluck('name', 'id');
+        return response()->stream(function () use ($userModel, $plan) {
+            echo "\xEF\xBB\xBF邮箱,余额,推广佣金,总流量,设备数限制,剩余流量,套餐到期时间,订阅计划,订阅地址\r\n";
+            UserBatchService::each($userModel, [
+                'id', 'email', 'balance', 'commission_balance', 'transfer_enable', 'u', 'd',
+                'expired_at', 'plan_id', 'token',
+            ], function ($user) use ($plan) {
+                $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
+                $balance = $user['balance'] / 100;
+                $commissionBalance = $user['commission_balance'] / 100;
+                $transferEnable = $user['transfer_enable'] ? $user['transfer_enable'] / 1073741824 : 0;
+                $deviceLimit = $user['devce_limit'] ? $user['devce_limit'] : NULL;
+                $notUseFlow = (($user['transfer_enable'] - ($user['u'] + $user['d'])) / 1073741824) ?? 0;
+                $planName = $plan[$user['plan_id']] ?? '无订阅';
+                $subscribeUrl =  Helper::getSubscribeUrl($user['token']);
+                echo "{$user['email']},{$balance},{$commissionBalance},{$transferEnable}, {$deviceLimit}, {$notUseFlow},{$expireDate},{$planName},{$subscribeUrl}\r\n";
+            });
+        }, 200, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function generate(UserGenerate $request)
@@ -284,7 +279,7 @@ class UserController extends Controller
         $sort = $request->input('sort') ? $request->input('sort') : 'created_at';
         $builder = User::orderBy($sort, $sortType);
         $this->filter($request, $builder);
-        foreach ($builder->cursor() as $user) {
+        UserBatchService::each($builder, ['id', 'email'], function ($user) use ($request) {
             SendEmailJob::dispatch([
                 'email' => $user->email,
                 'subject' => $request->input('subject'),
@@ -295,7 +290,7 @@ class UserController extends Controller
                     'content' => $request->input('content')
                 ]
             ], 'send_email_mass');
-        }
+        }, false);
 
         return response([
             'data' => true

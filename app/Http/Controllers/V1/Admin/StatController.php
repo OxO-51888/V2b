@@ -18,6 +18,7 @@ use App\Models\StatServer;
 use App\Models\StatUser;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\ClientGateway\OnlineDeviceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -25,8 +26,11 @@ class StatController extends Controller
 {
     public function getOverride(Request $request)
     {
+        $onlineDevices = app(OnlineDeviceService::class)->snapshot();
         return [
             'data' => [
+                'online_device' => $onlineDevices['count'],
+                'online_device_window_seconds' => $onlineDevices['window_seconds'],
                 'online_user' => User::where('t','>=', time() - 600)
                     ->count(),
                 'month_income' => Order::where('created_at', '>=', strtotime(date('Y-m-1')))
