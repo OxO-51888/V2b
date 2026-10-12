@@ -6,6 +6,7 @@ use App\Jobs\OrderHandleJob;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\User;
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Support\Facades\DB;
 
 class OrderService
@@ -28,77 +29,60 @@ class OrderService
 
     public function open()
     {
-        $order = $this->order;
-        $this->user = User::find($order->user_id);
-        if ($order->type == 9) {
-            DB::beginTransaction();
-            $this->user->balance += $order->total_amount + $this->getbounus($order->total_amount);
+        return DB::transaction(function () {
+            // Re-read under lock: queued jobs may hold a stale paid order.
+            $order = Order::where('id', $this->order->id)->lockForUpdate()->first();
+            if (!$order || (int)$order->status !== 1) return;
+            $this->order = $order;
+            $this->user = User::where('id', $order->user_id)->lockForUpdate()->first();
+            if (!$this->user) abort(500, '用户不存在');
 
-            if (!$this->user->save()) {
-                DB::rollBack();
-                abort(500, '充值失败');
+            if ($order->type == 9) {
+                $this->user->balance += $order->total_amount + $this->getbounus($order->total_amount);
+                if (!$this->user->save()) abort(500, '充值失败');
+                $order->status = 3;
+                if (!$order->save()) abort(500, '充值失败');
+                return;
             }
-            $order->status = 3;
-            if (!$order->save()) {
-                DB::rollBack();
-                abort(500, '充值失败');
+
+            $plan = Plan::find($order->plan_id);
+            if (!$plan) abort(500, '套餐不存在');
+            if ($order->refund_amount) {
+                $this->user->balance = $this->user->balance + $order->refund_amount;
             }
-            DB::commit();
-            return;
-        }
-
-        $plan = Plan::find($order->plan_id);
-
-        if ($order->refund_amount) {
-            $this->user->balance = $this->user->balance + $order->refund_amount;
-        }
-        DB::beginTransaction();
-        if ($order->surplus_order_ids) {
-            try {
+            if ($order->surplus_order_ids) {
                 Order::whereIn('id', $order->surplus_order_ids)->update([
                     'status' => 4
                 ]);
-            } catch (\Exception $e) {
-                DB::rollback();
-                abort(500, '开通失败');
             }
-        }
-        switch ((string)$order->period) {
-            case 'onetime_price':
-                $this->buyByOneTime($order, $plan);
-                break;
-            case 'reset_price':
-                $this->buyByResetTraffic();
-                break;
-            default:
-                $this->buyByPeriod($order, $plan);
-        }
+            switch ((string)$order->period) {
+                case 'onetime_price':
+                    $this->buyByOneTime($order, $plan);
+                    break;
+                case 'reset_price':
+                    $this->buyByResetTraffic();
+                    break;
+                default:
+                    $this->buyByPeriod($order, $plan);
+            }
 
-        switch ((int)$order->type) {
-            case 1:
-                $this->openEvent(config('v2board.new_order_event_id', 0));
-                break;
-            case 2:
-                $this->openEvent(config('v2board.renew_order_event_id', 0));
-                break;
-            case 3:
-                $this->openEvent(config('v2board.change_order_event_id', 0));
-                break;
-        }
+            switch ((int)$order->type) {
+                case 1:
+                    $this->openEvent(config('v2board.new_order_event_id', 0));
+                    break;
+                case 2:
+                    $this->openEvent(config('v2board.renew_order_event_id', 0));
+                    break;
+                case 3:
+                    $this->openEvent(config('v2board.change_order_event_id', 0));
+                    break;
+            }
 
-        $this->setSpeedLimit($plan->speed_limit);
-
-        if (!$this->user->save()) {
-            DB::rollBack();
-            abort(500, '开通失败');
-        }
-        $order->status = 3;
-        if (!$order->save()) {
-            DB::rollBack();
-            abort(500, '开通失败');
-        }
-
-        DB::commit();
+            $this->setSpeedLimit($plan->speed_limit);
+            if (!$this->user->save()) abort(500, '开通失败');
+            $order->status = 3;
+            if (!$order->save()) abort(500, '开通失败');
+        }, 3);
     }
 
 
@@ -257,13 +241,15 @@ class OrderService
     public function paid(string $callbackNo)
     {
         $order = $this->order;
-        if ($order->status !== 0) return true;
-        $order->status = 1;
-        $order->paid_at = time();
-        $order->callback_no = $callbackNo;
-        if (!$order->save()) return false;
+        $affected = Order::where('id', $order->id)->where('status', 0)->update([
+            'status' => 1,
+            'paid_at' => time(),
+            'callback_no' => $callbackNo
+        ]);
+        if ($affected !== 1) return true;
+        $order->refresh();
         try {
-            OrderHandleJob::dispatch($order->trade_no);
+            app(Dispatcher::class)->dispatch(new OrderHandleJob($order->trade_no));
         } catch (\Exception $e) {
             return false;
         }
@@ -272,22 +258,20 @@ class OrderService
 
     public function cancel():bool
     {
-        $order = $this->order;
-        DB::beginTransaction();
-        $order->status = 2;
-        if (!$order->save()) {
-            DB::rollBack();
-            return false;
-        }
-        if ($order->balance_amount) {
-            $userService = new UserService();
-            if (!$userService->addBalance($order->user_id, $order->balance_amount)) {
-                DB::rollBack();
-                return false;
+        return DB::transaction(function () {
+            $order = Order::where('id', $this->order->id)->lockForUpdate()->first();
+            if (!$order || (int)$order->status !== 0) return false;
+            $order->status = 2;
+            if (!$order->save()) abort(500, '取消失败');
+            if ($order->balance_amount) {
+                $userService = new UserService();
+                if (!$userService->addBalance($order->user_id, $order->balance_amount)) {
+                    abort(500, '退款失败');
+                }
             }
-        }
-        DB::commit();
-        return true;
+            $this->order = $order;
+            return true;
+        }, 3);
     }
 
     private function setSpeedLimit($speedLimit)

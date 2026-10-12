@@ -47,12 +47,16 @@ class CheckOrder extends Command
 
     protected function runTask()
     {
-        ini_set('memory_limit', -1);
-        $orders = Order::whereIn('status', [0, 1])
-            ->orderBy('created_at', 'ASC')
-            ->get();
-        foreach ($orders as $order) {
-            OrderHandleJob::dispatch($order->trade_no);
+        // Paid orders take priority; recent unpaid orders need no queued work.
+        $expiredAt = time() - 3600 * 2;
+        foreach ([1, 0] as $status) {
+            $orders = Order::where('status', $status);
+            if ($status === 0) $orders->where('created_at', '<=', $expiredAt);
+            $orders->select(['id', 'trade_no'])->chunkById(200, function ($orders) {
+                foreach ($orders as $order) {
+                    OrderHandleJob::dispatch($order->trade_no);
+                }
+            });
         }
     }
 }
