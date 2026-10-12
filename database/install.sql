@@ -188,7 +188,8 @@ CREATE TABLE `v2_order` (
                             PRIMARY KEY (`id`),
                             UNIQUE KEY `trade_no` (`trade_no`),
                             INDEX idx_user (`user_id`),
-                            INDEX idx_user_status (`user_id`, `status`)
+                            INDEX idx_user_status (`user_id`, `status`),
+                            INDEX idx_status_id (`status`, `id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -600,6 +601,14 @@ CREATE TABLE `v2_user` (
                            UNIQUE KEY `token` (`token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+CREATE TABLE IF NOT EXISTS `v2_accounting_receipt` (
+    `id` varchar(96) NOT NULL,
+    `digest` char(64) NOT NULL,
+    `created_at` int unsigned NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `accounting_receipt_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `community_identities` (
     `site` varchar(32) NOT NULL,

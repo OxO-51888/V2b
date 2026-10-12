@@ -20,6 +20,7 @@ class SendEmailJob implements ShouldQueue
     public $tries = 3;
     public $timeout = 10;
     public $maxExceptions;
+    public $backoff = [30, 120, 300];
     /**
      * Create a new job instance.
      *
@@ -84,6 +85,14 @@ class SendEmailJob implements ShouldQueue
         ];
 
         MailLog::create($log);
+        // Preserve the synchronous admin diagnostic response; queued failures must reach the worker.
+        if (isset($e) && $this->job) {
+            if ((int) $e->getCode() >= 500 && (int) $e->getCode() <= 599) {
+                $this->fail($e);
+            } else {
+                throw $e;
+            }
+        }
         $log['config'] = config('mail');
         return $log;
     }

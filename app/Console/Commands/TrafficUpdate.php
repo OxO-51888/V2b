@@ -3,10 +3,9 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\Services\ScheduledTaskLock;
+use App\Services\TrafficAccounting;
 
 class TrafficUpdate extends Command
 {
@@ -48,44 +47,10 @@ class TrafficUpdate extends Command
 
     protected function runTask()
     {
-        ini_set('memory_limit', -1);
         if (Redis::exists('traffic_reset_lock')) {
             return;
         }
-        $uploads = Redis::hgetall('v2board_upload_traffic');
-        Redis::del('v2board_upload_traffic');
-        $downloads = Redis::hgetall('v2board_download_traffic');
-        Redis::del('v2board_download_traffic');
-        if (empty($uploads) && empty($downloads)) {
-            return;
-        }
-
-        $users = User::whereIn('id', array_keys($downloads))->get(['id', 'u', 'd']);
-        $time = time();
-        $casesU = [];
-        $casesD = [];
-        $idList = [];
-
-        foreach ($users as $user) {
-            $upload = $uploads[$user->id] ?? 0;
-            $download = $downloads[$user->id] ?? 0;
-
-            $casesU[] = "WHEN {$user->id} THEN " . ($user->u + $upload);
-            $casesD[] = "WHEN {$user->id} THEN " . ($user->d + $download);
-            $idList[] = $user->id;
-        }
-        $idListStr = implode(',', $idList);
-        $casesUStr = implode(' ', $casesU);
-        $casesDStr = implode(' ', $casesD);
-        $sql = "UPDATE v2_user SET u = CASE id {$casesUStr} END, d = CASE id {$casesDStr} END, t = {$time}, updated_at = {$time} WHERE id IN ({$idListStr})";
-        try {
-            DB::beginTransaction();
-            DB::statement($sql);
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('流量更新失败: ' . $e->getMessage());
-            return;
-        }
+        app(TrafficAccounting::class)->drain();
+        return 0;
     }
 }

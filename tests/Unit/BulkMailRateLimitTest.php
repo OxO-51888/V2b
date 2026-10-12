@@ -141,6 +141,32 @@ class BulkMailRateLimitTest extends TestCase
         $this->assertSame('Fixture SMTP failure', $this->database->getConnection()->table('v2_mail_log')->value('error'));
     }
 
+    public function test_queued_transient_error_reaches_retry_handler_after_logging(): void
+    {
+        $this->limiter(1);
+        Mail::shouldReceive('send')->once()->andThrow(new \RuntimeException('Fixture temporary SMTP failure', 421));
+        $queued = Mockery::mock(Job::class);
+        $queued->shouldReceive('fail')->never();
+        $job = new SendEmailJob($this->params(), 'send_email_mass');
+        $job->setJob($queued);
+        try { $job->handle(); $this->fail('Queued failure must be retried'); }
+        catch (\RuntimeException $e) { $this->assertSame(421, $e->getCode()); }
+        $this->assertSame([30, 120, 300], $job->backoff);
+        $this->assertSame('Fixture temporary SMTP failure', $this->database->getConnection()->table('v2_mail_log')->value('error'));
+    }
+
+    public function test_queued_permanent_smtp_rejection_is_failed_without_retrying(): void
+    {
+        $this->limiter(1);
+        $error = new \RuntimeException('Fixture permanent SMTP rejection', 550);
+        Mail::shouldReceive('send')->once()->andThrow($error);
+        $queued = Mockery::mock(Job::class);
+        $queued->shouldReceive('fail')->once()->with($error);
+        $job = new SendEmailJob($this->params(), 'send_email_mass');
+        $job->setJob($queued);
+        $this->assertSame('Fixture permanent SMTP rejection', $job->handle()['error']);
+    }
+
     public function test_serialized_queue_payload_preserves_exception_limit_without_attempt_limit(): void
     {
         $queue = new SyncQueue();

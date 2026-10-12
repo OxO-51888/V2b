@@ -3,197 +3,88 @@
 namespace App\Console\Commands;
 
 use App\Models\Plan;
-use Illuminate\Console\Command;
 use App\Models\User;
+use App\Services\AccountingReceipt;
+use App\Services\ScheduledTaskLock;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use App\Services\TelegramService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
 class ResetTraffic extends Command
 {
-    protected $builder;
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'reset:traffic';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = '流量清空';
 
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-        $this->builder = User::where('expired_at', '!=', NULL)
-            ->where('expired_at', '>', time());
-    }
-
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
     public function handle()
     {
-        ini_set('memory_limit', -1);
+        $locks = app(ScheduledTaskLock::class);
+        return $locks->run('reset:traffic', function () use ($locks) {
+            return $locks->run('traffic:update', function () { return $this->runTask(time()); }, 60);
+        });
+    }
+
+    protected function runTask(int $now): int
+    {
+        $receipts = app(AccountingReceipt::class);
+        $receipts->assertReady();
+        $day = date('Y-m-d', $now);
+        $dayKey = 'reset:day:' . $day;
+        if (DB::table('v2_accounting_receipt')->where('id', $dayKey)->exists()) return 0;
+        $previous = DB::table('v2_accounting_receipt')->where('id', 'like', 'reset:day:%')
+            ->orderByDesc('id')->value('id');
+        if ($previous && substr($previous, 10) < date('Y-m-d', strtotime('-1 day', $now))) {
+            // Never erase newer usage to compensate for an unobserved historic reset.
+            Log::warning('Scheduled traffic reset missed a day; historical usage requires review', ['last_day' => substr($previous, 10)]);
+        }
+
         Redis::setex('traffic_reset_lock', 300, 1);
-        $resetMethods = Plan::select(
-            DB::raw("GROUP_CONCAT(`id`) as plan_ids"),
-            DB::raw("reset_traffic_method as method")
-        )
-            ->groupBy('reset_traffic_method')
-            ->get()
-            ->toArray();
-        foreach ($resetMethods as $resetMethod) {
-            $planIds = explode(',', $resetMethod['plan_ids']);
-            switch (true) {
-                case ($resetMethod['method'] === NULL): {
-                    $resetTrafficMethod = config('v2board.reset_traffic_method', 0);
-                    $builder = with(clone($this->builder))->whereIn('plan_id', $planIds);
-                    switch ((int)$resetTrafficMethod) {
-                        // month first day
-                        case 0:
-                            $this->resetByMonthFirstDay($builder);
-                            break;
-                        // expire day
-                        case 1:
-                            $this->resetByExpireDay($builder);
-                            break;
-                        // no action
-                        case 2:
-                            break;
-                        // year first day
-                        case 3:
-                            $this->resetByYearFirstDay($builder);
-                        // year expire day
-                        case 4:
-                            $this->resetByExpireYear($builder);
-                    }
-                    break;
-                }
-                case ($resetMethod['method'] === 0): {
-                    $builder = with(clone($this->builder))->whereIn('plan_id', $planIds);
-                    $this->resetByMonthFirstDay($builder);
-                    break;
-                }
-                case ($resetMethod['method'] === 1): {
-                    $builder = with(clone($this->builder))->whereIn('plan_id', $planIds);
-                    $this->resetByExpireDay($builder);
-                    break;
-                }
-                case ($resetMethod['method'] === 2): {
-                    break;
-                }
-                case ($resetMethod['method'] === 3): {
-                    $builder = with(clone($this->builder))->whereIn('plan_id', $planIds);
-                    $this->resetByYearFirstDay($builder);
-                    break;
-                }
-                case ($resetMethod['method'] === 4): {
-                    $builder = with(clone($this->builder))->whereIn('plan_id', $planIds);
-                    $this->resetByExpireYear($builder);
-                    break;
-                }
-            }
+        try {
+            User::whereNotNull('expired_at')->where('expired_at', '>', $now)->select('id')
+                ->chunkById(200, function ($page) use ($now, $day, $receipts) {
+                    Redis::setex('traffic_reset_lock', 300, 1);
+                    DB::transaction(function () use ($page, $now, $day, $receipts) {
+                        $users = User::whereIn('id', $page->pluck('id'))->orderBy('id')->lockForUpdate()
+                            ->get(['id', 'plan_id', 'expired_at']);
+                        $plans = Plan::whereIn('id', $users->pluck('plan_id')->unique())
+                            ->get(['id', 'reset_traffic_method'])->keyBy('id');
+                        $ids = [];
+                        foreach ($users as $user) {
+                            if ($user->expired_at === null || $user->expired_at <= $now || !isset($plans[$user->plan_id])) continue;
+                            $method = $plans[$user->plan_id]->reset_traffic_method;
+                            $method = $method === null ? (int) config('v2board.reset_traffic_method', 0) : (int) $method;
+                            if (!$this->due($method, (int) $user->expired_at, $now)) continue;
+                            if ($receipts->claim('reset:user:' . $user->id . ':' . $day, hash('sha256', 'scheduled-reset'))) {
+                                $ids[] = $user->id;
+                            }
+                        }
+                        if ($ids) User::whereIn('id', $ids)->update(['u' => 0, 'd' => 0]);
+                    }, 3);
+                });
+            $receipts->once($dayKey, hash('sha256', 'scheduled-reset-completed'), function () {});
+        } finally {
+            Redis::del('traffic_reset_lock');
         }
-        Redis::del('traffic_reset_lock');
+        return 0;
     }
 
-    private function resetByExpireYear($builder): void
+    private function due(int $method, int $expires, int $now): bool
     {
-        $users = [];
-        foreach ($builder->get() as $item) {
-            $expireDay = date('m-d', $item->expired_at);
-            $today = date('m-d');
-            if ($expireDay === $today) {
-                array_push($users, $item->id);
-            }
-        }
-        $this->retryTransaction(function () use ($users) {
-            User::whereIn('id', $users)->update([
-                'u' => 0,
-                'd' => 0
-            ]);
-        });
-    }
-
-    private function resetByYearFirstDay($builder): void
-    {
-        if ((string)date('md') === '0101') {
-            $this->retryTransaction(function () use ($builder) {
-                $builder->update([
-                    'u' => 0,
-                    'd' => 0
-                ]);
-            });
-        }
-    }
-
-    private function resetByMonthFirstDay($builder): void
-    {
-        if ((string)date('d') === '01') {
-            $this->retryTransaction(function () use ($builder) {
-                $builder->update([
-                    'u' => 0,
-                    'd' => 0
-                ]);
-            });
-        }
-    }
-
-    private function resetByExpireDay($builder): void
-    {
-        $lastDay = date('t');
-        $users = [];
-        $today = date('d');
-        foreach ($builder->get() as $item) {
-            $expireDay = date('d', $item->expired_at);
-
-            if (($expireDay === $today) ||(($today === $lastDay) && $expireDay >= $lastDay)) {
-                if (time() < $item->expired_at - 2160000) {
-                    array_push($users, $item->id);
-                }
-            }
-
-        }
-        $this->retryTransaction(function () use ($users) {
-            User::whereIn('id', $users)->update([
-                'u' => 0,
-                'd' => 0
-            ]);
-        });
-    }
-
-    private function retryTransaction($callback)
-    {
-        $attempts = 0;
-        $maxAttempts = 3;
-        while ($attempts < $maxAttempts) {
-            try {
-                DB::transaction($callback);
-                return;
-            } catch (\Exception $e) {
-                $attempts++;
-                if ($attempts >= $maxAttempts || strpos($e->getMessage(), '40001') === false && strpos(strtolower($e->getMessage()), 'deadlock') === false) {
-                    $telegramService = new TelegramService();
-                    $message = sprintf(
-                        date('Y/m/d H:i:s') . "用户流量重置失败：" . $e->getMessage()
-                    );
-                    $telegramService->sendMessageWithAdmin($message);
-                    abort(500, '用户流量重置失败'. $e->getMessage());
-                }
-                sleep(5);
-            }
+        switch ($method) {
+            case 0:
+                return date('d', $now) === '01';
+            case 1:
+                $today = date('d', $now);
+                $last = date('t', $now);
+                $expireDay = date('d', $expires);
+                return ($expireDay === $today || ($today === $last && $expireDay >= $last))
+                    && $now < $expires - 2160000;
+            case 3:
+                return date('md', $now) === '0101';
+            case 4:
+                return date('m-d', $expires) === date('m-d', $now);
+            default:
+                return false;
         }
     }
 }

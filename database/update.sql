@@ -876,6 +876,16 @@ CREATE TABLE IF NOT EXISTS `v2_giftcard_redemption` (
                                         KEY `idx_giftcard_created` (`giftcard_id`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `v2_accounting_receipt` (
+    `id` varchar(96) NOT NULL,
+    `digest` char(64) NOT NULL,
+    `created_at` int unsigned NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `accounting_receipt_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE `v2_order` ADD INDEX `idx_status_id` (`status`, `id`);
+
 CREATE TABLE IF NOT EXISTS `community_identities` (
     `site` varchar(32) NOT NULL,
     `user_id` bigint unsigned NOT NULL,

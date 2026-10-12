@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="../vendor/autoload.php" colors="true" failOnWarning="true" processIsolation="true">
+    <testsuites>
+        <testsuite name="Accounting and Memory Safety (isolated SQLite)">
+            <file>Unit/AccountingSafetyTest.php</file>
+            <file>Unit/SafeLogDataTest.php</file>
+            <file>Unit/BulkMailRateLimitTest.php</file>
+            <file>Unit/OrderConcurrencyTest.php</file>
+            <file>Unit/ScheduledTaskLockTest.php</file>
+            <file>Unit/PlanTrafficQuotaTest.php</file>
+        </testsuite>
+    </testsuites>
+</phpunit>

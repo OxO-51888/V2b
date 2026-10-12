@@ -10,6 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use App\Services\AccountingReceipt;
 
 class StatUserJob implements ShouldQueue
 {
@@ -18,6 +19,8 @@ class StatUserJob implements ShouldQueue
     protected $server;
     protected $protocol;
     protected $recordType;
+    protected $reportedAt;
+    protected $receiptId;
 
     public $tries = 3;
     public $timeout = 60;
@@ -34,6 +37,8 @@ class StatUserJob implements ShouldQueue
         $this->server = $server;
         $this->protocol = $protocol;
         $this->recordType = $recordType;
+        $this->reportedAt = time();
+        $this->receiptId = bin2hex(random_bytes(16));
     }
 
     /**
@@ -43,59 +48,34 @@ class StatUserJob implements ShouldQueue
      */
     public function handle()
     {
-        $recordAt = strtotime(date('Y-m-d'));
-        if ($this->recordType === 'm') {
-            //
-        }
-        $attempt = 0;
-        $maxAttempts = 3;
-        $existingData = StatUser::where('record_at', $recordAt)
-        ->where('server_rate', $this->server['rate'])
-        ->whereIn('user_id', array_keys($this->data))
-        ->select(['user_id', 'id', 'u', 'd'])
-        ->get()
-        ->keyBy('user_id');
-
-        $insertData = [];
-        while ($attempt < $maxAttempts) {
-            try {
-                DB::beginTransaction();
-                foreach($this->data as $userId => $trafficData){
-                    if (isset($existingData[$userId])) {
-                        $userdata = StatUser::where('id', $existingData[$userId]['id'])->first();
-                        $userdata->update([
-                            'u' => $userdata['u'] + $trafficData[0],
-                            'd' => $userdata['d'] + $trafficData[1]
-                        ]);
-                    } else {
-                        $insertData[] = [
-                            'user_id' => $userId,
-                            'server_rate' => $this->server['rate'],
-                            'u' => $trafficData[0],
-                            'd' => $trafficData[1],
-                            'record_type' => $this->recordType,
-                            'record_at' => $recordAt
-                        ];
-                    }
-                }
-                if (!empty($insertData)) {
-                    collect($insertData)->chunk(500)->each(function ($chunk) {
-                        StatUser::upsert($chunk->toArray(), ['user_id', 'server_rate', 'record_at']);
-                    });
-                }
-                DB::commit();
-                return;
-            } catch (\Exception $e) {
-                DB::rollback();
-                if (strpos($e->getMessage(), '40001') !== false || strpos(strtolower($e->getMessage()), 'deadlock') !== false) {
-                    $attempt++;
-                    if ($attempt < $maxAttempts) {
-                        sleep(pow(2, $attempt));
-                        continue;
-                    }
-                }
-                abort(500, '用户统计数据失败'. $e->getMessage());
+        $recordAt = strtotime(date('Y-m-d', $this->reportedAt ?? time()));
+        if ($recordAt < strtotime('-2 month')) return;
+        $this->receiptId = $this->receiptId ?? ($this->job ? $this->job->getJobId() : bin2hex(random_bytes(16)));
+        $rows = [];
+        $chunk = 0;
+        foreach ($this->data as $userId => $trafficData) {
+            $rows[] = ['user_id' => $userId, 'server_rate' => $this->server['rate'],
+                'u' => $trafficData[0], 'd' => $trafficData[1],
+                'record_type' => $this->recordType, 'record_at' => $recordAt];
+            if (count($rows) === 250) {
+                $this->writeChunk($rows, $chunk++);
+                $rows = [];
             }
         }
+        if ($rows) $this->writeChunk($rows, $chunk);
+    }
+
+    private function writeChunk(array $rows, int $chunk): void
+    {
+        usort($rows, function ($a, $b) { return $a['user_id'] <=> $b['user_id']; });
+        app(AccountingReceipt::class)->once('stat:' . $this->receiptId . ':' . $chunk,
+            hash('sha256', json_encode($rows)), function () use ($rows) {
+                $mysql = DB::connection()->getDriverName() === 'mysql';
+                StatUser::upsert($rows, ['user_id', 'server_rate', 'record_at'], [
+                    'u' => DB::raw('v2_stat_user.u + ' . ($mysql ? 'VALUES(u)' : 'excluded.u')),
+                    'd' => DB::raw('v2_stat_user.d + ' . ($mysql ? 'VALUES(d)' : 'excluded.d')),
+                    'updated_at',
+                ]);
+            });
     }
 }

@@ -17,28 +17,31 @@ class MysqlLoggerHandler extends AbstractProcessingHandler
     protected function write(array $record): void
     {
         try{
-            if(isset($record['context']['exception']) && is_object($record['context']['exception'])){
-                $record['context']['exception'] = (array)$record['context']['exception'];
-            }
-            $record['request_data'] = request()->all() ??[];
+            $request = request();
+            $safe = new SafeLogData();
+            $body = $request->isJson() ? $request->json()->all() : $request->request->all();
+            $query = $request->query->all();
+            $safe->rememberSecrets($body);
+            $safe->rememberSecrets($query);
+            $safe->rememberSecrets($record['context'] ?? []);
             $log = [
-                'title' => $record['message'],
+                'title' => $safe->message($record['message']),
                 'level' => $record['level_name'],
-                'host' => $record['request_host'] ?? request()->getSchemeAndHttpHost(),
-                'uri' => $record['request_uri'] ?? request()->getRequestUri(),
-                'method' => $record['request_method'] ?? request()->getMethod(),
-                'ip' => request()->getClientIp(),
-                'data' => json_encode($record['request_data']) ,
-                'context' => isset($record['context']) ? json_encode($record['context']) : '',
-                'created_at' => strtotime($record['datetime']),
-                'updated_at' => strtotime($record['datetime']),
+                'host' => $request->getSchemeAndHttpHost(),
+                'uri' => $safe->uri($request),
+                'method' => $request->getMethod(),
+                'ip' => $request->getClientIp(),
+                'data' => $safe->json(['body' => $safe->fields($body), 'query' => $safe->fields($query)]),
+                'context' => $safe->json($safe->fields($record['context'] ?? [])),
+                'created_at' => $record['datetime'] instanceof \DateTimeInterface ? $record['datetime']->getTimestamp() : strtotime($record['datetime']),
+                'updated_at' => $record['datetime'] instanceof \DateTimeInterface ? $record['datetime']->getTimestamp() : strtotime($record['datetime']),
             ];
 
             LogModel::insert(
                 $log
             );
         }catch (\Exception $e){
-            Log::channel('daily')->error($e->getMessage().$e->getFile().$e->getTraceAsString());
+            Log::channel('daily')->error('Database log write failed', ['class' => get_class($e), 'code' => $e->getCode()]);
         }
     }
 }
