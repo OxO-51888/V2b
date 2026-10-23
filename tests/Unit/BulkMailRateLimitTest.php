@@ -5,9 +5,11 @@ namespace Tests\Unit;
 use App\Jobs\SendEmailJob;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Queue\Job;
+use Illuminate\Contracts\Encryption\Encrypter as EncrypterContract;
 use Illuminate\Database\Capsule\Manager;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Application;
+use Illuminate\Encryption\Encrypter;
 use Illuminate\Queue\SyncQueue;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Mail;
@@ -28,6 +30,7 @@ class BulkMailRateLimitTest extends TestCase
             'v2board' => ['email_template' => 'default'],
             'queue' => ['connections' => ['redis' => ['connection' => 'default']]],
         ]));
+        $this->app->instance(EncrypterContract::class, new Encrypter(str_repeat('x', 32), 'AES-256-CBC'));
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication($this->app);
         Redis::swap(Mockery::mock());
@@ -179,7 +182,7 @@ class BulkMailRateLimitTest extends TestCase
             $this->assertSame($tries, $payload['maxTries']);
             $this->assertSame($name === 'send_email_mass' ? 3 : null, $payload['maxExceptions']);
             $this->assertSame(10, $payload['timeout']);
-            $restored = unserialize($payload['data']['command']);
+            $restored = unserialize($this->app->make(EncrypterContract::class)->decrypt($payload['data']['command']));
             $this->assertSame($name, $restored->queue);
             $this->assertSame($tries, $restored->tries);
         }

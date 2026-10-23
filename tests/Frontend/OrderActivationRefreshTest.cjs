@@ -72,7 +72,11 @@ async function app(t, options = {}) {
     }
     elapsed = end; await flush();
   }
-  async function navigate(route) {N.go(route); await flush(); await flush();}
+  async function navigate(route) {
+    N.go(route);
+    // jsdom schedules hashchange through the same fake window timers.
+    await tick(0); await flush();
+  }
   return {w, N, calls, errors, intercept, tick, navigate, now: () => elapsed,
     checks: () => calls.filter(call => call.url === '/user/order/check'),
     assertActive: () => {

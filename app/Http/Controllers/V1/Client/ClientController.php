@@ -56,11 +56,11 @@ class ClientController extends Controller
             }
             if (strpos($flag, 'sing') !== false) {
                 $version = null;
-                if (preg_match('/sing-box\s+([0-9.]+)/i', $flag, $matches)) {
+                if (preg_match('/sing-box\s+([0-9.]+(?:-[0-9a-z.-]+)?)/i', $flag, $matches)) {
                     $version = $matches[1];
                 }
                 if (!is_null($version) && version_compare($version, '1.12.0', '>=')) {
-                    $class = new Singbox($user, $servers);
+                    $class = new Singbox($user, $servers, ['client_version' => $version]);
                 } else {
                     $class = new SingboxOld($user, $servers);
                 }
@@ -95,10 +95,10 @@ class ClientController extends Controller
         if (strpos($text, 'shadowrocket') !== false) return 'shadowrocket';
         if (strpos($text, 'quantumult%20x') !== false || strpos($text, 'quantumult x') !== false || strpos($text, 'quantumultx') !== false) return 'quantumult%20x';
         if (strpos($text, 'hiddify') !== false) return 'sing-box 1.11.0';
-        if (preg_match('/\b(?:sfa|sfi)\/?([0-9.]+)?\b/i', $text, $matches)) {
+        if (preg_match('/\b(?:sfa|sfi)\/?([0-9.]+(?:-[0-9a-z.-]+)?)?\b/i', $text, $matches)) {
             return !empty($matches[1]) ? 'sing-box ' . $matches[1] : 'sing-box 1.12.0';
         }
-        if (preg_match('/sing[- ]?box[\/\s]+([0-9.]+)/i', $text, $matches)) return 'sing-box ' . $matches[1];
+        if (preg_match('/sing[- ]?box[\/\s]+([0-9.]+(?:-[0-9a-z.-]+)?)/i', $text, $matches)) return 'sing-box ' . $matches[1];
         if (strpos($text, 'sing-box') !== false || strpos($text, 'singbox') !== false) return 'sing-box 1.12.0';
         if (strpos($text, 'stash') !== false) return 'stash';
         if (strpos($text, 'surge') !== false) return 'surge';

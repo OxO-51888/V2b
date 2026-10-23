@@ -113,7 +113,7 @@ class AiRiskService
                         '知识条目有适用条件，不能机械拼接。若多个知识建议冲突，选择符合最新事实的部分。只读摘要没包含周期执行、证书或服务端状态时，应说明需人工核对，不能认定已经正常或已经修复。',
                         '只有本站国内站打不开才建议本地网络、Google Chrome和发布页国内站入口；这不是访问Google、Gemini等海外服务的建议。订阅入口变更必须有明确当前证据，历史命中不能证明本次链接失效。',
                         '工单是留言不是即时聊天。用户要求人工则不继续自动排查。不要索要邮箱、密码、完整IP、完整订阅链接或图片；即使说已在群里发图，没有图片内容也不能假装看到了。',
-                        '结合handoff_state和消息中的is_ai判断当前人工请求。真人回复会结束此前的人工等待；最新用户明确取消人工后可以回答新问题，不能引用已结束的旧要求。新提出的人工请求仍必须停止。',
+                        '同一工单只要用户曾要求人工，就持续由人工处理，后续追问、真人回复或取消人工的消息都不能恢复自动回复。handoff_state为pending时必须停止。',
                         '用户说已经好了，只简短确认，不再排查。用户没有说应用名称时，不把TestFlight等通用商店提示当成某个特定应用，也不编造菜单路径。',
                         '不要说已转交、已安排、已通知、正在检查、等待我处理或保证恢复。需要人工时说明需人工核对哪件事即可；不写“我帮你继续看”“如果方便再发一下版本和报错”等无必要结尾。',
                         'selected_examples仅用于学习简洁表达，旧方案可能过期。不要复制其中诊断、已执行操作、站点、版本、链接或客户信息。付款订单与提现不由AI处理。'
@@ -138,7 +138,7 @@ class AiRiskService
         $review = $this->callTicketModel($config, [
             [
                 'role' => 'system',
-                'content' => '你是独立的工单回复复核员，不沿用初稿结论。以用户明确事实和适用知识为准，历史客服和初稿可能错误。检查：诊断是否有证据、是否前后矛盾、是否重复索取已给信息、是否重复用户试过或不能做的操作、是否编造软件支持/后台操作、是否给无关建议。发现问题应修正；关键阶段未知时可只问一个澄清问题，不必一律转人工。本站已确认的旧版Clash Meta订阅导入x509 unknown authority/Trust anchor问题，应说明客户端版本过低并指引教程页新版，不改为证书兼容问题或通用证书排查，不因缺少版本号忽略已知原因。仅写Clash时可建议教程页新版，不补造客户端名。必须看x509后面的错误：certificate has expired/not yet valid是证书时间问题，certificate is valid for ... not ...是域名不匹配，绝不能改答版本低。已按教程升级仍失败、其他客户端或节点连接失败也不套导入版本结论。URL保存或Get订阅地址已说明阶段，不重复询问；阶段未知不能认定入口。付款、订单、提现及仍有效的人工请求一律safe_to_send=false，不生成确认或转交回复；付款判断要结合标题与追问，区分明确否定付款问题。真人回复或用户取消已结束的旧人工请求不能沿用。用户确认恢复后可简短复述，但不能声称你执行了修复。保留客户端原名、事实中的否定和条件；不把流量重置日当到期日。只输出JSON对象，格式为{"safe_to_send":true,"skip_reason":"","reply":"给客户的完整回复"}。skip_reason仅可为空、human_requested或payment_order；只有可靠且允许回复才为true。reply以“亲亲，我是 AI 小助手。”开头，通常2-3句，不超过220字，最多问一个必要信息。禁止索要邮箱、密码、完整订阅或截图，也不让客户转到群里发图；禁止虚构已转人工或已处理。'
+                'content' => '你是独立的工单回复复核员，不沿用初稿结论。以用户明确事实和适用知识为准，历史客服和初稿可能错误。检查：诊断是否有证据、是否前后矛盾、是否重复索取已给信息、是否重复用户试过或不能做的操作、是否编造软件支持/后台操作、是否给无关建议。发现问题应修正；关键阶段未知时可只问一个澄清问题，不必一律转人工。本站已确认的旧版Clash Meta订阅导入x509 unknown authority/Trust anchor问题，应说明客户端版本过低并指引教程页新版，不改为证书兼容问题或通用证书排查，不因缺少版本号忽略已知原因。仅写Clash时可建议教程页新版，不补造客户端名。必须看x509后面的错误：certificate has expired/not yet valid是证书时间问题，certificate is valid for ... not ...是域名不匹配，绝不能改答版本低。已按教程升级仍失败、其他客户端或节点连接失败也不套导入版本结论。URL保存或Get订阅地址已说明阶段，不重复询问；阶段未知不能认定入口。付款、订单、提现及用户曾要求人工的工单一律safe_to_send=false，不生成确认或转交回复；付款判断要结合标题与追问，区分明确否定付款问题。同一工单的人工请求不能因真人回复、后续追问或用户取消而恢复自动回复。用户确认恢复后可简短复述，但不能声称你执行了修复。保留客户端原名、事实中的否定和条件；不把流量重置日当到期日。只输出JSON对象，格式为{"safe_to_send":true,"skip_reason":"","reply":"给客户的完整回复"}。skip_reason仅可为空、human_requested或payment_order；只有可靠且允许回复才为true。reply以“亲亲，我是 AI 小助手。”开头，通常2-3句，不超过220字，最多问一个必要信息。禁止索要邮箱、密码、完整订阅或截图，也不让客户转到群里发图；禁止虚构已转人工或已处理。'
             ],
             [
                 'role' => 'user',
@@ -680,24 +680,27 @@ class AiRiskService
 
     private function ticketHumanRequested(array $context)
     {
+        if (!empty($context['ticket']['human_requested'])) {
+            return true;
+        }
         $messages = (array)($context['ticket']['messages'] ?? []);
+        $messages[] = ['from' => 'user', 'message' => (string)($context['ticket']['subject'] ?? '')];
         $messages[] = ['from' => 'user', 'message' => (string)($context['question'] ?? '')];
-        foreach (array_reverse($messages) as $message) {
-            $text = (string)($message['message'] ?? '');
-            if (($message['from'] ?? '') === 'staff') {
-                if (!$this->ticketMessageIsAi($message)) {
-                    break;
-                }
+        foreach ($messages as $message) {
+            if (($message['from'] ?? '') === 'user' && $this->ticketTextRequestsHuman((string)($message['message'] ?? ''))) {
+                return true;
             }
-            if (($message['from'] ?? '') === 'user') {
-                foreach (array_reverse(preg_split('/[。！？，,；;\n]+|但是|不过|而是/u', $text)) as $clause) {
-                    if (preg_match('/不用人工|不需要人工|不要转人工|取消人工|不必人工|继续用AI|继续让AI|让机器人继续/iu', $clause)) {
-                        return false;
-                    }
-                    if (preg_match('/^(?:人工|人工客服|人工回复|真人客服)[！!。\s]*$|(?:请|麻烦|安排|转|找|要|换|联系|让|叫|由|希望).{0,10}(?:人工|真人)|(?:人工|真人).{0,8}(?:回复|接手|处理|来答|服务)|(?:不要|别再|停止|别用|不想要).{0,6}(?:机器人|自动回复|AI|小助手)/iu', $clause)) {
-                        return true;
-                    }
-                }
+        }
+        return false;
+    }
+
+    public function ticketTextRequestsHuman(string $text): bool
+    {
+        foreach (preg_split('/[。！？，,!?；;\r\n]+|但是|不过|而是/u', $text) as $clause) {
+            // A negated request alone is not a handoff, but never cancels an earlier one.
+            $clause = preg_replace('/(?:不用|不需要|无需|不要|不必|取消)(?:再)?(?:找|转接|转|联系|安排)?(?:人工|真人)(?:客服|回复|处理)?/u', '', $clause);
+            if (preg_match('/^(?:人工|人工客服|人工回复|真人|真人客服)\s*$|(?:请|麻烦|安排|转|找|要|换|联系|让|叫|由|希望|有没有).{0,10}(?:人工|真人)|(?:人工|真人).{0,8}(?:回复|接手|处理|来答|服务|在哪|在吗|呢|介入)|(?:不要|别再|停止|别用|不想要|不需要|不用).{0,6}(?:机器人|自动回复|AI|小助手)/iu', trim($clause))) {
+                return true;
             }
         }
         return false;

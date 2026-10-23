@@ -48,9 +48,9 @@ class TicketAiReplyTest extends TestCase
         ]]];
         $this->assertSame('human_requested', $service->ticketAutoReplySkipReason($context));
         $context['ticket']['messages'][] = ['from' => 'staff', 'message' => '已经核对，请再试一次。', 'is_ai' => false];
-        $this->assertSame('', $service->ticketAutoReplySkipReason($context));
+        $this->assertSame('human_requested', $service->ticketAutoReplySkipReason($context));
         $context['question'] = '不用人工，继续让AI回答';
-        $this->assertSame('', $service->ticketAutoReplySkipReason($context));
+        $this->assertSame('human_requested', $service->ticketAutoReplySkipReason($context));
     }
 
     public function test_money_questions_skip_and_plan_change_is_not_a_payment_error(): void
@@ -122,24 +122,63 @@ class TicketAiReplyTest extends TestCase
         }
     }
 
-    public function test_human_intent_variants_and_latest_cancellation(): void
+    public function test_human_intent_variants_and_followups_remain_manual(): void
     {
         $service = new AiRiskService();
-        foreach (['人工回复', '麻烦安排真人接手处理，不要AI再答了。', '能帮我联系人工吗', '不要机器人回答', '不用AI，要人工处理'] as $question) {
+        foreach (['人工回复', '麻烦安排真人接手处理，不要AI再答了。', '能帮我联系人工吗', '不要机器人回答', '不用AI，要人工处理', '人工呢？', '有没有人工客服？', '不需要AI回复'] as $question) {
             $this->assertSame('human_requested', $service->ticketAutoReplySkipReason(['question' => $question]));
         }
         $context = ['question' => '不需要人工了，继续让AI回答。', 'ticket' => ['messages' => [
             ['from' => 'user', 'message' => '人工回复'],
             ['from' => 'staff', 'message' => '请说明问题', 'is_ai' => true]
         ]]];
-        $this->assertSame('', $service->ticketAutoReplySkipReason($context));
+        $this->assertSame('human_requested', $service->ticketAutoReplySkipReason($context));
         $context['question'] = '现在只有YouTube不能打开';
         $context['ticket']['messages'][] = ['from' => 'staff', 'message' => '上个问题处理好了', 'is_ai' => false];
-        $this->assertSame('', $service->ticketAutoReplySkipReason($context));
+        $this->assertSame('human_requested', $service->ticketAutoReplySkipReason($context));
         $model = $this->invoke('ticketModelContext', [$context]);
-        $this->assertSame('no_pending_request', $model['handoff_state']);
+        $this->assertSame('pending', $model['handoff_state']);
         $this->assertTrue($model['ticket']['messages'][1]['is_ai']);
         $this->assertFalse($model['ticket']['messages'][2]['is_ai']);
+    }
+
+    public function test_handoff_remains_after_staff_reply(): void
+    {
+        $context = ['question' => '还是连接超时', 'ticket' => ['messages' => [
+            ['from' => 'user', 'message' => '请转人工'],
+            ['from' => 'staff', 'message' => '请更换节点再试', 'is_ai' => false]
+        ]]];
+        $this->assertSame('human_requested', (new AiRiskService())->ticketAutoReplySkipReason($context));
+    }
+
+    public function test_subject_and_full_history_handoff_flag_block_publication(): void
+    {
+        $service = new AiRiskService();
+        foreach ([['subject' => '人工客服'], ['human_requested' => true]] as $ticket) {
+            $context = ['question' => '节点超时', 'ticket' => $ticket];
+            $this->assertSame('human_requested', $service->ticketAutoReplySkipReason($context));
+            $this->assertSame('human_requested', $service->ticketAutoPublishBlockReason('亲亲，我是 AI 小助手。请更换节点。', $context));
+            try {
+                $service->generateTicketReplyDraft($context, []);
+                $this->fail('Handoff must stop before model access');
+            } catch (\RuntimeException $exception) {
+                $this->assertSame('This ticket requires manual handling', $exception->getMessage());
+            }
+        }
+    }
+
+    public function test_negated_or_staff_only_requests_do_not_stop_normal_tickets(): void
+    {
+        $service = new AiRiskService();
+        foreach (['不用人工，继续让AI回答', '不需要人工客服', '不要转人工', '取消人工', '无需人工处理', '节点超时'] as $question) {
+            $context = ['question' => $question, 'ticket' => ['messages' => [
+                ['from' => 'staff', 'message' => '请转人工', 'is_ai' => false],
+                ['from' => 'staff', 'message' => '亲亲，我是 AI 小助手。需要人工处理', 'is_ai' => true]
+            ]]];
+            $this->assertSame('', $service->ticketAutoReplySkipReason($context), $question);
+        }
+        $this->assertSame('human_requested', $service->ticketAutoReplySkipReason(['question' => '不用AI，转人工']));
+        $this->assertSame('human_requested', $service->ticketAutoReplySkipReason(['question' => '不需要人工，不过现在请转人工']));
     }
 
     public function test_payment_followups_use_subject_and_history_regardless_of_length(): void

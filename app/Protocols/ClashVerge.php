@@ -3,6 +3,7 @@
 namespace App\Protocols;
 
 use App\Utils\Helper;
+use App\Utils\Hysteria2ClientWindows;
 use Symfony\Component\Yaml\Yaml;
 
 class ClashVerge
@@ -462,7 +463,7 @@ class ClashVerge
             $array['protocol'] = 'udp';
         }
 
-        return $array;
+        return Hysteria2ClientWindows::mihomo($array);
     }
 
     private function buildHysteria2($password, $server)
@@ -494,7 +495,7 @@ class ClashVerge
             $array['obfs'] = $server['obfs'];
             $array['obfs-password'] = $server['obfs_password'];
         }
-        return $array;
+        return Hysteria2ClientWindows::mihomo($array);
     }
 
     private function isMatch($exp, $str)

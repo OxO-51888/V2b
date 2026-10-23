@@ -60,6 +60,8 @@ class EPay {
 
     public function notify($params)
     {
+        if (!is_string($this->config['key'] ?? null) || $this->config['key'] === ''
+            || !is_string($params['sign'] ?? null)) return false;
         $sign = $params['sign'];
         unset($params['sign']);
         unset($params['sign_type']);
@@ -74,12 +76,14 @@ class EPay {
         // 强制要求交易状态为成功，避免未支付/处理中状态被误入账
         $tradeStatus = $params['trade_status'] ?? '';
         if ($tradeStatus !== 'TRADE_SUCCESS') {
-            return('fail');
+            return false;
         }
+        if (!is_scalar($params['pid'] ?? null) || (string)$params['pid'] !== (string)$this->config['pid']) return false;
 
         return [
             'trade_no' => $params['out_trade_no'],
-            'callback_no' => $params['trade_no']
+            'callback_no' => $params['trade_no'],
+            'paid_amount' => $params['money'] ?? null
         ];
     }
 }

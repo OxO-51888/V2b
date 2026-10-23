@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
 use App\Models\MailLog;
 
-class SendEmailJob implements ShouldQueue
+class SendEmailJob implements ShouldQueue, ShouldBeEncrypted
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     protected $params;

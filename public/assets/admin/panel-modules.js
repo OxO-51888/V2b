@@ -44,15 +44,16 @@
                                 ['enabled', 'verify_join', 'verify_message'].forEach(function (k) { form[k] = !!form[k]; });
                                 form.token = ''; form.chat_id = String(form.chat_id);
                             }
-                            self.setState({ data: data, form: form, dirty: false, loading: false, cursors: [], offset: 0 }, function () { self.loadRows(0); });
+                            self.setState({ data: data, form: form, dirty: false, loading: false, cursors: [], offset: 0 }, function () { if (kind === 'telegram') self.loadRows(0); });
                         }).catch(function (e) { if (self.alive && generation === self.generation) self.setState({ error: e.message, loading: false }); });
                     }
                     loadRows(offset) {
+                        if (kind !== 'telegram') return Promise.resolve();
                         var self = this, generation = this.generation;
                         self.setState({ rowsLoading: true, rowError: '' });
-                        return request(kind + (kind === 'gateway' ? '/devices?offset=' : '/events?before=') + offset).then(function (d) {
+                        return request('telegram/events?before=' + offset).then(function (d) {
                             if (!self.alive || generation !== self.generation) return;
-                            self.setState({ rows: d.items, offset: offset, next: kind === 'gateway' ? (offset + 30 < d.total ? offset + 30 : null) : d.next_cursor, rowsLoading: false });
+                            self.setState({ rows: d.items, offset: offset, next: d.next_cursor, rowsLoading: false });
                         }).catch(function (e) { if (self.alive && generation === self.generation) self.setState({ rowError: e.message, rowsLoading: false }); });
                     }
                     change(key, value) {
@@ -115,7 +116,7 @@
                     render() {
                         var self = this, s = this.state, f = s.form, d = s.data;
                         var title = kind === 'gateway' ? '客户端授权管理' : '群组与验证管理';
-                        var headers = kind === 'gateway' ? ['设备 ID', '客户端', '版本', '最近连接'] : ['时间', 'Telegram 用户', '操作', '详情'];
+                        var headers = ['时间', 'Telegram 用户', '操作', '详情'];
                         var connectionDirty = f && (kind === 'telegram' ? (f.token || String(f.chat_id) !== String(d.group.chat_id))
                             : (f.entryDomain || '') !== (d.panels[0].entryDomain || ''));
                         var settingsDirty = kind === 'gateway' && f && ['name', 'clientName', 'status'].some(function (key) { return f[key] !== d.panels[0][key]; });
@@ -140,20 +141,20 @@
                                     h('button', { type: 'button', className: 'btn btn-primary', disabled: !s.dirty || s.saving || (kind === 'telegram' ? !!connectionDirty : !settingsDirty),
                                     onClick: function () { self.save(); } }, h('i', { className: 'fa fa-save', 'aria-hidden': true }), s.saving && !s.configuring ? ' 保存中...' : ' 保存'),
                                     s.dirty && h('button', { type: 'button', className: 'btn btn-light', disabled: s.saving, onClick: function () { self.load(); } }, '取消')),
-                                h('h4', { className: 'pm-list-heading' }, kind === 'gateway' ? '新网关设备' : '本站操作记录'),
+                                kind === 'telegram' && h(React.Fragment, null,
+                                h('h4', { className: 'pm-list-heading' }, '本站操作记录'),
                                 s.rowError && h('div', { role: 'alert', className: 'alert alert-danger' }, s.rowError),
                                 h('div', { className: 'pm-table-wrap', 'aria-busy': !!s.rowsLoading }, h('table', { className: 'table' },
                                     h('thead', null, h('tr', null, headers.map(function (label) { return h('th', { key: label }, label); }))),
                                     h('tbody', null, s.rows.length ? s.rows.map(function (row) {
-                                        var cells = kind === 'gateway' ? [row.deviceId, row.clientName, row.version, row.lastSeenAt]
-                                            : [new Date(row.created_at * 1000).toLocaleString(), row.display_name || row.username || row.telegram_id || '-', row.action, row.reason];
-                                        return h('tr', { key: row.id || row.deviceId }, cells.map(function (cell, i) { return h('td', { key: i }, cell || '-'); }));
+                                        var cells = [new Date(row.created_at * 1000).toLocaleString(), row.display_name || row.username || row.telegram_id || '-', row.action, row.reason];
+                                        return h('tr', { key: row.id }, cells.map(function (cell, i) { return h('td', { key: i }, cell || '-'); }));
                                     }) : h('tr', null, h('td', { colSpan: 4, className: 'pm-empty' }, s.rowsLoading ? '加载中...' : '暂无记录'))))),
                                 h('div', { className: 'pm-pagination' },
                                     h('button', { type: 'button', className: 'btn btn-light pm-icon', title: '上一页', 'aria-label': '上一页', disabled: s.rowsLoading || !s.cursors.length,
                                         onClick: function () { var c = s.cursors.slice(), prev = c.pop(); self.setState({ cursors: c }); self.loadRows(prev); } }, h('i', { className: 'fa fa-angle-left' })),
                                     h('button', { type: 'button', className: 'btn btn-light pm-icon', title: '下一页', 'aria-label': '下一页', disabled: s.rowsLoading || s.next == null,
-                                        onClick: function () { self.setState({ cursors: s.cursors.concat([s.offset]) }); self.loadRows(s.next); } }, h('i', { className: 'fa fa-angle-right' })))));
+                                        onClick: function () { self.setState({ cursors: s.cursors.concat([s.offset]) }); self.loadRows(s.next); } }, h('i', { className: 'fa fa-angle-right' }))))));
                     }
                 }
                 components[kind] = ModuleSection;

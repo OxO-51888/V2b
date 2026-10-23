@@ -58,18 +58,23 @@ class SGEPay {
 
     public function notify($params)
     {
+        if (!is_string($this->config['key'] ?? null) || $this->config['key'] === ''
+            || !is_string($params['sign'] ?? null)) return false;
         $sign = $params['sign'];
         unset($params['sign']);
         unset($params['sign_type']);
         ksort($params);
         reset($params);
         $str = stripslashes(urldecode(http_build_query($params))) . $this->config['key'];
-        if ($sign !== md5($str)) {
+        if (!hash_equals(md5($str), $sign)) {
             return false;
         }
+        if (($params['trade_status'] ?? '') !== 'TRADE_SUCCESS') return false;
+        if (!is_scalar($params['pid'] ?? null) || (string)$params['pid'] !== (string)$this->config['pid']) return false;
         return [
             'trade_no' => $params['out_trade_no'],
-            'callback_no' => $params['trade_no']
+            'callback_no' => $params['trade_no'],
+            'paid_amount' => $params['money'] ?? null
         ];
     }
 }

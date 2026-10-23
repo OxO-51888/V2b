@@ -212,20 +212,122 @@ class TelegramBindingTest extends TestCase
         $this->failsWith(422, fn() => $this->service->confirmCode(7, $code, $this->id()));
     }
 
-    public function test_existing_binding_is_not_overwritten(): void
+    public function test_verified_email_replaces_old_telegram_and_preserves_other_fields(): void
     {
         User::first()->update(['telegram_id' => 8]);
+        $before = User::first()->toArray();
         [$code] = $this->pending();
+        $this->assertSame(8, User::first()->telegram_id);
+        $requestId = $this->id();
+        $result = $this->service->confirmCode(7, $code, $requestId);
+        $this->assertSame('bound', $result['status']);
+        $this->assertTrue($result['allowed']);
+        $this->assertSame($result, $this->service->confirmCode(7, $code, $requestId));
+        $after = User::first()->toArray();
+        $this->assertSame(7, $after['telegram_id']);
+        unset($before['telegram_id'], $before['updated_at'], $after['telegram_id'], $after['updated_at']);
+        $this->assertSame($before, $after);
+        $this->assertTrue($this->service->verify(7)['allowed']);
+        $this->assertFalse($this->service->verify(8)['allowed']);
+        $this->failsWith(422, fn() => $this->service->readSubscription(8));
+        $this->failsWith(422, fn() => $this->service->readPlan(8));
+        $this->assertSame(['status' => 'not_bound'], $this->service->prepareUnbind(8));
+        $this->assertStringContainsString('fixture-token', $this->service->readSubscription(7)['subscribe_url']);
+    }
+
+    private function clearFixtureEmailCooldown(): void
+    {
+        $hash = hash_hmac('sha256', 'email:member@example.invalid', str_repeat('s', 48));
+        Cache::forget(TelegramBindingService::key('cooldown:email:' . $hash));
+    }
+
+    public function test_old_pending_code_cannot_reclaim_binding_after_transfer(): void
+    {
+        User::first()->update(['telegram_id' => 8]);
+        [$oldCode] = $this->pending(8);
+        $this->clearFixtureEmailCooldown();
+        [$newCode] = $this->pending(7);
+        $this->service->confirmCode(7, $newCode, $this->id());
+        $this->failsWith(409, fn() => $this->service->confirmCode(8, $oldCode, $this->id()));
+        $this->assertSame(7, User::first()->telegram_id);
+    }
+
+    public function test_old_receipt_and_unbind_confirmation_cannot_reclaim_or_remove_transfer(): void
+    {
+        [$oldCode] = $this->pending(8); $oldId = $this->id();
+        $this->service->confirmCode(8, $oldCode, $oldId);
+        $token = $this->service->prepareUnbind(8)['confirmation_token'];
+        $this->clearFixtureEmailCooldown();
+        [$newCode] = $this->pending(7);
+        $this->service->confirmCode(7, $newCode, $this->id());
+        $this->failsWith(409, fn() => $this->service->confirmCode(8, $oldCode, $oldId));
+        $this->failsWith(409, fn() => $this->service->confirmUnbind(8, $token, $this->id()));
+        $this->assertSame(7, User::first()->telegram_id);
+    }
+
+    public function test_competing_verified_requests_must_refresh_after_binding_changes(): void
+    {
+        [$first] = $this->pending(7);
+        $this->clearFixtureEmailCooldown();
+        [$second] = $this->pending(8);
+        $this->service->confirmCode(7, $first, $this->id());
+        $this->failsWith(409, fn() => $this->service->confirmCode(8, $second, $this->id()));
+        $this->assertSame(7, User::first()->telegram_id);
+    }
+
+    public function test_wrong_and_expired_codes_do_not_replace_old_telegram(): void
+    {
+        User::first()->update(['telegram_id' => 8]);
+        $before = User::first()->toArray();
+        [$code] = $this->pending(7);
+        $this->failsWith(422, fn() => $this->service->confirmCode(7, '000000', $this->id()));
+        $key = TelegramBindingService::key('challenge:7');
+        $challenge = Cache::get($key); $challenge['expires_at'] = time() - 1; Cache::put($key, $challenge, 600);
+        $this->failsWith(422, fn() => $this->service->confirmCode(7, $code, $this->id()));
+        $this->assertSame($before, User::first()->toArray());
+    }
+
+    public function test_code_cannot_be_used_in_another_site_namespace(): void
+    {
+        User::first()->update(['telegram_id' => 8]);
+        [$code] = $this->pending(7);
+        $original = base_path();
+        try {
+            $this->app->setBasePath($original . '-other');
+            $this->failsWith(422, fn() => $this->service->confirmCode(7, $code, $this->id()));
+            $this->assertSame(8, User::first()->telegram_id);
+        } finally {
+            $this->app->setBasePath($original);
+        }
+        $this->assertSame('bound', $this->service->confirmCode(7, $code, $this->id())['status']);
+    }
+
+    public function test_predeployment_code_cannot_replace_an_existing_binding(): void
+    {
+        User::first()->update(['telegram_id' => 8]);
+        [$code] = $this->pending(7);
+        $key = TelegramBindingService::key('challenge:7');
+        $challenge = Cache::get($key); unset($challenge['bound_telegram_id']); Cache::put($key, $challenge, 600);
         $this->failsWith(409, fn() => $this->service->confirmCode(7, $code, $this->id()));
         $this->assertSame(8, User::first()->telegram_id);
     }
 
+    public function test_predeployment_code_still_supports_first_binding(): void
+    {
+        [$code] = $this->pending(7);
+        $key = TelegramBindingService::key('challenge:7');
+        $challenge = Cache::get($key); unset($challenge['bound_telegram_id']); Cache::put($key, $challenge, 600);
+        $this->assertSame('bound', $this->service->confirmCode(7, $code, $this->id())['status']);
+    }
+
     public function test_one_telegram_cannot_take_second_account(): void
     {
+        User::first()->update(['telegram_id' => 8]);
         User::create(['email' => 'other@example.invalid', 'telegram_id' => 7]);
+        $before = User::orderBy('id')->get()->toArray();
         [$code] = $this->pending();
         $this->failsWith(409, fn() => $this->service->confirmCode(7, $code, $this->id()));
-        $this->assertNull(User::where('email', 'member@example.invalid')->first()->telegram_id);
+        $this->assertSame($before, User::orderBy('id')->get()->toArray());
     }
 
     public function test_account_banned_or_email_changed_after_code_is_rejected(): void

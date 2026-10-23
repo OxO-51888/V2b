@@ -8,6 +8,7 @@ use App\Http\Requests\Staff\UserUpdate;
 use App\Jobs\SendEmailJob;
 use App\Models\Plan;
 use App\Models\User;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -30,7 +31,10 @@ class UserController extends Controller
     public function update(UserUpdate $request)
     {
         $params = $request->validated();
-        $user = User::find($request->input('id'));
+        $user = User::where('is_admin', 0)
+            ->where('is_staff', 0)
+            ->where('id', $request->input('id'))
+            ->first();
         if (!$user) {
             abort(500, '用户不存在');
         }
@@ -40,6 +44,7 @@ class UserController extends Controller
         if (isset($params['password'])) {
             $params['password'] = password_hash($params['password'], PASSWORD_DEFAULT);
             $params['password_algo'] = NULL;
+            $params['password_salt'] = NULL;
         } else {
             unset($params['password']);
         }
@@ -52,7 +57,7 @@ class UserController extends Controller
         }
 
         try {
-            $user->update($params);
+            (new AuthService($user))->updateUser($params, true);
         } catch (\Exception $e) {
             abort(500, '保存失败');
         }

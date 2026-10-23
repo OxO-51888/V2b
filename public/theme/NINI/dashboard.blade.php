@@ -16,7 +16,7 @@
         }
         $metaOrigin = strtolower($metaUrlParts['scheme']) . '://' . $metaUrlParts['host'] . (isset($metaUrlParts['port']) ? ':' . $metaUrlParts['port'] : '');
         $metaCanonical = $metaOrigin . '/';
-        $metaImage = $metaOrigin . '/theme/' . rawurlencode($theme) . '/assets/retouched/gift-soft-v2-lossless.png';
+        $metaImage = $metaOrigin . '/theme/' . rawurlencode($theme) . '/assets/retouched/mascot-wave-fresh-v9-20261014.png';
     @endphp
     <meta name="description" content="{{ $metaDescription }}">
     <meta name="robots" content="index,follow,max-image-preview:large">
@@ -29,8 +29,8 @@
     <meta property="og:url" content="{{ $metaCanonical }}">
     <meta property="og:image" content="{{ $metaImage }}">
     <meta property="og:image:type" content="image/png">
-    <meta property="og:image:width" content="1145">
-    <meta property="og:image:height" content="1374">
+    <meta property="og:image:width" content="1024">
+    <meta property="og:image:height" content="1536">
     <meta property="og:image:alt" content="{{ $metaTitle }} - 粉色看板娘">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="{{ $metaTitle }}">
@@ -60,7 +60,7 @@
             if (!image) return;
             var link = document.createElement('link');
             link.rel = 'preload'; link.as = 'image'; link.type = 'image/png';
-            link.href = window.settings.assets_path + '/retouched/' + (image === 'mascot' ? 'mascot-soft-v3-optimized.png' : 'gift-soft-v2-lossless.png');
+            link.href = window.settings.assets_path + '/retouched/' + (image === 'mascot' ? 'mascot-soft-v3-optimized.png' : 'mascot-wave-fresh-v9-20261014.png');
             link.setAttribute('fetchpriority', 'high'); document.head.appendChild(link);
         })();
     </script>
@@ -68,7 +68,7 @@
     <link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/theme.css?v={{$version}}-nini-1.2.0-731d0bfb5302">
     <link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/commerce.css?v={{$version}}-nini-1.2.0-850a158ff3fd">
     <link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/support.css?v={{$version}}-nini-1.2.0-7652bf48b92f">
-<link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/fidelity.css?v={{$version}}-nini-1.2.0-147dc42179fa"><link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/motion.css?v={{$version}}-nini-1.2.0-a153b55f1664"><link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/landing.css?v={{$version}}-nini-1.2.0-0254623e7372"><link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/viewport.css?v={{$version}}-nini-1.2.0-1b6ed23ad8e7"><script src="/theme/{{$theme}}/assets/v1/viewport.js?v={{$version}}-nini-1.2.0-1e9365ed5634"></script></head>
+<link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/fidelity.css?v={{$version}}-nini-1.2.0-147dc42179fa"><link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/motion.css?v={{$version}}-nini-1.2.0-a153b55f1664"><link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/landing.css?v={{$version}}-nini-1.2.0-fb96ae05b942"><link rel="stylesheet" href="/theme/{{$theme}}/assets/v1/viewport.css?v={{$version}}-nini-1.2.0-1b6ed23ad8e7"><script src="/theme/{{$theme}}/assets/v1/viewport.js?v={{$version}}-nini-1.2.0-1e9365ed5634"></script></head>
 <body>
     <div id="nini-root"><div class="boot-screen">正在加载 {{$title}}…</div></div>
     <script src="/theme/{{$theme}}/assets/vendor/purify.min.js?v=3.2.6"></script>
@@ -76,10 +76,10 @@
     <script src="/theme/{{$theme}}/assets/vendor/qrcode.min.js?v=1.0.0"></script>
     <script src="/theme/{{$theme}}/assets/v1/core.js?v={{$version}}-nini-1.2.0-4e2cdf211871"></script>
     <script src="/theme/{{$theme}}/assets/v1/commerce.js?v={{$version}}-nini-1.2.0-2927dbff98a5"></script>
-    <script src="/theme/{{$theme}}/assets/v1/support.js?v={{$version}}-nini-1.2.0-7bc07dbc5a79"></script>
+    <script src="/theme/{{$theme}}/assets/v1/support.js?v={{$version}}-nini-1.2.0-2fe4028e9e6d"></script>
     <script src="/theme/{{$theme}}/assets/v1/reference-lettering.js?v={{$version}}-nini-1.2.0-c7923f48a634"></script>
     <script src="/theme/{{$theme}}/assets/v1/fidelity.js?v={{$version}}-nini-1.2.0-1a78c0c3b420"></script>
-    <script src="/theme/{{$theme}}/assets/v1/motion.js?v={{$version}}-nini-1.2.0-4c8fd705ce04"></script><script src="/theme/{{$theme}}/assets/v1/landing.js?v={{$version}}-nini-1.2.0-26ca8e1eeca2"></script>
+    <script src="/theme/{{$theme}}/assets/v1/motion.js?v={{$version}}-nini-1.2.0-4c8fd705ce04"></script><script src="/theme/{{$theme}}/assets/v1/landing.js?v={{$version}}-nini-1.2.0-13fea3d8fc2c"></script>
     <script>Nini.boot();</script>
     {!! $theme_config['custom_html'] ?? '' !!}
 </body>

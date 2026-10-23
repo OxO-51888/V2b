@@ -77,14 +77,7 @@ class UserController extends Controller
         )) {
             abort(500, __('The old password is wrong'));
         }
-        $user->password = password_hash($request->input('new_password'), PASSWORD_DEFAULT);
-        $user->password_algo = NULL;
-        $user->password_salt = NULL;
-        if (!$user->save()) {
-            abort(500, __('Save failed'));
-        }
-        $authService = new AuthService($user);
-        $authService->removeAllSession();
+        (new AuthService($user))->resetPassword($request->input('new_password'), true);
         return response([
             'data' => true
         ]);
@@ -502,9 +495,7 @@ class UserController extends Controller
             abort(500, __('The user does not exist'));
         }
 
-        $code = Helper::guid();
-        $key = CacheKey::get('TEMP_TOKEN', $code);
-        Cache::put($key, $user->id, 60);
+        $code = AuthService::issueQuickLoginToken($request->input('auth_data') ?? $request->header('authorization'));
         $redirect = '/#/login?verify=' . $code . '&redirect=' . ($request->input('redirect') ? $request->input('redirect') : 'dashboard');
         if (config('v2board.app_url')) {
             $url = config('v2board.app_url') . $redirect;

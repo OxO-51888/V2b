@@ -150,7 +150,7 @@
           const action = node('a', 'client-platform-action');
           action.href = href; action.target = '_blank'; action.rel = 'noopener noreferrer';
           action.setAttribute('aria-label', '下载本站 ' + name + ' 客户端');
-          action.append(icon('download'), node('span', '', key === 'windows' ? '下载 Windows 版' : key === 'android' ? '下载 Android 版' : '下载'));
+          action.append(icon('download'), node('span', '', '下载 ' + name + ' 版'));
           card.append(action);
         } else if (key === 'android') {
           const action = node('button', 'client-platform-action');

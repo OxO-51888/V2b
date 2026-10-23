@@ -246,7 +246,7 @@ class Gateway
     private function text($value, int $max): string { return is_scalar($value) ? mb_substr(trim((string) $value), 0, $max) : ''; }
     private function email($value): string { $value = strtolower($this->text($value, 160)); return filter_var($value, FILTER_VALIDATE_EMAIL) ? $value : ''; }
     private function issuer(): string { return $this->settings['issuer'] ?? 'Client Authorization'; }
-    private function heartbeatAfter(): int { return max(60, (int) ($this->settings['heartbeatAfterSeconds'] ?? 3600)); }
+    private function heartbeatAfter(): int { return max(60, (int) ($this->settings['heartbeatAfterSeconds'] ?? 300)); }
     private function ttl(): int { return max($this->heartbeatAfter() + 300, (int) ($this->settings['sessionTtlSeconds'] ?? 7200)); }
     private function deny(int $status, string $code): void { throw new GatewayException($status, $code, '授权校验未通过，请重新打开客户端或联系管理员'); }
 }

@@ -136,6 +136,7 @@ class UserController extends Controller
         if (isset($params['password'])) {
             $params['password'] = password_hash($params['password'], PASSWORD_DEFAULT);
             $params['password_algo'] = NULL;
+            $params['password_salt'] = NULL;
         } else {
             unset($params['password']);
         }
@@ -157,13 +158,8 @@ class UserController extends Controller
             $params['invite_user_id'] = null;
         }
 
-        if (isset($params['banned']) && (int)$params['banned'] === 1) {
-            $authService = new AuthService($user);
-            $authService->removeAllSession();
-        }
-
         try {
-            $user->update($params);
+            (new AuthService($user))->updateUser($params);
         } catch (\Exception $e) {
             abort(500, '保存失败');
         }

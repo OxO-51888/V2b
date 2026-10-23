@@ -14,11 +14,17 @@ class PaymentService
 
     public function __construct($method, $id = NULL, $uuid = NULL)
     {
+        if (!is_string($method) || !preg_match('/\A[A-Za-z][A-Za-z0-9]*\z/D', $method)) abort(500, 'gate is not found');
         $this->method = $method;
         $this->class = '\\App\\Payments\\' . $this->method;
         if (!class_exists($this->class)) abort(500, 'gate is not found');
-        if ($id) $payment = Payment::find($id)->toArray();
-        if ($uuid) $payment = Payment::where('uuid', $uuid)->first()->toArray();
+        $payment = null;
+        if ($id !== null) $payment = Payment::find($id);
+        if ($uuid !== null) $payment = Payment::where('uuid', $uuid)->first();
+        if ($id !== null || $uuid !== null) {
+            if (!$payment || $payment->payment !== $method) abort(500, 'gate does not match');
+            $payment = $payment->toArray();
+        }
         $this->config = [];
         if (isset($payment)) {
             $this->config = $payment['config'];
@@ -34,6 +40,11 @@ class PaymentService
     {
         if (!$this->config['enable']) abort(500, 'gate is not enable');
         return $this->payment->notify($params);
+    }
+
+    public function getPaymentId(): int
+    {
+        return (int)($this->config['id'] ?? 0);
     }
 
     public function pay($order)

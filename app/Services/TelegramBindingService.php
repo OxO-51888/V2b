@@ -134,6 +134,7 @@ class TelegramBindingService
                 $code = (string) random_int(100000, 999999);
                 $id = bin2hex(random_bytes(16));
                 $challenge = ['id' => $id, 'user_id' => (int) $user->id, 'telegram_id' => $telegramId,
+                    'bound_telegram_id' => $user->telegram_id ? (string) $user->telegram_id : null,
                     'email' => $email, 'code_hash' => $this->codeHash($id, $code), 'attempts' => 0,
                     'expires_at' => time() + self::TTL, 'request_id' => $requestId];
                 Cache::put($key, $challenge, self::TTL);
@@ -174,7 +175,14 @@ class TelegramBindingService
             $result = DB::transaction(function () use ($challenge, $telegramId) {
                 $user = User::where('id', $challenge['user_id'])->lockForUpdate()->first();
                 abort_unless($this->eligible($user) && strtolower($user->email) === $challenge['email'], 422, '账号状态已变化，请重新获取验证码');
-                abort_if($user->telegram_id && (string) $user->telegram_id !== (string) $telegramId, 409, '该邮箱已绑定其他Telegram账号，请联系管理员');
+                $boundTelegramId = $user->telegram_id ? (string) $user->telegram_id : null;
+                // A code issued before another successful binding must not reclaim that binding.
+                if (array_key_exists('bound_telegram_id', $challenge)) {
+                    abort_unless($boundTelegramId === $challenge['bound_telegram_id'], 409, '绑定关系已变化，请重新获取验证码');
+                } else {
+                    abort_if($boundTelegramId !== null && $boundTelegramId !== (string) $telegramId,
+                        409, '请重新获取验证码后更换Telegram账号');
+                }
                 abort_if(User::where('telegram_id', $telegramId)->where('id', '<>', $user->id)->exists(), 409, '当前Telegram已绑定其他邮箱，请联系管理员');
                 $user->telegram_id = $telegramId;
                 $user->save();

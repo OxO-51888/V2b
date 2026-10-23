@@ -2,6 +2,7 @@
 namespace App\Protocols\Singbox;
 
 use App\Utils\Helper;
+use App\Utils\Hysteria2ClientWindows;
 
 class Singbox
 {
@@ -9,11 +10,13 @@ class Singbox
     private $servers;
     private $user;
     private $config;
+    private $clientVersion;
 
     public function __construct($user, $servers, array $options = null)
     {
         $this->user = $user;
         $this->servers = $servers;
+        $this->clientVersion = $options['client_version'] ?? null;
     }
 
     public function handle()
@@ -474,7 +477,7 @@ class Singbox
             }
         }
 
-        return $array;
+        return Hysteria2ClientWindows::singbox($array, $this->clientVersion);
     }
 
     protected function buildHysteria2($password, $server)
@@ -505,6 +508,6 @@ class Singbox
             $array['obfs']['type'] = $server['obfs'];
             $array['obfs']['password'] = $server['obfs_password'];
         }
-        return $array;
+        return Hysteria2ClientWindows::singbox($array, $this->clientVersion);
     }
 }

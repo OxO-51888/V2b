@@ -786,5 +786,36 @@ body:has(#nini-root.auth-app):after{display:none}
 .landing-app .lp-jewel-left,
 .landing-app .lp-plan-card.lp-feature-02 .lp-plan-present{background-image:url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%22128%22%20height=%22128%22%20viewBox=%220%200%20128%20128%22%20fill=%22none%22%3E%0A%20%20%3Cg%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22%3E%0A%20%20%20%20%3Cpath%20d=%22M29%2074C18%2073%2014%2065%2020%2058C15%2049%2022%2040%2033%2040C32%2030%2043%2024%2052%2028C51%2019%2061%2013%2070%2017L75%208L85%2011L79%2022C91%2024%2096%2033%2092%2042C106%2041%20113%2051%20107%2060C116%2068%20109%2077%20101%2078L89%20111C73%20119%2049%20117%2037%20108Z%22%20fill=%22%23fff%22%20stroke=%22%23fff%22%20stroke-width=%2210%22/%3E%0A%20%20%20%20%3Cpath%20d=%22M30%2071L39%20108C51%20116%2074%20118%2088%20110L101%2073Z%22%20fill=%22%23ffabd0%22%20stroke=%22%23e779af%22%20stroke-width=%222.3%22/%3E%0A%20%20%20%20%3Cpath%20d=%22M39%2079L46%20105M54%2080L58%20110M69%2082L70%20111M86%2080L81%20108%22%20stroke=%22%23ff78b1%22%20stroke-width=%225.5%22/%3E%0A%20%20%20%20%3Cpath%20d=%22M43%2081L48%20102M59%2083L62%20106M83%2082L79%20104%22%20stroke=%22%23ffc2de%22%20stroke-width=%222.6%22/%3E%0A%20%20%20%20%3Cpath%20d=%22M35%20102C48%20111%2073%20115%2090%20104%22%20stroke=%22%23e779af%22%20stroke-width=%221.8%22/%3E%0A%20%20%20%20%3Cpath%20d=%22M22%2058C16%2050%2022%2041%2033%2041C33%2030%2044%2025%2054%2031C60%2021%2075%2023%2078%2034C90%2027%20100%2035%2097%2044C110%2044%20114%2054%20106%2061C111%2068%20105%2076%2096%2076C92%2083%2083%2085%2076%2078C70%2085%2059%2084%2054%2077C46%2083%2037%2078%2034%2073C24%2075%2016%2067%2022%2058Z%22%20fill=%22%23ffffff%22%20stroke=%22%23e779af%22%20stroke-width=%222.3%22/%3E%0A%20%20%20%20%3Cpath%20d=%22M32%2048C36%2052%2041%2052%2046%2048M56%2038C61%2041%2066%2040%2069%2036M81%2051C86%2056%2093%2055%2096%2052M39%2062C44%2067%2051%2068%2056%2063M68%2067C71%2070%2077%2070%2082%2065%22%20stroke=%22%23ffc2de%22%20stroke-width=%222%22/%3E%0A%20%20%20%20%3Cpath%20d=%22M53%2029C51%2020%2055%2013%2064%2012C61%2020%2066%2026%2069%2028%22%20stroke=%22%23e779af%22%20stroke-width=%222.2%22/%3E%0A%20%20%20%20%3Cpath%20d=%22M62%2013C69%208%2076%209%2082%2013C77%2020%2068%2022%2062%2013Z%22%20fill=%22%23e779af%22%20stroke=%22%23e779af%22%20stroke-width=%222%22/%3E%0A%20%20%20%20%3Cpath%20d=%22M57%2028C49%2023%2040%2026%2039%2035C38%2044%2045%2051%2052%2049C60%2052%2066%2044%2064%2036C64%2032%2061%2029%2057%2028Z%22%20fill=%22%23ff78b1%22%20stroke=%22%23e779af%22%20stroke-width=%222.2%22/%3E%0A%20%20%20%20%3Cpath%20d=%22M45%2032C44%2033%2043%2035%2044%2037%22%20stroke=%22%23ffe6f1%22%20stroke-width=%223.4%22/%3E%0A%20%20%20%20%3Cpath%20d=%22M70%2038C72%2033%2075%2030%2079%2028%22%20stroke=%22%23e779af%22%20stroke-width=%222%22/%3E%0A%20%20%20%20%3Cpath%20d=%22M74%2038C68%2034%2062%2037%2061%2044C60%2051%2066%2057%2072%2055C79%2056%2084%2050%2082%2044C81%2040%2078%2038%2074%2038Z%22%20fill=%22%23ff78b1%22%20stroke=%22%23e779af%22%20stroke-width=%222.1%22/%3E%0A%20%20%20%20%3Cpath%20d=%22M66%2041L65%2044%22%20stroke=%22%23ffffff%22%20stroke-width=%223%22/%3E%0A%20%20%20%20%3Cpath%20d=%22M99%2020L102%2014L105%2020L111%2022L105%2025L102%2031L99%2025L93%2022Z%22%20fill=%22%23ffda68%22%20stroke=%22%23e779af%22%20stroke-width=%221.5%22/%3E%0A%20%20%3C/g%3E%0A%3C/svg%3E%0A")}
 
-/* Gently brighten the landing mascot while preserving the original white cutout edge. */
-.landing-app .lp-girl{filter:brightness(1.04) saturate(1.15) drop-shadow(0 3px 0 white) drop-shadow(0 -2px 0 white)}
+/* Full standing mascot with the smaller welcome ticket in front of her legs. */
+.landing-app .lp-hero .lp-girl-window {
+  left:3%;top:0;width:90%;height:94%;overflow:visible;border-radius:0;
+}
+.landing-app .lp-hero .lp-girl {
+  width:100%;height:100%;max-width:100%!important;
+  object-fit:contain;object-position:center bottom;
+  filter:none;
+}
+.landing-app .lp-hero .lp-welcome-ticket {
+  left:50%;bottom:13%;width:267px;max-width:74%;padding:11px 10px 9px;
+  border-width:4px;border-radius:18px;transform:translateX(-50%) rotate(-4deg);z-index:6;
+}
+.landing-app .lp-hero .lp-welcome-ticket>span {display:block;font-size:8px;line-height:1.5;letter-spacing:2px;margin-bottom:4px}
+.landing-app .lp-hero .lp-welcome-ticket strong {font-size:21px;line-height:1.5;white-space:nowrap}
+.landing-app .lp-hero .lp-welcome-ticket strong>span {padding-left:5px}
+.landing-app .lp-hero .lp-welcome-ticket small {display:block;font-size:9px;line-height:1.5;letter-spacing:1.5px}
+.landing-app .lp-hero .lp-welcome-ticket i {width:60%;height:4px;margin:3px auto 5px}
+@media(max-width:1024px) {
+  .landing-app .lp-hero .lp-girl-window {height:95%}
+  .landing-app .lp-hero .lp-welcome-ticket {width:58%;max-width:none;min-width:174px;padding:8px 7px 7px;border-width:3px;border-radius:14px}
+  .landing-app .lp-hero .lp-welcome-ticket>span {font-size:6px;letter-spacing:1.3px;margin-bottom:3px}
+  .landing-app .lp-hero .lp-welcome-ticket strong {font-size:clamp(14px,2.9vw,18px);line-height:1.5}
+  .landing-app .lp-hero .lp-welcome-ticket strong>span {padding-left:3px}
+  .landing-app .lp-hero .lp-welcome-ticket small {font-size:7px;letter-spacing:1px}
+  .landing-app .lp-hero .lp-welcome-ticket i {height:3px;margin:2px auto 4px}
+}
+@media(max-width:600px) {
+  .landing-app .lp-hero .lp-welcome-ticket strong {font-size:14px}
+}
+@media(max-width:360px) {
+  .landing-app .lp-hero .lp-speech {transform:rotate(10deg) scale(.8);transform-origin:top right}
+}

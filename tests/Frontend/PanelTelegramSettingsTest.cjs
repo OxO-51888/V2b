@@ -28,11 +28,11 @@ function tab(integrated) {
         window: { PanelModules: integrated ? { section: () => createElement('module') } : undefined } };
     return vm.runInNewContext(bundle.slice(start, end), context);
 }
-function moduleView(kind = 'telegram') {
+function moduleView(kind = 'telegram', response = () => ({})) {
     const requests = [];
     const context = { window: { settings: { secure_path: 'fixture' } },
         localStorage: { getItem: () => 'fixture-auth' },
-        fetch: async (url, options) => { requests.push({ url, options }); return { ok: true, json: async () => ({ data: {} }) }; } };
+        fetch: async (url, options) => { requests.push({ url, options }); return { ok: true, json: async () => ({ data: response(url, options) }) }; } };
     vm.runInNewContext(fs.readFileSync(modulePath, 'utf8'), context);
     const component = context.window.PanelModules.section(React, kind);
     const view = new component.type({});
@@ -139,6 +139,51 @@ test('gateway reserves feedback space and keeps the form while loading', () => {
     assert.equal(nodes(view.render()).filter(n => n.props.className === 'pm-feedback').length, 1);
     view.state.loading = true;
     assert.equal(nodes(view.render()).filter(n => n.props.className === 'pm-form').length, 1);
+});
+
+test('gateway omits the device list, empty placeholder and pagination', () => {
+    const { view } = moduleView('gateway');
+    view.state.rows = [{ deviceId: 'fixture-device', clientName: 'Fixture', version: '1.0.0' }];
+    view.state.rowError = 'Fixture device lookup failed';
+    const tree = nodes(view.render());
+    assert.equal(tree.filter(n => ['pm-list-heading', 'pm-table-wrap', 'pm-pagination'].includes(n.props.className)).length, 0);
+    assert.equal(tree.filter(n => n.type === 'table').length, 0);
+    assert.equal(tree.filter(n => n.children.includes(view.state.rowError)).length, 0);
+    assert.equal(tree.filter(n => n.props.className === 'pm-form').length, 1);
+    assert.equal(tree.filter(n => n.props.className === 'pm-actions').length, 1);
+});
+
+test('gateway initial load, refresh and row loading never query device records', async () => {
+    const { view, requests } = moduleView('gateway', () => ({ panels: [{ id: 'panel_06', entryDomain: '' }] }));
+    view.alive = true;
+    await view.load();
+    await view.load();
+    await view.loadRows(30);
+    assert.deepEqual(requests.map(r => r.url), ['/api/v1/fixture/modules/gateway', '/api/v1/fixture/modules/gateway']);
+    assert.ok(requests.every(r => r.options.method === 'GET'));
+    assert.equal(view.state.form.id, 'panel_06');
+});
+
+test('Telegram still loads operation records and paginates independently', async () => {
+    const event = { id: 8, created_at: 1, display_name: 'Fixture', action: 'verify', reason: 'Fixture event' };
+    const { view, requests } = moduleView('telegram', url => url.includes('/events?')
+        ? { items: [event], next_cursor: url.endsWith('=0') ? 8 : null }
+        : { group: { chat_id: -123, enabled: true, verify_join: true, verify_message: true } });
+    view.alive = true;
+    await view.load();
+    await new Promise(setImmediate);
+    let tree = nodes(view.render());
+    assert.equal(tree.filter(n => n.type === 'table').length, 1);
+    assert.ok(tree.some(n => n.children.includes('Fixture event')));
+    const next = tree.find(n => n.props['aria-label'] === '\u4e0b\u4e00\u9875');
+    assert.equal(next.props.disabled, false);
+    next.props.onClick();
+    await new Promise(setImmediate);
+    tree = nodes(view.render());
+    assert.equal(view.state.offset, 8);
+    assert.equal(tree.find(n => n.props['aria-label'] === '\u4e0b\u4e00\u9875').props.disabled, true);
+    assert.equal(tree.find(n => n.props['aria-label'] === '\u4e0a\u4e00\u9875').props.disabled, false);
+    assert.deepEqual(requests.map(r => r.url), ['/api/v1/fixture/modules/telegram', '/api/v1/fixture/modules/telegram/events?before=0', '/api/v1/fixture/modules/telegram/events?before=8']);
 });
 
 test('gateway domain uses configuration endpoint without sending another site identity', async () => {

@@ -197,3 +197,6 @@ body[data-theme="nini"] .message>div.message-body>.images .image-thumb{flex:0 1 
   body[data-theme="nini"] .message>div.message-body>.message-text{font-size:15px}
   body[data-theme="nini"] .message>div.message-body>.images .image-thumb{flex-basis:128px;width:128px;height:102px}
 }
+
+/* Staff bubbles have no timestamp row in either viewport size. */
+body[data-theme="nini"] .message.moderator-message>div.message-body{padding-bottom:8px}

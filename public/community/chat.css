@@ -219,23 +219,23 @@ body[data-theme="nini"] .community-resources .publish-card .publish-content>.pub
 body[data-theme] .community-resources .download-card .client-download .client-copy strong{color:#6f5362}
 body[data-theme] .community-resources .download-card .client-download .client-copy small{color:#8a6d7c}
 
-/* A primary desktop download with two compact platform tiles below. */
+/* Available platforms share the same full-width download layout. */
 body[data-theme] .community-resources .download-card .client-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;align-items:stretch}
 body[data-theme] .download-card .client-platform{display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-width:0;margin:0;padding:12px;border:1px solid #ece3e9;border-radius:12px;background:#fff;box-shadow:none}
-body[data-theme] .download-card .client-platform-windows,body[data-theme] .download-card .client-platform-android{grid-column:1/-1;padding:14px;background:#fcf7fa;border-color:#ead5df}
+body[data-theme] .download-card .client-platform-windows,body[data-theme] .download-card .client-platform-android,body[data-theme] .download-card .client-platform-macos.is-available{grid-column:1/-1;padding:14px;background:#fcf7fa;border-color:#ead5df}
 body[data-theme] .download-card .client-platform-head{display:flex;align-items:center;gap:8px;min-width:0}
 body[data-theme] .download-card .client-platform-icon{display:grid;place-items:center;width:28px;height:28px;flex:0 0 28px;border-radius:9px;background:#f9e7f0;color:#bd6c93}
 body[data-theme] .download-card .client-platform-icon svg{width:19px;height:19px}
-body[data-theme] .download-card .client-platform-windows .client-platform-icon,body[data-theme] .download-card .client-platform-android .client-platform-icon{width:42px;height:42px;flex-basis:42px;border-radius:12px}
-body[data-theme] .download-card .client-platform-windows .client-platform-icon svg,body[data-theme] .download-card .client-platform-android .client-platform-icon svg{width:25px;height:25px}
+body[data-theme] .download-card .client-platform-windows .client-platform-icon,body[data-theme] .download-card .client-platform-android .client-platform-icon,body[data-theme] .download-card .client-platform-macos.is-available .client-platform-icon{width:42px;height:42px;flex-basis:42px;border-radius:12px}
+body[data-theme] .download-card .client-platform-windows .client-platform-icon svg,body[data-theme] .download-card .client-platform-android .client-platform-icon svg,body[data-theme] .download-card .client-platform-macos.is-available .client-platform-icon svg{width:25px;height:25px}
 body[data-theme] .download-card .client-platform-copy{display:flex;flex-direction:column;gap:3px;min-width:0;text-align:left}
 body[data-theme] .download-card .client-platform-name{display:block;color:#654958;font-size:14px;font-weight:650;line-height:1.4;overflow-wrap:anywhere}
-body[data-theme] .download-card .client-platform-windows .client-platform-name,body[data-theme] .download-card .client-platform-android .client-platform-name{font-size:16px}
+body[data-theme] .download-card .client-platform-windows .client-platform-name,body[data-theme] .download-card .client-platform-android .client-platform-name,body[data-theme] .download-card .client-platform-macos.is-available .client-platform-name{font-size:16px}
 body[data-theme] .download-card .client-platform-version{display:block;color:#876d7c;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
 body[data-theme] .download-card .client-platform-action{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:44px;padding:9px 8px;border:1px solid #e6b3ca;border-radius:9px;background:#f9e2ed;color:#934365;text-decoration:none;font-size:13px;font-weight:600;line-height:1.4;text-align:center}
 body[data-theme] .download-card .client-platform-action svg{width:17px;height:17px;flex:none}
 body[data-theme] .download-card .client-platform-action:disabled{opacity:.6;cursor:default;pointer-events:none}
-body[data-theme] .download-card .client-platform-macos{grid-column:1/-1;flex-direction:row;align-items:center;gap:12px}
+body[data-theme] .download-card .client-platform-macos.is-unavailable{grid-column:1/-1;flex-direction:row;align-items:center;gap:12px}
 body[data-theme] .download-card .client-platform.client-platform-macos .client-platform-head{flex-direction:row;align-items:center}
 
 body[data-theme] .download-card .client-platform-action:hover{background:#f5d6e5;border-color:#d68fac}
@@ -243,11 +243,11 @@ body[data-theme] .download-card .client-platform-state{display:flex;align-items:
 body[data-theme] .download-card .client-platform-state:before{content:"";width:5px;height:5px;flex:none;border-radius:50%;background:#c4a9b8}
 body[data-theme] .download-card .client-platform-windows.is-unavailable{flex-direction:row;align-items:center;gap:10px}
 body[data-theme="nini"] .download-card .client-platform{border-color:#edd8e3;border-radius:14px;background:#fffbfd}
-body[data-theme="nini"] .download-card .client-platform-windows,body[data-theme="nini"] .download-card .client-platform-android{background:#fff1f7;border-color:#e9bdd1}
-body[data-theme="nini"] .download-card .client-platform-windows .client-platform-icon,body[data-theme="nini"] .download-card .client-platform-android .client-platform-icon{background:#f7d8e7;color:#b85d87}
+body[data-theme="nini"] .download-card .client-platform-windows,body[data-theme="nini"] .download-card .client-platform-android,body[data-theme="nini"] .download-card .client-platform-macos.is-available{background:#fff1f7;border-color:#e9bdd1}
+body[data-theme="nini"] .download-card .client-platform-windows .client-platform-icon,body[data-theme="nini"] .download-card .client-platform-android .client-platform-icon,body[data-theme="nini"] .download-card .client-platform-macos.is-available .client-platform-icon{background:#f7d8e7;color:#b85d87}
 body[data-theme="nini"] .download-card .client-platform-action{border-color:#ce608a;background:#d66592;color:#fff}
 body[data-theme="nini"] .download-card .client-platform-action:hover{background:#c45884;border-color:#ba4f7c}
-@media(max-width:380px){body[data-theme] .download-card .client-platform{padding:10px}body[data-theme] .download-card .client-platform-head{gap:6px}body[data-theme] .download-card .client-platform-icon{width:24px;height:24px;flex-basis:24px}body[data-theme] .download-card .client-platform-name{font-size:13px}}
+@media(max-width:380px){body[data-theme] .download-card .client-platform,body[data-theme] .download-card .client-platform-macos.is-available{padding:10px}body[data-theme] .download-card .client-platform-head{gap:6px}body[data-theme] .download-card .client-platform-icon{width:24px;height:24px;flex-basis:24px}body[data-theme] .download-card .client-platform-name{font-size:13px}}
 
 /* Larger, readable member identity in the original theme. */
 body[data-theme="default"] .message>.avatar{width:40px;height:40px;flex-basis:40px;font-size:15px}
@@ -293,3 +293,8 @@ body[data-theme="nini"] .community-resources .publish-card .publish-content>p{co
   body[data-theme="nini"] .community-layout>.community-resources{order:1;width:100%}
   body[data-theme="nini"] .community-layout>.chat-app{order:2}
 }
+
+/* Isolate bubble layout while preserving exact heights and native scrolling. */
+.message{contain:layout style}
+.chat-app>.unread{position:static;inset:auto;transform:none;align-self:center;flex:0 0 auto;margin:6px 12px;max-width:calc(100% - 24px)}
+body[data-theme="default"] .message.moderator-message>.message-body{padding-bottom:8px}

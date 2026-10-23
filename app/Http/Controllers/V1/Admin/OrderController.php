@@ -22,15 +22,14 @@ class OrderController extends Controller
     {
         if ($request->input('filter')) {
             foreach ($request->input('filter') as $filter) {
-                if ($filter['key'] === 'email') {
-                    $user = User::where('email', "%{$filter['value']}%")->first();
-                    if (!$user) continue;
-                    $builder->where('user_id', $user->id);
-                    continue;
-                }
                 if ($filter['condition'] === '模糊') {
                     $filter['condition'] = 'like';
                     $filter['value'] = "%{$filter['value']}%";
+                }
+                if ($filter['key'] === 'email') {
+                    $builder->whereIn('user_id', User::select('id')
+                        ->where('email', $filter['condition'], $filter['value']));
+                    continue;
                 }
                 $builder->where($filter['key'], $filter['condition'], $filter['value']);
             }
@@ -53,7 +52,7 @@ class OrderController extends Controller
     public function fetch(OrderFetch $request)
     {
         $current = $request->input('current') ? $request->input('current') : 1;
-        $pageSize = $request->input('pageSize') >= 10 ? $request->input('pageSize') : 10;
+        $pageSize = min(150, max(10, (int) $request->input('pageSize', 10)));
         $orderModel = Order::orderBy('created_at', 'DESC');
         if ($request->input('is_commission')) {
             $orderModel->where('invite_user_id', '!=', NULL);

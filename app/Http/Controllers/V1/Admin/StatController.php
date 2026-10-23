@@ -27,44 +27,40 @@ class StatController extends Controller
     public function getOverride(Request $request)
     {
         $onlineDevices = app(OnlineDeviceService::class)->snapshot();
+        $now = time();
+        $monthStart = strtotime(date('Y-m-1', $now));
+        $dayStart = strtotime(date('Y-m-d', $now));
+        $lastMonthStart = strtotime('-1 month', $monthStart);
+        $users = User::selectRaw('COUNT(CASE WHEN t >= ? THEN 1 END) AS online_user,
+                COUNT(CASE WHEN created_at >= ? AND created_at < ? THEN 1 END) AS month_register_total,
+                COUNT(CASE WHEN created_at >= ? AND created_at < ? THEN 1 END) AS day_register_total',
+                [$now - 600, $monthStart, $now, $dayStart, $now])->first();
+        $orders = Order::whereNotIn('status', [0, 2])
+            ->selectRaw('SUM(CASE WHEN created_at >= ? AND created_at < ? THEN total_amount ELSE 0 END) AS month_income,
+                SUM(CASE WHEN created_at >= ? AND created_at < ? THEN total_amount ELSE 0 END) AS day_income,
+                SUM(CASE WHEN created_at >= ? AND created_at < ? THEN total_amount ELSE 0 END) AS last_month_income,
+                COUNT(CASE WHEN commission_status = 0 AND invite_user_id IS NOT NULL AND commission_balance > 0 THEN 1 END) AS commission_pending_total',
+                [$monthStart, $now, $dayStart, $now, $lastMonthStart, $monthStart])->first();
+        $commissions = CommissionLog::where('created_at', '>=', $lastMonthStart)->where('created_at', '<', $now)
+            ->selectRaw('SUM(CASE WHEN created_at >= ? THEN get_amount ELSE 0 END) AS month_payout,
+                SUM(CASE WHEN created_at < ? THEN get_amount ELSE 0 END) AS last_month_payout',
+                [$monthStart, $monthStart])->first();
         return [
             'data' => [
                 'online_device' => $onlineDevices['count'],
                 'online_device_window_seconds' => $onlineDevices['window_seconds'],
-                'online_user' => User::where('t','>=', time() - 600)
-                    ->count(),
-                'month_income' => Order::where('created_at', '>=', strtotime(date('Y-m-1')))
-                    ->where('created_at', '<', time())
-                    ->whereNotIn('status', [0, 2])
-                    ->sum('total_amount'),
-                'month_register_total' => User::where('created_at', '>=', strtotime(date('Y-m-1')))
-                    ->where('created_at', '<', time())
-                    ->count(),
-                'day_register_total' => User::where('created_at', '>=', strtotime(date('Y-m-d')))
-                    ->where('created_at', '<', time())
-                    ->count(),
+                'online_user' => (int) $users->online_user,
+                'month_income' => $orders->month_income ?: 0,
+                'month_register_total' => (int) $users->month_register_total,
+                'day_register_total' => (int) $users->day_register_total,
                 'ticket_pending_total' => Ticket::where('status', 0)
                     ->where('reply_status', 0)
                     ->count(),
-                'commission_pending_total' => Order::where('commission_status', 0)
-                    ->where('invite_user_id', '!=', NULL)
-                    ->whereNotIn('status', [0, 2])
-                    ->where('commission_balance', '>', 0)
-                    ->count(),
-                'day_income' => Order::where('created_at', '>=', strtotime(date('Y-m-d')))
-                    ->where('created_at', '<', time())
-                    ->whereNotIn('status', [0, 2])
-                    ->sum('total_amount'),
-                'last_month_income' => Order::where('created_at', '>=', strtotime('-1 month', strtotime(date('Y-m-1'))))
-                    ->where('created_at', '<', strtotime(date('Y-m-1')))
-                    ->whereNotIn('status', [0, 2])
-                    ->sum('total_amount'),
-                'commission_month_payout' => CommissionLog::where('created_at', '>=', strtotime(date('Y-m-1')))
-                    ->where('created_at', '<', time())
-                    ->sum('get_amount'),
-                'commission_last_month_payout' => CommissionLog::where('created_at', '>=', strtotime('-1 month', strtotime(date('Y-m-1'))))
-                    ->where('created_at', '<', strtotime(date('Y-m-1')))
-                    ->sum('get_amount'),
+                'commission_pending_total' => (int) $orders->commission_pending_total,
+                'day_income' => $orders->day_income ?: 0,
+                'last_month_income' => $orders->last_month_income ?: 0,
+                'commission_month_payout' => $commissions->month_payout ?: 0,
+                'commission_last_month_payout' => $commissions->last_month_payout ?: 0,
             ]
         ];
     }
@@ -215,12 +211,13 @@ class StatController extends Controller
             ->orderBy('total', 'DESC')
             ->get()
             ->toArray();
+        $emails = $statistics ? User::whereIn('id', array_unique(array_column($statistics, 'user_id')))
+            ->pluck('email', 'id')->all() : [];
         $data = [];
         $idIndexMap = [];
         foreach ($statistics as $k => $v) {
             $id = $statistics[$k]['user_id'];
-            $user = User::where('id', $id)->first();
-            $statistics[$k]['email'] = empty($user) ? "null" : $user['email'];
+            $statistics[$k]['email'] = array_key_exists($id, $emails) ? $emails[$id] : "null";
             $statistics[$k]['total'] = $statistics[$k]['total'] * $statistics[$k]['server_rate'] / 1073741824;
             if (isset($idIndexMap[$id])) {
                 $index = $idIndexMap[$id];
@@ -255,12 +252,13 @@ class StatController extends Controller
             ->orderBy('total', 'DESC')
             ->get()
             ->toArray();
+        $emails = $statistics ? User::whereIn('id', array_unique(array_column($statistics, 'user_id')))
+            ->pluck('email', 'id')->all() : [];
         $data = [];
         $idIndexMap = [];
         foreach ($statistics as $k => $v) {
             $id = $statistics[$k]['user_id'];
-            $user = User::where('id', $id)->first();
-            $statistics[$k]['email'] = empty($user) ? "null" : $user['email'];
+            $statistics[$k]['email'] = array_key_exists($id, $emails) ? $emails[$id] : "null";
             $statistics[$k]['total'] = $statistics[$k]['total'] * $statistics[$k]['server_rate'] / 1073741824;
             if (isset($idIndexMap[$id])) {
 
@@ -284,7 +282,7 @@ class StatController extends Controller
             'user_id' => 'required|integer'
         ]);
         $current = $request->input('current') ? $request->input('current') : 1;
-        $pageSize = $request->input('pageSize') >= 10 ? $request->input('pageSize') : 10;
+        $pageSize = min(150, max(10, (int) $request->input('pageSize', 10)));
         $builder = StatUser::orderBy('record_at', 'DESC')->where('user_id', $request->input('user_id'));
 
         $total = $builder->count();

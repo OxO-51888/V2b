@@ -7,7 +7,18 @@
   const auth = () => (nini ? localStorage.getItem("nini_auth_data") || localStorage.getItem("auth_data") : localStorage.getItem("authorization")) || "";
   const startingAuth = auth();
   let composing = false, compositionEnterGuard = false, compositionGuardTimer = 0;
-  const icons = () => lucide.createIcons();
+  const renderedRows = new Map(), requests = new Set(), unseen = new Set();
+  const messageDate = new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  let epoch = 0, suspended = false, pollTimer = 0, readTimer = 0, failures = 0, mutationRevision = 0;
+  Object.assign(state, { paged: false, hasMore: false, viewed: 0, acknowledged: 0, reading: false });
+  function icons(root = document) {
+    root.querySelectorAll('i[data-lucide]').forEach(node => {
+      const name = node.dataset.lucide, key = name.replace(/(^|-)(\w)/g, (_, dash, letter) => letter.toUpperCase());
+      const definition = lucide.icons[key]; if (!definition) return;
+      const [tag, attrs, children] = definition;
+      node.replaceWith(lucide.createElement([tag, { ...attrs, "data-lucide": name, class: "lucide lucide-" + name, "aria-hidden": "true" }, children]));
+    });
+  }
   function error(message, scope) { state.errorScope = scope || "action"; $("error").textContent = message || ""; $("error").hidden = !message; }
   function controls() {
     const disabled = !composerInputReady() || state.busy;
@@ -22,20 +33,40 @@
   }
   async function api(action, data) {
     if (!auth() || auth() !== startingAuth || !state.active) { deactivateComposer(); throw new Error("登录已变化，请返回面板重新进入"); }
+    if (suspended) throw Object.assign(new Error("页面已暂停，返回后可重试"), { stale: true });
+    const requestEpoch = epoch;
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 25000);
+    requests.add(controller);
+    function current() {
+      if (auth() !== startingAuth) deactivateComposer();
+      if (requestEpoch !== epoch || !state.active || suspended) throw Object.assign(new Error("页面或登录已变化，请返回后重试"), { stale: true });
+    }
     try {
       const multipart = data instanceof FormData;
       const response = await fetch("/api/v1/user/community/" + action, {
         method: "POST", headers: Object.assign({ Authorization: auth(), Accept: "application/json" }, multipart ? {} : { "Content-Type": "application/json" }),
         body: multipart ? data : JSON.stringify(data || {}), signal: controller.signal, cache: "no-store"
       });
+      current();
+      if (response.status === 401) {
+        deactivateComposer();
+        const message = "登录已失效，请返回面板重新登录后进入群聊";
+        $("status").textContent = "登录已失效"; error(message, "session");
+        throw Object.assign(new Error(message), { stale: true, status: 401 });
+      }
       let result;
       try { result = await response.json(); } catch (_) { throw new Error("群聊暂时不可用，请稍后重试"); }
-      if (response.status === 401) deactivateComposer();
+      current();
       if (!response.ok) throw new Error(result.message || "操作失败，请稍后重试");
       return result.data;
-    } catch (e) { if (e.name === "AbortError") throw new Error("请求超时，可重试；重复提交不会重复发送"); throw e; }
-    finally { clearTimeout(timer); }
+    } catch (e) {
+      if (e.name === "AbortError") {
+        if (requestEpoch !== epoch || suspended || !state.active) throw Object.assign(new Error("请求已暂停，返回后可重试"), { stale: true });
+        throw new Error("请求超时，可重试；重复提交不会重复发送");
+      }
+      throw e;
+    }
+    finally { clearTimeout(timer); requests.delete(controller); }
   }
   function element(tag, cls, text) { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined) node.textContent = text; return node; }
   function button(icon, title, click) {
@@ -115,24 +146,97 @@
     }, { passive: false });
   }
   function nearBottom() { return $("messages").scrollHeight - $("messages").scrollTop - $("messages").clientHeight < 80; }
-  async function read() {
-    if (!state.me || document.hidden || !nearBottom() || Date.now() - state.readAt < 5000) return;
-    state.readAt = Date.now();
-    try { await api("read"); state.unread = 0; $("unread").hidden = true; } catch (_) {}
+  function unreadBadge() {
+    state.unread = unseen.size;
+    $("unread").hidden = !state.unread && !state.loadingLatest;
+    $("unread").textContent = state.loadingLatest ? "正在加载最新消息…" : state.unread + " 条新消息 · 查看最新";
+    $("unread").disabled = !!state.loadingLatest;
   }
-  function bottom() { $("messages").scrollTop = $("messages").scrollHeight; state.unread = 0; $("unread").hidden = true; read(); }
+  async function read(explicit = false) {
+    if (!state.me || !state.active || suspended || document.hidden || (!explicit && !document.hasFocus()) || !nearBottom()) return;
+    let viewed = state.viewed;
+    for (const row of state.rows.values()) viewed = Math.max(viewed, row.created_at);
+    state.viewed = viewed; unseen.clear(); unreadBadge();
+    if (!viewed || viewed <= state.acknowledged || state.reading) return;
+    const remaining = 5000 - (Date.now() - state.readAt);
+    if (remaining > 0) { if (!readTimer) readTimer = setTimeout(() => { readTimer = 0; read(); }, remaining); return; }
+    state.readAt = Date.now(); state.reading = true;
+    const requestEpoch = epoch;
+    try { await api("read"); if (requestEpoch === epoch) state.acknowledged = Math.max(state.acknowledged, viewed); }
+    catch (_) { /* Local seen state is independent of the read receipt; retry below. */ }
+    finally {
+      state.reading = false;
+      if (state.active && !suspended && state.viewed > state.acknowledged && !readTimer) readTimer = setTimeout(() => { readTimer = 0; read(); }, 5000);
+    }
+  }
+  function bottom(explicit = false) { $("messages").scrollTop = $("messages").scrollHeight; read(explicit); }
+  async function viewLatest() {
+    if (state.loadingLatest || !state.me || !state.active || suspended) return;
+    const requestEpoch = epoch;
+    bottom(true); state.loadingLatest = true; unreadBadge();
+    try { await poll(true); if (requestEpoch === epoch && state.active) bottom(true); }
+    finally { if (requestEpoch === epoch) { state.loadingLatest = false; unreadBadge(); } }
+  }
+  function trimImages() {
+    const referenced = new Set();
+    for (const row of state.rows.values()) for (const id of row.file_ids || []) referenced.add(id);
+    for (const [id, pending] of state.urls) if (!referenced.has(id)) {
+      state.urls.delete(id);
+      pending.then(url => {
+        if ($("full-image").getAttribute("src") === url) { $("viewer").close(); $("full-image").removeAttribute("src"); }
+        URL.revokeObjectURL(url);
+      }).catch(() => {});
+    }
+  }
   async function imageURL(id) {
-    if (!state.urls.has(id)) state.urls.set(id, api("file", { file_id: id }).then(file => {
-      if (!["image/png", "image/jpeg", "image/webp"].includes(file.mime)) throw new Error("图片格式不支持");
-      return URL.createObjectURL(new Blob([Uint8Array.from(atob(file.data), c => c.charCodeAt(0))], { type: file.mime }));
-    }).catch(e => { state.urls.delete(id); throw e; }));
+    if (!state.urls.has(id)) {
+      const pending = api("file", { file_id: id }).then(file => {
+        if (!["image/png", "image/jpeg", "image/webp"].includes(file.mime)) throw new Error("图片格式不支持");
+        if (state.urls.get(id) !== pending) throw new Error("图片已移除");
+        return URL.createObjectURL(new Blob([Uint8Array.from(atob(file.data), c => c.charCodeAt(0))], { type: file.mime }));
+      }).catch(e => { if (state.urls.get(id) === pending) state.urls.delete(id); throw e; });
+      state.urls.set(id, pending);
+    }
     return state.urls.get(id);
+  }
+  const imageJobs = new Map();
+  let imageObserver = null, activeImages = 0;
+  function drainImages() {
+    if (suspended || !state.active) return;
+    for (const [thumb, job] of imageJobs) {
+      if (activeImages >= 4) break;
+      if (!job.visible || job.started || !thumb.isConnected) continue;
+      job.started = true; activeImages++; const requestEpoch = epoch;
+      imageURL(job.id).then(url => {
+        if (!thumb.isConnected || imageJobs.get(thumb) !== job) return;
+        if (requestEpoch !== epoch) { job.started = false; return; }
+        job.img.src = url; thumb.replaceChildren(job.img);
+        thumb.onclick = () => { $("full-image").src = url; $("viewer").showModal(); };
+        imageObserver?.unobserve(thumb); imageJobs.delete(thumb);
+      }).catch(e => {
+        if (!thumb.isConnected || imageJobs.get(thumb) !== job) return;
+        if (e.stale) { job.started = false; return; }
+        thumb.textContent = "图片加载失败，点击重试";
+        thumb.onclick = () => { job.started = false; job.visible = true; drainImages(); };
+      }).finally(() => { activeImages--; drainImages(); });
+    }
+  }
+  function lazyImage(thumb, img, id) {
+    if (!imageObserver) imageObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => { const job = imageJobs.get(entry.target); if (job) job.visible = entry.isIntersecting; });
+      drainImages();
+    }, { root: $("messages"), rootMargin: "240px" });
+    imageJobs.set(thumb, { id, img, visible: false, started: false }); imageObserver.observe(thumb);
+  }
+  function releaseRendered(node) {
+    node.querySelectorAll('.image-thumb').forEach(thumb => { imageObserver?.unobserve(thumb); imageJobs.delete(thumb); });
   }
   function displayName(member) { return member.moderator ? "客服小姐姐" : member.name; }
   function pruneExpiredRows(cutoff) {
     if (typeof cutoff === "number" && Number.isFinite(cutoff) && cutoff > 0) state.retentionCutoff = Math.max(state.retentionCutoff || 0, cutoff);
     let changed = false;
     if (state.retentionCutoff) for (const [id, row] of state.rows) if (row.created_at < state.retentionCutoff) { state.rows.delete(id); changed = true; }
+    if (changed) trimImages();
     return changed;
   }
   function display(rows, reset, cutoff) {
@@ -141,62 +245,105 @@
     const stick = nearBottom(), oldHeight = $("messages").scrollHeight, oldTop = $("messages").scrollTop;
     const previous = new Set(state.rows.keys());
     if (reset) {
-      // Retain paged history, but remove deleted posts in the current server window.
+      // Only explicit history pagination retains older windows during a long session.
       const oldest = rows.length ? rows[0].created_at : 0;
-      for (const [id, row] of state.rows) if (row.created_at >= oldest) state.rows.delete(id);
+      if (!state.paged) state.rows.clear();
+      else for (const [id, row] of state.rows) if (row.created_at >= oldest) state.rows.delete(id);
     }
     rows.forEach(row => state.rows.set(row.id, row));
     const ordered = Array.from(state.rows.values()).sort((a, b) => a.created_at - b.created_at || a.id.localeCompare(b.id));
-    const fragment = document.createDocumentFragment();
+    const liveIds = new Set(ordered.map(row => row.id));
+    for (const id of unseen) if (!liveIds.has(id)) unseen.delete(id);
+    for (const [id, rendered] of renderedRows) if (!liveIds.has(id)) {
+      releaseRendered(rendered.node); rendered.node.remove(); renderedRows.delete(id);
+    }
+    let cursor = $("list").firstChild;
     ordered.forEach(row => {
-      const node = element("article", "message" + (row.user_id === state.me.id ? " own" : "")); node.dataset.postId = row.id;
+      const root = row.root_id ? state.rows.get(row.root_id) : null;
+      const signature = JSON.stringify([row, root && [displayName(root), root.message], state.me.id, state.me.moderator]);
+      const existing = renderedRows.get(row.id);
+      if (existing?.signature === signature) {
+        if (existing.node !== cursor) $("list").insertBefore(existing.node, cursor);
+        cursor = existing.node.nextSibling; return;
+      }
+      const node = element("article", "message" + (row.user_id === state.me.id ? " own" : "") + (row.moderator === true ? " moderator-message" : "")); node.dataset.postId = row.id;
       node.append(element("div", "avatar", row.moderator ? "客服" : row.name.slice(-2)));
       const body = element("div", "message-body"), meta = element("div", "meta"); meta.append(element("span", "name", displayName(row)));
-      const date = element("time", "", new Date(row.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })); date.dateTime = new Date(row.created_at).toISOString(); meta.append(date);
+      if (row.moderator !== true) {
+        const date = element("time", "", messageDate.format(row.created_at)); date.dateTime = new Date(row.created_at).toISOString(); meta.append(date);
+      }
       const actions = element("div", "message-actions");
       actions.append(button("reply", "回复", () => { state.reply = row; state.pending = null; $("reply-text").textContent = "回复 " + displayName(row) + "：" + row.message; $("reply").hidden = false; $("message").focus(); }));
       if (state.me.moderator || row.user_id === state.me.id) actions.append(button("trash-2", "删除消息", async () => {
         if (!confirm("删除这条消息？")) return;
-        try { await api("delete", { post_id: row.id }); state.rows.delete(row.id); await poll(true); } catch (e) { error(e.message); }
+        try { await api("delete", { post_id: row.id }); mutationRevision++; state.rows.delete(row.id); display([], false); await poll(true); } catch (e) { if (!e.stale) error(e.message); }
       }));
       if (state.me.moderator && row.user_id !== state.me.id) actions.append(button(row.muted ? "volume-x" : "volume-2", row.muted ? "当前已禁言，点击解除禁言" : "当前可发言，点击禁言", async () => {
         if (!confirm((row.muted ? "解除禁言：" : "禁言：") + displayName(row) + "？")) return;
-        try { await api("mute", { target_id: row.user_id, muted: !row.muted }); await poll(true); } catch (e) { error(e.message); }
+        try { await api("mute", { target_id: row.user_id, muted: !row.muted }); mutationRevision++; await poll(true); } catch (e) { if (!e.stale) error(e.message); }
       }));
       meta.append(actions); body.append(meta);
-      if (row.root_id) { const root = state.rows.get(row.root_id); body.append(element("div", "quote", root ? "回复 " + displayName(root) + "：" + (root.message || "图片") : "回复较早的消息")); }
+      if (row.root_id) body.append(element("div", "quote", root ? "回复 " + displayName(root) + "：" + (root.message || "图片") : "回复较早的消息"));
       if (row.message) body.append(element("div", "message-text", row.message));
       if (row.file_ids && row.file_ids.length) {
         const images = element("div", "images");
         row.file_ids.forEach(id => {
-          const thumb = element("button", "image-thumb"); thumb.title = "查看图片"; const img = element("img"); img.alt = "群聊图片"; thumb.append(img); images.append(thumb);
-          imageURL(id).then(url => { img.src = url; thumb.onclick = () => { $("full-image").src = url; $("viewer").showModal(); }; }).catch(() => { thumb.textContent = "图片加载失败"; thumb.onclick = () => poll(true); });
+          const thumb = element("button", "image-thumb"); thumb.title = "查看图片"; const img = element("img"); img.alt = "群聊图片"; img.decoding = "async"; thumb.append(img); images.append(thumb);
+          lazyImage(thumb, img, id);
         }); body.append(images);
       }
-      node.append(body); fragment.append(node);
+      node.append(body); icons(node);
+      if (existing) {
+        releaseRendered(existing.node);
+        if (existing.node === cursor) cursor = existing.node.nextSibling;
+        existing.node.remove();
+      }
+      $("list").insertBefore(node, cursor); cursor = node.nextSibling;
+      renderedRows.set(row.id, { node, signature });
     });
-    $("list").replaceChildren(fragment); $("empty").hidden = ordered.length > 0; icons();
-    const added = rows.filter(row => !previous.has(row.id) && row.user_id !== state.me.id).length;
+    $("empty").hidden = ordered.length > 0; trimImages();
+    if (reset && previous.size) for (const row of rows) if (!previous.has(row.id) && row.user_id !== state.me.id && row.created_at > state.viewed) unseen.add(row.id);
+    unreadBadge();
     if (reset && (stick || previous.size === 0)) bottom();
     else if (!reset) $("messages").scrollTop = oldTop + $("messages").scrollHeight - oldHeight;
-    else if (added) { state.unread += added; $("unread").textContent = state.unread + " 条新消息"; $("unread").hidden = false; }
+    else $("messages").scrollTop = oldTop;
+  }
+  function schedulePoll(delay = 3500) {
+    clearTimeout(pollTimer); pollTimer = 0;
+    if (!state.active || suspended || document.hidden) return;
+    pollTimer = setTimeout(() => { pollTimer = 0; state.me ? poll() : connect(); }, delay);
   }
   async function poll(force) {
-    if (state.polling || !state.me || !state.active || (!force && document.hidden)) return;
-    state.polling = true;
-    try {
-      const data = await api("history"); state.me.muted = data.muted;
-      const expired = pruneExpiredRows(data.retention_cutoff), signature = JSON.stringify(data.messages);
-      if (expired || signature !== state.signature) { display(data.messages, true); state.signature = signature; }
-      $("older").hidden = !data.has_more; $("status").textContent = state.me.muted ? "当前已被禁言" : "已连接"; if (state.errorScope === "connection") error(""); controls(); read();
-    } catch (e) { $("status").textContent = "连接中断"; error(e.message, "connection"); }
-    finally { state.polling = false; }
+    if (!state.me || !state.active || suspended || (!force && document.hidden)) return;
+    if (state.polling) { if (force) state.refreshQueued = true; return state.pollPromise; }
+    state.polling = true; clearTimeout(pollTimer); pollTimer = 0;
+    state.pollPromise = (async () => {
+      try {
+        do {
+          state.refreshQueued = false;
+          const revision = mutationRevision, data = await api("history");
+          if (revision !== mutationRevision) { state.refreshQueued = true; continue; }
+          state.me.muted = data.muted;
+          const expired = pruneExpiredRows(data.retention_cutoff), signature = JSON.stringify([data.messages, state.me.id, state.me.moderator]);
+          if (expired || signature !== state.signature) { display(data.messages, true); state.signature = signature; }
+          if (!state.paged) state.hasMore = data.has_more;
+          $("older").hidden = !state.hasMore; $("status").textContent = state.me.muted ? "当前已被禁言" : "已连接";
+          failures = 0; if (state.errorScope === "connection") error(""); controls(); read();
+        } while (state.refreshQueued && state.active && !suspended);
+      } catch (e) {
+        if (!e.stale && state.active) { failures++; $("status").textContent = "连接中断，正在重试"; error(e.message, "connection"); }
+      } finally {
+        state.polling = false; state.pollPromise = null;
+        schedulePoll(state.refreshQueued ? 0 : failures ? Math.min(30000, 3500 * 2 ** Math.min(failures, 3)) : 3500);
+      }
+    })();
+    return state.pollPromise;
   }
   function showAttachments() {
     $("attachments").replaceChildren();
     state.attachments.forEach(file => { const wrap = element("div", "attachment"), img = element("img"); img.src = file.url; img.alt = "待发送图片"; wrap.append(img, button("x", "移除图片", () => { if (state.busy || !state.active || !state.me || state.me.muted) return; state.attachments = state.attachments.filter(x => x !== file); URL.revokeObjectURL(file.url); state.pending = null; showAttachments(); })); $("attachments").append(wrap); }); icons(); controls();
   }
-  function composerInputReady() { return !!state.me && !state.me.muted && state.active && !!startingAuth && auth() === startingAuth; }
+  function composerInputReady() { return !!state.me && !state.me.muted && state.active && !suspended && !!startingAuth && auth() === startingAuth; }
   function composerReady() {
     if (!state.active || !startingAuth || auth() !== startingAuth) { deactivateComposer(); error("登录已变化，请返回面板重新进入"); return false; }
     return composerInputReady() && !state.busy;
@@ -275,10 +422,21 @@
     submission.attachments.forEach(file => URL.revokeObjectURL(file.url)); submission.attachments = [];
   }
   function deactivateComposer() {
+    if (!state.active) return;
     state.active = false;
+    stopTransport();
     releaseSubmission(state.inFlight); releaseSubmission(state.failedSend); state.failedSend = null;
     state.attachments.forEach(file => URL.revokeObjectURL(file.url)); state.attachments = [];
+    state.rows.clear(); trimImages(); renderedRows.clear(); unseen.clear(); imageObserver?.disconnect(); imageJobs.clear();
+    $("list").replaceChildren(); $("empty").hidden = false;
+    $("message").value = ""; $("count").textContent = "0 / 2000"; unreadBadge();
+    $("viewer").close(); $("full-image").removeAttribute("src");
     state.reply = null; state.pending = null; $("reply").hidden = true; showAttachments();
+  }
+  function stopTransport() {
+    epoch++; clearTimeout(pollTimer); pollTimer = 0; clearTimeout(readTimer); readTimer = 0;
+    state.loadingLatest = false;
+    requests.forEach(controller => controller.abort());
   }
   function showFailedSend() {
     let panel = $("failed-send");
@@ -306,6 +464,7 @@
     $("message").focus();
     try {
       const sent = await api("post", submission.data); if (!current()) return;
+      mutationRevision++;
       if (state.failedSend === submission) state.failedSend = null;
       releaseSubmission(submission); state.rows.set(sent.id, sent); state.signature = null; display([], false); bottom();
       // History refresh runs independently so its latency cannot lock the next draft.
@@ -327,25 +486,42 @@
   $("send").onclick = sendMessage;
   $("older").onclick = async () => {
     const rows = Array.from(state.rows.values()).sort((a, b) => a.created_at - b.created_at); if (!rows.length) return;
+    const revision = mutationRevision;
     $("older").disabled = true;
-    try { const data = await api("history", { before: rows[0].id }); display(data.messages, false, data.retention_cutoff); $("older").hidden = !data.has_more; } catch (e) { error(e.message); }
+    try {
+      const data = await api("history", { before: rows[0].id });
+      if (revision !== mutationRevision) { error("消息已更新，请再次加载更早消息"); return; }
+      state.paged = true; state.hasMore = data.has_more;
+      display(data.messages, false, data.retention_cutoff); $("older").hidden = !state.hasMore;
+    } catch (e) { if (!e.stale) error(e.message); }
     finally { $("older").disabled = false; }
   };
   $("refresh").onclick = () => { error(""); state.signature = null; connect(); };
-  $("unread").onclick = bottom; $("messages").addEventListener("scroll", read);
+  $("unread").onclick = viewLatest; $("messages").addEventListener("scroll", () => read(), { passive: true });
   $("close-viewer").onclick = () => $("viewer").close();
   window.addEventListener("storage", () => { if (auth() !== startingAuth) { deactivateComposer(); error("登录已变化，请返回面板重新进入"); } });
-  document.addEventListener("visibilitychange", () => poll());
-  window.addEventListener("pagehide", () => { deactivateComposer(); state.urls.forEach(p => p.then(URL.revokeObjectURL).catch(() => {})); });
+  function resume() {
+    if (!state.active) return;
+    if (auth() !== startingAuth) { deactivateComposer(); error("登录已变化，请返回面板重新进入"); return; }
+    suspended = false; state.readAt = 0; state.refreshQueued = true; controls(); unreadBadge(); drainImages();
+    state.me ? poll(true) : connect();
+  }
+  document.addEventListener("visibilitychange", () => { if (document.hidden) { clearTimeout(pollTimer); pollTimer = 0; } else resume(); });
+  window.addEventListener("online", resume);
+  window.addEventListener("focus", () => { read(); });
+  window.addEventListener("pagehide", event => {
+    if (event.persisted) { suspended = true; stopTransport(); }
+    else deactivateComposer();
+  });
+  window.addEventListener("pageshow", event => { if (event.persisted) resume(); });
   icons();
   async function connect() {
-    if (state.connecting || !state.active) return;
-    state.connecting = true;
-    try { const data = await api("bootstrap"); state.me = data.me; $("identity").textContent = displayName(state.me); controls(); error(""); await poll(true); }
-    catch (e) { $("status").textContent = "暂不可用"; error(e.message, "connection"); }
-    finally { state.connecting = false; }
+    if (state.connecting || !state.active || suspended) return;
+    state.connecting = true; state.refreshQueued = false; clearTimeout(pollTimer); pollTimer = 0;
+    try { const data = await api("bootstrap"); mutationRevision++; state.me = data.me; $("identity").textContent = displayName(state.me); controls(); error(""); await poll(true); }
+    catch (e) { if (!e.stale && state.active) { failures++; $("status").textContent = "暂不可用，正在重试"; error(e.message, "connection"); } }
+    finally { state.connecting = false; schedulePoll(state.refreshQueued ? 0 : failures ? Math.min(30000, 3500 * 2 ** Math.min(failures, 3)) : 3500); }
   }
   setupScrollChaining();
   connect();
-  setInterval(() => state.me ? poll() : connect(), 3500);
 })();

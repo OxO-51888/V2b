@@ -110,6 +110,76 @@ class TicketAiPersistenceTest extends TestCase
         $this->assertSame(2, TicketMessage::count());
     }
 
+    public function test_handoff_remains_after_staff_reply(): void
+    {
+        [$ticket] = $this->fixture('请转人工');
+        $service = new TicketService();
+        $service->replyByAdmin($ticket->id, '请更换节点再试', 2);
+        $followup = $service->reply($ticket, '还是连接超时', 1);
+        $this->assertFalse($this->persist($ticket, $followup->id));
+        $this->assertFalse($service->autoReplyByAi($ticket));
+        $this->assertSame(3, TicketMessage::count());
+        $this->assertSame(0, (int)$ticket->fresh()->reply_status);
+    }
+
+    public function test_handoff_beyond_model_history_limit_is_not_forgotten(): void
+    {
+        [$ticket] = $this->fixture('请转人工');
+        for ($i = 0; $i < 130; $i++) {
+            $latest = TicketMessage::create(['ticket_id' => $ticket->id, 'user_id' => $i % 2 ? 1 : 2, 'message' => '节点测试结果' . $i]);
+        }
+        $service = new TicketService();
+        $context = $service->buildAiTicketContext($ticket, '', 'test');
+        $this->assertCount(120, $context['ticket']['messages']);
+        $this->assertTrue($context['ticket']['human_requested']);
+        $this->assertFalse($this->persist($ticket, $latest->id));
+        $this->assertFalse($service->autoReplyByAi($ticket));
+        $this->assertSame(131, TicketMessage::count());
+    }
+
+    public function test_handoff_after_first_scan_page_and_inside_long_message_is_detected(): void
+    {
+        [$ticket] = $this->fixture();
+        for ($i = 0; $i < 105; $i++) {
+            TicketMessage::create(['ticket_id' => $ticket->id, 'user_id' => 1, 'message' => '继续排查' . $i]);
+        }
+        $latest = TicketMessage::create(['ticket_id' => $ticket->id, 'user_id' => 1, 'message' => str_repeat('网络超时。', 400) . '请转人工']);
+        $context = (new TicketService())->buildAiTicketContext($ticket, $latest->message, 'test');
+        $this->assertStringNotContainsString('人工', $context['question']);
+        $this->assertTrue($context['ticket']['human_requested']);
+        $this->assertFalse($this->persist($ticket, $latest->id));
+    }
+
+    public function test_subject_handoff_is_checked_again_before_publication(): void
+    {
+        [$ticket, $message] = $this->fixture();
+        $ticket->update(['subject' => '人工客服']);
+        $this->assertFalse($this->persist($ticket, $message->id));
+        $this->assertFalse((new TicketService())->autoReplyByAi($ticket));
+        $this->assertSame(1, TicketMessage::count());
+    }
+
+    public function test_cancellation_and_reopening_do_not_resume_ai_on_same_ticket(): void
+    {
+        [$ticket] = $this->fixture('请转人工');
+        $ticket->update(['status' => 1]);
+        $service = new TicketService();
+        $service->replyByAdmin($ticket->id, '重新打开工单核对', 2);
+        $latest = $service->reply($ticket, '不用人工了，继续让AI回答', 1);
+        $this->assertFalse($this->persist($ticket, $latest->id));
+        $this->assertFalse($service->autoReplyByAi($ticket));
+        $this->assertSame(3, TicketMessage::count());
+    }
+
+    public function test_manual_handoff_does_not_affect_other_tickets(): void
+    {
+        [$manual] = $this->fixture('请转人工');
+        [$normal, $message] = $this->fixture('连接超时');
+        $this->assertTrue($this->persist($normal, $message->id));
+        $this->assertSame(1, TicketMessage::where('ticket_id', $manual->id)->count());
+        $this->assertSame(2, TicketMessage::where('ticket_id', $normal->id)->count());
+    }
+
     public function test_closed_or_disabled_ticket_is_not_written(): void
     {
         [$ticket, $message] = $this->fixture();

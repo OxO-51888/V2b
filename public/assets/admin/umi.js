@@ -100011,15 +100011,22 @@
                     grid: {
                         top: "1%",
                         left: "1%",
-                        right: "1%",
+                        right: 20,
                         bottom: "3%",
                         containLabel: !0
                     },
                     xAxis: {
-                        type: "value"
+                        type: "value",
+                        splitNumber: 3
                     },
                     yAxis: {
                         type: "category",
+                        triggerEvent: !0,
+                        axisLabel: {
+                            fontSize: 14,
+                            width: this.userTodayRankLabelWidth(),
+                            overflow: "truncate"
+                        },
                         data: []
                     },
                     series: [{
@@ -100027,12 +100034,73 @@
                         type: "bar"
                     }]
                 };
-                e.reverse().forEach(e=>{
+                e.slice().reverse().forEach(e=>{
                     n.yAxis.data.push(e.email),
                     n.series[0].data.push(e.total)
                 }
                 ),
-                this.userTodayRankChartObj.setOption(n)
+                this.userTodayRankChartObj.setOption(n),
+                this.bindRankEmailCopy("today", this.userTodayRankChart.current, this.userTodayRankChartObj, n.yAxis.data)
+            }
+            userTodayRankLabelWidth() {
+                return Math.max(100, Math.min(280, this.userTodayRankChartObj.getWidth() / 2))
+            }
+            bindRankEmailCopy(e, t, n, r) {
+                this.rankEmailCopyBindings || (this.rankEmailCopyBindings = {}),
+                this.rankEmailCopyBindings[e] && this.rankEmailCopyBindings[e]();
+                var i = e=>{
+                    if ("yAxis" === e.componentType && "axisLabel" === e.targetType && r.indexOf(e.value) >= 0)
+                        this.copyRankEmail(e.value)
+                }
+                  , o = e=>{
+                    var i = e.target && e.target.closest && e.target.closest("svg text");
+                    if (!i || !t.contains(i) || e.button > 0)
+                        return;
+                    var o = i.textContent
+                      , a = /(?:\.\.\.|\u2026)$/.test(o)
+                      , s = a ? o.replace(/(?:\.\.\.|\u2026)$/, "") : o
+                      , l = r.map((e,t)=>({email: e, index: t})).filter(e=>"string" === typeof e.email && e.email.indexOf("@") > 0 && (e.email === o || a && s && e.email.indexOf(s) === 0));
+                    if (!l.length)
+                        return;
+                    if (l.length > 1) {
+                        var c = i.getBoundingClientRect()
+                          , u = i.closest("svg").getBoundingClientRect()
+                          , h = (c.top + c.height / 2 - u.top) * n.getHeight() / u.height;
+                        l.sort((e,t)=>Math.abs(n.convertToPixel({yAxisIndex: 0}, e.index) - h) - Math.abs(n.convertToPixel({yAxisIndex: 0}, t.index) - h))
+                    }
+                    e.preventDefault(),
+                    e.stopPropagation(),
+                    this.copyRankEmail(l[0].email)
+                };
+                // SVG labels also use native capture, independent of chart hit testing.
+                t.addEventListener("click", o, !0),
+                n.on("click", i),
+                this.rankEmailCopyBindings[e] = ()=>{
+                    t.removeEventListener("click", o, !0),
+                    n.off("click", i)
+                }
+            }
+            copyRankEmail(e) {
+                if ("string" !== typeof e || e.indexOf("@") <= 0)
+                    return;
+                var t = n("tsqr")["a"]
+                  , r = ()=>t.success("\u90ae\u7bb1\u5df2\u590d\u5236")
+                  , i = ()=>{
+                    var i = !1;
+                    try {
+                        i = n("+QRC")(e, {
+                            format: "text/plain",
+                            message: "\u8bf7\u6309 #{key} \u590d\u5236\u90ae\u7bb1"
+                        })
+                    } catch (o) {}
+                    i ? r() : t.error("\u590d\u5236\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u6d4f\u89c8\u5668\u526a\u8d34\u677f\u6743\u9650")
+                };
+                if (window.isSecureContext && navigator.clipboard && navigator.clipboard.writeText) {
+                    try {
+                        return navigator.clipboard.writeText(e).then(r, i)
+                    } catch (o) {}
+                }
+                i()
             }
             userLastRankChartRender(e) {
                 var t;
@@ -100047,15 +100115,22 @@
                     grid: {
                         top: "1%",
                         left: "1%",
-                        right: "1%",
+                        right: 20,
                         bottom: "3%",
                         containLabel: !0
                     },
                     xAxis: {
-                        type: "value"
+                        type: "value",
+                        splitNumber: 3
                     },
                     yAxis: {
                         type: "category",
+                        triggerEvent: !0,
+                        axisLabel: {
+                            fontSize: 14,
+                            width: Math.max(100, Math.min(280, this.userLastRankChartObj.getWidth() / 2)),
+                            overflow: "truncate"
+                        },
                         data: []
                     },
                     series: [{
@@ -100063,19 +100138,34 @@
                         type: "bar"
                     }]
                 };
-                e.reverse().forEach(e=>{
+                e.slice().reverse().forEach(e=>{
                     n.yAxis.data.push(e.email),
                     n.series[0].data.push(e.total)
                 }
                 ),
-                this.userLastRankChartObj.setOption(n)
+                this.userLastRankChartObj.setOption(n),
+                this.bindRankEmailCopy("yesterday", this.userLastRankChart.current, this.userLastRankChartObj, n.yAxis.data)
             }
             chartResize() {
                 this.orderChartObj.resize(),
                 this.serverLastRankChartObj.resize(),
                 this.serverTodayRankChartObj.resize(),
                 this.userTodayRankChartObj.resize(),
-                this.userLastRankChartObj.resize()
+                this.userTodayRankChartObj.setOption({
+                    yAxis: {
+                        axisLabel: {
+                            width: this.userTodayRankLabelWidth()
+                        }
+                    }
+                }),
+                this.userLastRankChartObj.resize(),
+                this.userLastRankChartObj.setOption({
+                    yAxis: {
+                        axisLabel: {
+                            width: Math.max(100, Math.min(280, this.userLastRankChartObj.getWidth() / 2))
+                        }
+                    }
+                })
             }
             componentDidMount() {
                 var e = this;
@@ -100131,7 +100221,8 @@
                 })
             }
             componentWillUnmount() {
-                window.removeEventListener("resize", this.chartResize.bind(this))
+                window.removeEventListener("resize", this.chartResize.bind(this)),
+                this.rankEmailCopyBindings && Object.values(this.rankEmailCopyBindings).forEach(e=>e())
             }
             orderFilter() {
                 this.props.dispatch({
@@ -100291,7 +100382,8 @@
                 }, l.a.createElement("div", {
                     className: "block-content"
                 }, l.a.createElement("div", {
-                    className: "d-flex align-items-center"
+                    className: "d-flex align-items-center flex-wrap",
+                    "data-dashboard-live-stats": true
                 }, l.a.createElement("div", {
                     className: "pr-4 pr-sm-5 pl-0 pl-sm-3 "
                 }, l.a.createElement("i", {
@@ -100302,6 +100394,18 @@
                 }, "\u5728\u7ebf\u4eba\u6570"), l.a.createElement("div", {
                     className: "display-4 text-black font-w300 mb-2"
                 }, t.online_user ? t.online_user : "0")), l.a.createElement("div", {
+                    className: "pr-4 pr-sm-5 pl-0 pl-sm-3 ",
+                    "data-stat": "online-device",
+                    title: t.online_device == null ? "\u4e13\u5c5e\u5ba2\u6237\u7aef\u7edf\u8ba1\u6682\u4e0d\u53ef\u7528" : "\u4e13\u5c5e\u5ba2\u6237\u7aef\uff1a\u6700\u8fd1 " + Math.ceil(t.online_device_window_seconds / 60) + " \u5206\u949f\u5185\u6709\u6210\u529f\u6388\u6743\u6216\u5fc3\u8df3\uff0c\u4e14\u4f1a\u8bdd\u6709\u6548"
+                }, l.a.createElement("i", {
+                    className: "fa fa-desktop fa-2x text-gray-light float-right",
+                    "aria-hidden": true
+                }), l.a.createElement("div", {
+                    className: "text-muted mb-1",
+                    style: { width: '120px' }
+                }, "\u5728\u7ebf\u8bbe\u5907"), l.a.createElement("div", {
+                    className: "display-4 text-black font-w300 mb-2"
+                }, t.online_device == null ? "--" : t.online_device)), l.a.createElement("div", {
                     className: "pr-4 pr-sm-5 pl-0 pl-sm-3 "
                 }, l.a.createElement("i", {
                     className: "fa fa-chart-line fa-2x text-gray-light float-right"
@@ -100418,6 +100522,7 @@
                 }, l.a.createElement("div", {
                     className: "px-sm-3 pt-sm-3 py-3 clearfix",
                     id: "userTodayRankChart",
+                    title: "\u70b9\u51fb\u90ae\u7bb1\u590d\u5236",
                     style: {
                         height: 400
                     },
@@ -100436,6 +100541,7 @@
                 }, l.a.createElement("div", {
                     className: "px-sm-3 pt-sm-3 py-3 clearfix",
                     id: "userLastRankChart",
+                    title: "\u70b9\u51fb\u90ae\u7bb1\u590d\u5236",
                     style: {
                         height: 400
                     },

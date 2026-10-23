@@ -142,6 +142,9 @@ class TicketService {
             if (TicketMessage::where('ticket_id', $freshTicket->id)->where('id', '>', $lastUserMessageId)->exists()) {
                 return null;
             }
+            if ($this->ticketRequiresHuman($freshTicket)) {
+                return null;
+            }
             $ticketMessage = TicketMessage::create([
                 'user_id' => $adminId,
                 'ticket_id' => $freshTicket->id,
@@ -158,6 +161,28 @@ class TicketService {
             return false;
         }
         return true;
+    }
+
+    private function ticketRequiresHuman(Ticket $ticket): bool
+    {
+        $service = new AiRiskService();
+        if ($service->ticketTextRequestsHuman((string)$ticket->subject)) {
+            return true;
+        }
+        $requested = false;
+        // Handoff policy uses all original user messages, not the model's truncated history.
+        TicketMessage::where('ticket_id', $ticket->id)
+            ->where('user_id', $ticket->user_id)
+            ->select(['id', 'message'])
+            ->chunkById(100, function ($messages) use ($service, &$requested) {
+                foreach ($messages as $message) {
+                    if ($service->ticketTextRequestsHuman((string)$message->message)) {
+                        $requested = true;
+                        return false;
+                    }
+                }
+            });
+        return $requested;
     }
 
     public function buildAiTicketContext(Ticket $ticket, $question, $source)
@@ -196,6 +221,7 @@ class TicketService {
                 'subject' => $ticket->subject,
                 'level' => $ticket->level,
                 'status' => $ticket->status,
+                'human_requested' => $this->ticketRequiresHuman($ticket),
                 'user_email' => $user ? $user->email : '',
                 'messages' => $messages
             ]

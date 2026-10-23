@@ -14,7 +14,7 @@ class GiftcardController extends Controller
     public function fetch(Request $request)
     {
         $current = $request->input('current', 1);
-        $pageSize = max($request->input('pageSize', 10), 10);
+        $pageSize = min(150, max(10, (int) $request->input('pageSize', 10)));
         $sortType = in_array($request->input('sort_type'), ['ASC', 'DESC']) ? $request->input('sort_type') : 'DESC';
         $sort = $request->input('sort', 'id');
         

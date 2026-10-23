@@ -406,11 +406,19 @@ class ServerService
 
     private function mergeData(&$servers)
     {
+        $keys = [];
+        foreach ($servers as $server) {
+            $type = strtoupper($server['type']);
+            foreach (['ONLINE_USER', 'LAST_CHECK_AT', 'LAST_PUSH_AT'] as $suffix) {
+                $keys[] = CacheKey::get("SERVER_{$type}_{$suffix}", $server['parent_id'] ?? $server['id']);
+            }
+        }
+        $status = $keys ? Cache::many(array_values(array_unique($keys))) : [];
         foreach ($servers as $k => $v) {
             $serverType = strtoupper($v['type']);
-            $servers[$k]['online'] = Cache::get(CacheKey::get("SERVER_{$serverType}_ONLINE_USER", $v['parent_id'] ?? $v['id']));
-            $servers[$k]['last_check_at'] = Cache::get(CacheKey::get("SERVER_{$serverType}_LAST_CHECK_AT", $v['parent_id'] ?? $v['id']));
-            $servers[$k]['last_push_at'] = Cache::get(CacheKey::get("SERVER_{$serverType}_LAST_PUSH_AT", $v['parent_id'] ?? $v['id']));
+            $servers[$k]['online'] = $status[CacheKey::get("SERVER_{$serverType}_ONLINE_USER", $v['parent_id'] ?? $v['id'])] ?? null;
+            $servers[$k]['last_check_at'] = $status[CacheKey::get("SERVER_{$serverType}_LAST_CHECK_AT", $v['parent_id'] ?? $v['id'])] ?? null;
+            $servers[$k]['last_push_at'] = $status[CacheKey::get("SERVER_{$serverType}_LAST_PUSH_AT", $v['parent_id'] ?? $v['id'])] ?? null;
             if ((time() - 300) >= $servers[$k]['last_check_at']) {
                 $servers[$k]['available_status'] = 0;
             } else if ((time() - 300) >= $servers[$k]['last_push_at']) {
