@@ -10,14 +10,15 @@ class SafeLogData
     private $visited = 0;
     private $remainingFields = 128;
 
-    public function rememberSecrets(array $input, int $depth = 0): void
+    public function rememberSecrets(array $input, int $depth = 0, bool $sensitiveParent = false): void
     {
         if ($depth > 4) return;
         foreach ($input as $key => $value) {
             if (++$this->visited > 200) break;
+            $sensitive = $sensitiveParent || $this->sensitive((string)$key);
             if (is_array($value)) {
-                $this->rememberSecrets($value, $depth + 1);
-            } elseif (is_scalar($value) && $this->sensitive((string) $key) && strlen((string) $value) > 0) {
+                $this->rememberSecrets($value, $depth + 1, $sensitive);
+            } elseif (is_scalar($value) && $sensitive && strlen((string) $value) > 0) {
                 $secret = substr((string) $value, 0, 2048);
                 $this->secrets[] = $secret;
                 $this->secrets[] = rawurlencode($secret);
@@ -86,6 +87,6 @@ class SafeLogData
 
     private function sensitive(string $key): bool
     {
-        return (bool) preg_match('/pass|secret|token|auth|cookie|session|credential|api.?key|code|subscribe|private.?key/i', $key);
+        return (bool) preg_match('/pass|secret|token|auth|cookie|session|credential|signature|api.?key|code|subscribe|private.?key/i', $key);
     }
 }

@@ -57,6 +57,28 @@ class TelegramBindingController extends Controller
         return response()->json(['data' => $service->prepareUnbind((int) $data['telegram_id'])]);
     }
 
+    public function readPublication(Request $request, TelegramBindingService $service)
+    {
+        $this->identity($request);
+        return response()->json(['data' => $service->readPublication()])->header('Cache-Control', 'private, no-store');
+    }
+
+    public function prepareSubscriptionReset(Request $request, TelegramBindingService $service)
+    {
+        $data = $this->identity($request);
+        return response()->json(['data' => $service->prepareSubscriptionReset((int) $data['telegram_id'])])
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    public function confirmSubscriptionReset(Request $request, TelegramBindingService $service)
+    {
+        $data = $this->identity($request) + $request->validate([
+            'confirmation_token' => 'required|string|regex:/^[a-f0-9]{32}$/D',
+        ]);
+        return response()->json(['data' => $service->confirmSubscriptionReset((int) $data['telegram_id'], $data['confirmation_token'])])
+            ->header('Cache-Control', 'private, no-store');
+    }
+
     public function confirmUnbind(Request $request, TelegramBindingService $service)
     {
         $data = $this->identity($request) + $request->validate([

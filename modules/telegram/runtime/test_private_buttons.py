@@ -8,7 +8,7 @@ import bot
 from panel_binding import BindingError
 
 
-BUTTONS = {'绑定邮箱', '重试入群验证', '获取订阅', '查看套餐', '重新发送验证码', '解绑邮箱'}
+BUTTONS = {'绑定邮箱', '获取订阅', '查看套餐', '重新发送验证码', '解绑邮箱', '重置订阅', '发布页'}
 
 
 class PrivateButtonTests(unittest.TestCase):
@@ -36,8 +36,8 @@ class PrivateButtonTests(unittest.TestCase):
     def assert_menu(self, call=None):
         markup = (call or self.api.send_message.call_args).kwargs['reply_markup']
         self.assertEqual(BUTTONS, {item['text'] for row in markup['keyboard'] for item in row})
-        self.assertEqual([3, 3], [len(row) for row in markup['keyboard']])
-        self.assertEqual([['绑定邮箱', '获取订阅', '查看套餐'], ['重试入群验证', '重新发送验证码', '解绑邮箱']],
+        self.assertEqual([4, 3], [len(row) for row in markup['keyboard']])
+        self.assertEqual([['发布页', '获取订阅', '查看套餐', '重置订阅'], ['绑定邮箱', '重新发送验证码', '解绑邮箱']],
                          [[item['text'] for item in row] for row in markup['keyboard']])
         self.assertFalse(markup['is_persistent'])
         self.assertFalse(markup['one_time_keyboard'])
@@ -105,7 +105,8 @@ class PrivateButtonTests(unittest.TestCase):
             with self.subTest(result=result):
                 self.checker.verify.return_value = result
                 self.dispatch('重试入群验证')
-                self.assertIn('重试入群验证', self.api.send_message.call_args.args[1])
+                self.assertIn('返回群组查看', self.api.send_message.call_args.args[1])
+                self.assertNotIn('重试入群验证', self.api.send_message.call_args.args[1])
                 self.assert_menu()
                 self.api.approve_chat_join_request.assert_not_called()
                 self.assertEqual(1, len(self.db.pending_joins_for(7)))
@@ -145,7 +146,7 @@ class PrivateButtonTests(unittest.TestCase):
         self.dispatch('解绑邮箱')
         self.checker.email_client.confirm_unbind.assert_not_called()
         markup = self.api.send_message.call_args.kwargs['reply_markup']
-        self.assertEqual({'确认解绑', '取消解绑'}, {b['text'] for row in markup['keyboard'] for b in row})
+        self.assertEqual({'确认解绑', '取消解绑'}, {b['text'] for row in markup['inline_keyboard'] for b in row})
         self.dispatch('取消解绑')
         self.checker.email_client.cancel_unbind.assert_called_once_with(7)
         self.checker.email_client.confirm_unbind.assert_not_called()
@@ -157,6 +158,15 @@ class PrivateButtonTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.dispatch(text)
                 self.assert_menu()
+
+    def test_help_and_pending_feedback_never_advertise_removed_button(self):
+        for text in [bot.bind_help_text(), bot.bound_help_text(), bot.join_approval_text([], True)]:
+            self.assertNotIn('重试入群验证', text)
+        for command in ['/start', '/help', '绑定邮箱']:
+            self.dispatch(command)
+            for sent in self.api.send_message.call_args_list:
+                self.assertNotIn('重试入群验证', sent.args[1])
+            self.assert_menu()
 
 
 if __name__ == '__main__':

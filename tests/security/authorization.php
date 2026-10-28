@@ -9,13 +9,6 @@ spl_autoload_register(function ($class) use ($source) {
     if (is_file($file)) require $file;
 }, true, true);
 
-class SecurityTelegramSink
-{
-    public function sendMessage(...$args) {}
-    public function sendMessageWithAdmin(...$args) {}
-}
-class_alias(SecurityTelegramSink::class, 'App\\Services\\TelegramService');
-
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Payment;
@@ -30,7 +23,7 @@ use Illuminate\Support\Facades\Bus;
 $app = new Illuminate\Foundation\Application($source);
 $app->instance('config', new Illuminate\Config\Repository([
     'app' => ['key' => 'security-suite-only-not-a-production-key'],
-    'v2board' => ['telegram_bot_token' => ''],
+    'v2board' => [],
 ]));
 $capsule = new Illuminate\Database\Capsule\Manager($app);
 $capsule->addConnection(['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']);
@@ -41,9 +34,8 @@ $app->instance('cache', new Illuminate\Cache\Repository(new Illuminate\Cache\Arr
 $app->instance('bus', new Illuminate\Bus\Dispatcher($app));
 $app->alias('bus', Illuminate\Contracts\Bus\Dispatcher::class);
 $app->bind(Illuminate\Contracts\Routing\ResponseFactory::class, function () {
-    return new class {
-        public function make($data = '', $status = 200, $headers = []) { return new Illuminate\Http\Response($data, $status, $headers); }
-        public function json($data = [], $status = 200) { return new Illuminate\Http\JsonResponse($data, $status); }
+    return new class extends Illuminate\Routing\ResponseFactory {
+        public function __construct() {}
     };
 });
 $app->instance('translator', new Illuminate\Translation\Translator(new Illuminate\Translation\ArrayLoader(), 'en'));
@@ -54,6 +46,9 @@ set_error_handler(function ($severity, $message, $file, $line) {
     throw new ErrorException($message, 0, $severity, $file, $line);
 });
 $schema = $db->getSchemaBuilder();
+$app->instance('db.schema', $schema);
+require_once $source . '/database/migrations/2026_10_23_000001_create_payment_attempts_table.php';
+(new CreatePaymentAttemptsTable())->up();
 $schema->create('v2_user', function ($t) {
     $t->increments('id'); $t->string('email')->unique();
     foreach (['is_admin','is_staff','banned','balance','commission_balance','u','d','transfer_enable'] as $field) $t->integer($field)->default(0);
@@ -187,15 +182,30 @@ testCase('authenticated_lookup_is_one_primary_key_query', function () use ($db) 
     $queries=$db->getQueryLog();$db->disableQueryLog();
     expectTrue(count($queries)===1 && strpos($queries[0]['query'],'"v2_user"."id" = ?')!==false);
 });
-testCase('empty_legacy_telegram_token_rejected', function () {
-    config(['v2board.telegram_bot_token'=>'']);
-    expectTrue(denied(fn() => new App\Http\Controllers\V1\Guest\TelegramController(Request::create('/fixture','POST',['access_token'=>md5('')]))));
+testCase('retired_legacy_telegram_controller_cannot_load', function () {
+    expectTrue(!class_exists(App\Http\Controllers\V1\Guest\TelegramController::class));
+    expectTrue(!method_exists(App\Http\Controllers\V1\Admin\ConfigController::class, 'setTelegramWebhook'));
 });
-testCase('configured_legacy_telegram_token_still_accepted', function () {
-    config(['v2board.telegram_bot_token'=>'fixture-token']);
-    new App\Http\Controllers\V1\Guest\TelegramController(Request::create('/fixture','POST',['access_token'=>md5('fixture-token')]));
-    expectTrue(denied(fn() => new App\Http\Controllers\V1\Guest\TelegramController(Request::create('/fixture','POST',['access_token'=>'wrong']))));
-    config(['v2board.telegram_bot_token'=>'']);
+testCase('legacy_routes_removed_native_binding_remains_authenticated', function () use ($app) {
+    $router = new Illuminate\Routing\Router(new Illuminate\Events\Dispatcher($app), $app);
+    (new App\Http\Routes\V1\GuestRoute())->map($router);
+    (new App\Http\Routes\V1\AdminRoute())->map($router);
+    (new App\Http\Routes\V1\TelegramBindingRoute())->map($router);
+    $native = [];
+    foreach ($router->getRoutes() as $route) {
+        expectTrue(!str_contains($route->uri(), 'guest/telegram/webhook'));
+        expectTrue(!str_contains($route->uri(), 'config/setTelegramWebhook'));
+        if (str_starts_with($route->uri(), 'bot/telegram/')) {
+            $native[] = substr($route->uri(), strlen('bot/telegram/'));
+            expectTrue(in_array(App\Http\Middleware\TelegramBotAuth::class, $route->gatherMiddleware(), true));
+        }
+    }
+    $expected = ['email/request', 'email/confirm', 'email/unbind/prepare', 'email/unbind/confirm', 'verify',
+        'account/subscription', 'account/plan', 'account/publication',
+        'account/subscription/reset/prepare', 'account/subscription/reset/confirm'];
+    sort($native);
+    sort($expected);
+    expectTrue($native === $expected);
 });
 testCase('normal_sgepay_callback_is_paid', function () { expectTrue(callbackFixture(paymentFixture(), signedPayment()) === [false,1]); });
 testCase('normal_epay_callback_is_paid', function () { expectTrue(callbackFixture(paymentFixture('EPay'), signedPayment()) === [false,1]); });
@@ -247,7 +257,7 @@ testCase('staff_cannot_update_admin_or_staff', function () {
     foreach (['is_admin','is_staff'] as $role) {
         $target=fixtureUser([$role=>1]);
         $request = new class extends App\Http\Requests\Staff\UserUpdate {
-            public function validated() { return ['email'=>'changed@example.invalid','banned'=>0]; }
+            public function validated($key = null, $default = null) { return data_get(['email'=>'changed@example.invalid','banned'=>0], $key, $default); }
         };
         $request->initialize([], ['id'=>$target->id]);
         $request->setMethod('POST');
@@ -260,9 +270,9 @@ foreach (['Staff','Admin'] as $actor) {
         $target=fixtureUser(['password'=>password_hash('old-fixture-password',PASSWORD_DEFAULT),'password_salt'=>'old-salt','transfer_enable'=>123456,'u'=>123,'d'=>456,'balance'=>789]);
         $jwt=loginFixture($target);AuthService::decryptAuthData($jwt);
         if ($actor==='Staff') {
-            $request=new class extends App\Http\Requests\Staff\UserUpdate { public function validated() { return $this->input('fixture_params'); } };
+            $request=new class extends App\Http\Requests\Staff\UserUpdate { public function validated($key = null, $default = null) { return data_get($this->input('fixture_params'), $key, $default); } };
         } else {
-            $request=new class extends App\Http\Requests\Admin\UserUpdate { public function validated() { return $this->input('fixture_params'); } };
+            $request=new class extends App\Http\Requests\Admin\UserUpdate { public function validated($key = null, $default = null) { return data_get($this->input('fixture_params'), $key, $default); } };
         }
         $request->initialize([],['id'=>$target->id,'fixture_params'=>['email'=>$target->email,'banned'=>0,'password'=>'new-fixture-password']]);
         $request->setMethod('POST');

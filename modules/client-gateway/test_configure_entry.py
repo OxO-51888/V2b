@@ -91,6 +91,22 @@ class EntryProvisionTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             entry.render_shared(policy)
 
+    def test_all_sites_use_php85_with_or_without_explicit_socket(self):
+        policy = {'dispatcher': 'new', 'sites': {
+            'default': {'root': '/www/wwwroot/default.example', 'panel_id': 'panel_01'},
+            'new': {**self.site, 'php_socket': '/tmp/php-cgi-85.sock'},
+        }}
+        text = entry.render_shared(policy).decode()
+        self.assertEqual(5, text.count('fastcgi_pass unix:/tmp/php-cgi-85.sock;'))
+        self.assertIn('fastcgi_pass unix:/tmp/php-cgi-85.sock;', entry.render(self.site).decode())
+
+    def test_socket_policy_cannot_inject_nginx_or_choose_remote_upstreams(self):
+        for socket in ['127.0.0.1:9000', '/tmp/php-cgi-85.sock;include /tmp/x;',
+                       '/tmp/../php-cgi-85.sock', '/tmp/other.sock', None, 85,
+                       '/tmp/php-cgi-81.sock', '/tmp/php-cgi-84.sock', '/tmp/php-cgi-86.sock']:
+            with self.assertRaises(ValueError):
+                entry.render({**self.site, 'php_socket': socket})
+
 
 if __name__ == '__main__':
     unittest.main()

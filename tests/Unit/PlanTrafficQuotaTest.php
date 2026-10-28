@@ -128,7 +128,7 @@ class PlanTrafficQuotaTest extends TestCase
         $this->assertSame(['data' => true], $response->getOriginalContent());
     }
 
-    /** @dataProvider forceUpdateCases */
+    #[\PHPUnit\Framework\Attributes\DataProvider('forceUpdateCases')]
     public function test_force_update_respects_billing_type(array $prices, array $changes, $expiry, int $expectedGiB): void
     {
         $plan = $this->plan($prices);
@@ -149,7 +149,7 @@ class PlanTrafficQuotaTest extends TestCase
         $this->assertSame(200, (int)$plan->fresh()->transfer_enable);
     }
 
-    public function forceUpdateCases(): array
+    public static function forceUpdateCases(): array
     {
         $cases = [
             'one-time accumulated quota' => [['onetime_price' => 100], [], null, 900],
@@ -217,7 +217,7 @@ class PlanTrafficQuotaTest extends TestCase
         return $order;
     }
 
-    /** @dataProvider oneTimePurchaseCases */
+    #[\PHPUnit\Framework\Attributes\DataProvider('oneTimePurchaseCases')]
     public function test_one_time_purchase_keeps_original_unused_quota_carryover(int $quota, int $up, int $down, $expiry, int $expected): void
     {
         $plan = $this->plan(['onetime_price' => 100]);
@@ -234,7 +234,7 @@ class PlanTrafficQuotaTest extends TestCase
         $this->assertSame($plan->id, (int)$user->plan_id);
     }
 
-    public function oneTimePurchaseCases(): array
+    public static function oneTimePurchaseCases(): array
     {
         $gib = self::GIB;
         return [
@@ -268,7 +268,7 @@ class PlanTrafficQuotaTest extends TestCase
         $this->assertSame(0, (int)$user->fresh()->d);
     }
 
-    /** @dataProvider resetEventCases */
+    #[\PHPUnit\Framework\Attributes\DataProvider('resetEventCases')]
     public function test_purchase_events_do_not_give_back_used_quota(int $type): void
     {
         $this->app['config']->set('v2board', [
@@ -282,7 +282,7 @@ class PlanTrafficQuotaTest extends TestCase
         $this->assertSame(0, (int)$user->fresh()->d);
     }
 
-    public function resetEventCases(): array
+    public static function resetEventCases(): array
     {
         return ['new' => [1], 'renewal' => [2], 'change without conversion' => [3]];
     }

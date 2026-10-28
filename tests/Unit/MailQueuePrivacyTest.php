@@ -91,7 +91,6 @@ class MailQueuePrivacyTest extends TestCase
         $queue = new SyncQueue();
         $queue->setContainer($this->app);
         $method = new \ReflectionMethod($queue, 'createPayload');
-        $method->setAccessible(true);
         return json_decode($method->invoke($queue, $job, $job->queue), true);
     }
 
@@ -99,7 +98,6 @@ class MailQueuePrivacyTest extends TestCase
     {
         $handler = new CallQueuedHandler($this->app->make(DispatcherContract::class), $this->app);
         $method = new \ReflectionMethod($handler, 'getCommand');
-        $method->setAccessible(true);
         return $method->invoke($handler, $payload['data']);
     }
 
@@ -282,7 +280,7 @@ class MailQueuePrivacyTest extends TestCase
         return (new HideQueueSecrets())->handle(Request::create($path), function () use ($response) { return $response; });
     }
 
-    public function monitorPaths(): array
+    public static function monitorPaths(): array
     {
         return array_map(function ($path) { return [$path]; }, [
             '/monitor/api/jobs/pending', '/monitor/api/jobs/completed', '/monitor/api/jobs/silenced',
@@ -291,7 +289,7 @@ class MailQueuePrivacyTest extends TestCase
         ]);
     }
 
-    /** @dataProvider monitorPaths */
+    #[\PHPUnit\Framework\Attributes\DataProvider('monitorPaths')]
     public function test_all_monitor_paths_hide_legacy_and_encrypted_mail_data(string $path): void
     {
         foreach ([false, true] as $encrypted) {

@@ -27,6 +27,7 @@ class PanelGatewayDatabaseTest extends TestCase
         $capsule->addConnection(['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']);
         $this->db = $capsule->getConnection();
         $app->instance('db', $capsule->getDatabaseManager());
+        $app->bind('db.schema', fn () => $this->db->getSchemaBuilder());
         Facade::clearResolvedInstances(); Facade::setFacadeApplication($app);
         (new \CreateClientGatewayTable())->up();
         $this->own = new PanelStore($this->db, 'panel_06');

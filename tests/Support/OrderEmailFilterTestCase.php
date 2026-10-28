@@ -112,7 +112,7 @@ abstract class OrderEmailFilterTestCase extends TestCase
         ];
     }
 
-    /** @dataProvider filters */
+    #[\PHPUnit\Framework\Attributes\DataProvider('filters')]
     public function testEmailConditions(string $condition, $value, array $expected): void
     {
         $this->assertIds($expected, $this->fetch([$this->email($condition, $value)]));

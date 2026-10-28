@@ -44,7 +44,7 @@ class UserReadMysqlTest extends TestCase
 
     public static function orders(): array { return [[true], [false]]; }
 
-    /** @dataProvider orders */
+    #[\PHPUnit\Framework\Attributes\DataProvider('orders')]
     public function testSnapshotDoesNotSkipDuplicateOrChangeRowsDuringConcurrentEdits(bool $byId): void
     {
         $query = User::where('banned', 1)->orderBy('created_at', 'DESC');

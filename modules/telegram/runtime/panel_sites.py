@@ -77,6 +77,21 @@ class PanelSites:
         for client in self.clients.values():
             client.email_requests.pop(user_id, None)
             client.cancel_unbind(user_id)
+            client.cancel_subscription_reset(user_id)
+
+    def begin_switch(self, user_id):
+        self.clear_pending(user_id)
+        now = time.monotonic()
+        self.selections = {uid: row for uid, row in self.selections.items() if row[1] > now}
+        if user_id not in self.selections and len(self.selections) >= 20000:
+            raise BindingError('当前请求较多，请稍后再试')
+        # None reserves the conversation while the user explicitly chooses a site.
+        self.selections[user_id] = (None, now + 86400)
+
+    def awaiting_choice(self, user_id):
+        self.current(user_id)
+        selected = self.selections.get(user_id)
+        return selected is not None and selected[0] is None
 
     def select(self, user_id, key):
         if key not in self.sites:
@@ -141,12 +156,19 @@ class PanelSites:
         entry = self.entry_choice(text)
         if entry:
             return entry
-        cached = self.discoveries.get(user_id)
-        own = cached[1] if cached and cached[0] > time.monotonic() else []
         current = self.current(user_id)
         for key, site in self.sites.items():
-            if text == site['label'] and (key == current or key in own):
+            if text != site['label']:
+                continue
+            if key == current:
                 return key
+            # Telegram keeps reply buttons after the short discovery cache expires.
+            own, incomplete = self.bound_sites(user_id)
+            if key in own:
+                return key
+            if incomplete:
+                raise BindingError('未切换机场。请稍后发送 /sites 重新选择，或从网站的验证入口进入。')
+            raise BindingError('未切换机场。请从网站的验证入口进入，或发送 /sites 重新选择已绑定的机场。')
         return None
 
     def can_switch(self, user_id):
@@ -172,7 +194,7 @@ class SitePrivateBot:
     def __getattr__(self, name):
         return getattr(self.bot, name)
 
-    def send_message(self, chat_id, text, reply_to_message_id=None, *, reply_markup=None):
+    def send_message(self, chat_id, text, reply_to_message_id=None, *, reply_markup=None, entities=None):
         if reply_markup and 'keyboard' in reply_markup:
             rows = reply_markup['keyboard']
             labels = {b.get('text') for row in rows for b in row}
@@ -180,7 +202,12 @@ class SitePrivateBot:
                 rows = [[b for b in row if b.get('text') != '切换机场'] for row in rows]
                 rows = [row for row in rows if row]
                 if self.sites and self.sites.can_switch(self.user_id):
-                    rows = rows + [[{'text': '切换机场'}]]
+                    rows[-1] = rows[-1] + [{'text': '切换机场'}]
                 reply_markup = {**reply_markup, 'keyboard': rows}
-        return self.bot.send_message(chat_id, self.label + '\n\n' + text,
-                                     reply_to_message_id, reply_markup=reply_markup)
+        prefix = self.label + '\n\n'
+        if entities is not None:
+            shift = len(prefix.encode('utf-16-le')) // 2
+            shifted = [{**entity, 'offset': entity['offset'] + shift} for entity in entities]
+            return self.bot.send_message(chat_id, prefix + text, reply_to_message_id,
+                                         reply_markup=reply_markup, entities=shifted)
+        return self.bot.send_message(chat_id, prefix + text, reply_to_message_id, reply_markup=reply_markup)

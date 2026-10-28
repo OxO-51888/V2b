@@ -20,6 +20,9 @@ return [
 
     'driver' => env('SESSION_DRIVER', 'file'),
 
+    // Retain the existing wire format when upgrading the framework.
+    'serialization' => 'php',
+
     /*
     |--------------------------------------------------------------------------
     | Session Lifetime

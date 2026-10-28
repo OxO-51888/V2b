@@ -5655,7 +5655,7 @@
                     enable: 0,
                     provider: "openai",
                     base_url: "https://api.openai.com/v1",
-                    model: "gpt-5-nano",
+                    model: "gpt-6-luna",
                     log_limit: 80,
                     block_score: 80,
                     api_key: "",
@@ -7152,18 +7152,8 @@
                     value: e.model,
                     onChange: e=>this.updateAiConfig("model", e.target.value)
                 }, f.a.createElement("option", {
-                    value: "gpt-5-nano"
-                }, "GPT-5 nano（推荐，最低成本）"), f.a.createElement("option", {
-                    value: "gpt-4o-mini"
-                }, "GPT-4o mini（便宜稳定）"), f.a.createElement("option", {
-                    value: "gpt-5-mini"
-                }, "GPT-5 mini（更强判断）"), f.a.createElement("option", {
-                    value: "gpt-4.1-nano"
-                }, "GPT-4.1 nano（快速低价）"), f.a.createElement("option", {
-                    value: "gpt-4.1-mini"
-                }, "GPT-4.1 mini（稳定通用）"), f.a.createElement("option", {
-                    value: "gpt-4.1"
-                }, "GPT-4.1（高质量，较贵）"))), f.a.createElement("label", {
+                    value: "gpt-6-luna"
+                }, "GPT-6 Luna"))), f.a.createElement("label", {
                     className: "v2-ai-risk-field"
                 }, f.a.createElement("span", null, "日志条数"), f.a.createElement("input", {
                     type: "number",
@@ -7222,7 +7212,7 @@
                     onClick: ()=>this.runAiAnalysis()
                 }, this.state.aiRunning ? "分析中..." : "开始分析")), f.a.createElement("p", {
                     className: "v2-ai-risk-note"
-                }, "使用 gpt-5-nano 进行实时风控；分析按钮只做风险概览，规则动作选 AI 审查时会实时判断是否拦截。")), this.renderAiRejections(), t ? f.a.createElement("div", {
+                }, "使用 GPT-6 Luna 进行实时风控；分析按钮只做风险概览，规则动作选 AI 审查时会实时判断是否拦截。")), this.renderAiRejections(), t ? f.a.createElement("div", {
                     className: "v2-ai-risk-result"
                 }, f.a.createElement("div", {
                     className: "v2-ai-risk-result-box"
@@ -33737,155 +33727,11 @@
     Jezz: function(e, t, n) {
         "use strict";
         n.r(t);
-        var r = n("jehZ")
-          , i = n.n(r)
-          , o = (n("g9YV"),
-        n("wCAj"))
-          , a = n("q1tI")
-          , s = n.n(a)
-          , l = n("Bl7J")
-          , c = (n("maVC"),
-        n("wd/R"),
-        n("/MKj"))
-          , u = (n("mCd/"),
-        n("CgOb"),
-        n("hVla"),
-        n("Qg4q"),
-        n("yWgo"),
-        n("Oa6W"),
-        n("H9LU"),
-        n("3XVG"),
-        n("ykC2"),
-        n("v32e"));
-        class h extends s.a.Component {
-            constructor(e) {
-                super(e),
-                this.state = {},
-                this.getDataTimer = void 0
-            }
-            componentDidMount() {
-                this.getData()
-            }
-            componentWillUnmount() {
-                clearTimeout(this.getDataTimer)
-            }
-            getData() {
-                this.props.dispatch({
-                    type: "system/getQueueStats"
-                }),
-                this.props.dispatch({
-                    type: "system/getQueueWorkload"
-                }),
-                this.getDataTimer = setTimeout(()=>{
-                    this.getData()
-                }
-                , 3e3)
-            }
-            render() {
-                var e = this.props.system
-                  , t = e.queueStats
-                  , n = (e.getQueueStatsLoading,
-                e.queueWorkload);
-                e.getQueueWorkloadLoading;
-                return s.a.createElement(l["a"], i()({}, this.props, {
-                    title: "\u961f\u5217\u76d1\u63a7"
-                }), s.a.createElement(u["a"], {
-                    loading: !t
-                }, s.a.createElement("div", {
-                    className: "block block-rounded "
-                }, s.a.createElement("div", {
-                    className: "block-header block-header-default"
-                }, s.a.createElement("h3", {
-                    className: "block-title"
-                }, "\u603b\u89c8")), s.a.createElement("div", {
-                    className: "block-content p-0"
-                }, s.a.createElement("div", {
-                    className: "row no-gutters"
-                }, s.a.createElement("div", {
-                    className: "col-lg-6 col-xl-3 border-right p-4 border-bottom"
-                }, s.a.createElement("div", null, s.a.createElement("div", null, "\u5f53\u524d\u4f5c\u4e1a\u91cf"), s.a.createElement("div", {
-                    className: "mt-4 font-size-h3"
-                }, (null === t || void 0 === t ? void 0 : t.jobsPerMinute) || "0"))), s.a.createElement("div", {
-                    className: "col-lg-6 col-xl-3 border-right p-4 border-bottom"
-                }, s.a.createElement("div", null, s.a.createElement("div", null, "\u8fd1\u4e00\u5c0f\u65f6\u5904\u7406\u91cf"), s.a.createElement("div", {
-                    className: "mt-4 font-size-h3"
-                }, (null === t || void 0 === t ? void 0 : t.recentJobs) || "0"))), s.a.createElement("div", {
-                    className: "col-lg-6 col-xl-3 border-right p-4 border-bottom"
-                }, s.a.createElement("div", null, s.a.createElement("div", null, "7\u65e5\u5185\u62a5\u9519\u6570\u91cf"), s.a.createElement("div", {
-                    className: "mt-4 font-size-h3"
-                }, (null === t || void 0 === t ? void 0 : t.failedJobs) || "0"))), s.a.createElement("div", {
-                    className: "col-lg-6 col-xl-3 p-4 border-bottom overflow-hidden"
-                }, s.a.createElement("div", null, s.a.createElement("div", null, "\u72b6\u6001"), s.a.createElement("div", {
-                    className: "mt-4 font-size-h3"
-                }, t && ((null === t || void 0 === t ? void 0 : t.status) ? "\u8fd0\u884c\u4e2d" : "\u672a\u542f\u52a8")), t && ((null === t || void 0 === t ? void 0 : t.status) ? s.a.createElement("i", {
-                    class: "si si-check text-success",
-                    style: {
-                        position: "absolute",
-                        fontSize: 100,
-                        right: -20,
-                        bottom: -20
-                    }
-                }) : s.a.createElement("i", {
-                    class: "si si-close text-danger",
-                    style: {
-                        position: "absolute",
-                        fontSize: 100,
-                        right: -20,
-                        bottom: -20
-                    }
-                })))))))), s.a.createElement(u["a"], {
-                    loading: !n
-                }, s.a.createElement("div", {
-                    className: "block block-rounded "
-                }, s.a.createElement("div", {
-                    className: "block-header block-header-default"
-                }, s.a.createElement("h3", {
-                    className: "block-title"
-                }, "\u5f53\u524d\u4f5c\u4e1a\u8be6\u60c5")), s.a.createElement("div", {
-                    className: "block-content p-0"
-                }, s.a.createElement(o["a"], {
-                    columns: [{
-                        title: "\u961f\u5217\u540d\u79f0",
-                        dataIndex: "name",
-                        key: "name",
-                        render: e=>{
-                            var t = {
-                                order_handle: "\u8ba2\u5355\u961f\u5217",
-                                send_email: "\u90ae\u4ef6\u961f\u5217",
-                                send_email_mass: "\u90ae\u4ef6\u7fa4\u53d1\u961f\u5217",
-                                send_telegram: "Telegram\u6d88\u606f\u961f\u5217",
-                                stat: "\u7edf\u8ba1\u961f\u5217",
-                                traffic_fetch: "\u6d41\u91cf\u6d88\u8d39\u961f\u5217"
-                            };
-                            return t[e]
-                        }
-                    }, {
-                        title: "\u4f5c\u4e1a\u91cf",
-                        dataIndex: "processes",
-                        key: "processes"
-                    }, {
-                        title: "\u4efb\u52a1\u91cf",
-                        dataIndex: "length",
-                        key: "length"
-                    }, {
-                        title: "\u5360\u7528\u65f6\u95f4",
-                        dataIndex: "wait",
-                        key: "wait",
-                        align: "right",
-                        render: e=>e + "s"
-                    }],
-                    dataSource: n && n.filter(e=>"default" !== e.name),
-                    pagination: !1
-                })))))
-            }
-        }
-        t["default"] = Object(c["c"])(e=>{
-            var t = e.system;
-            return {
-                system: t
-            }
-        }
-        )(h)
+        var React = n("q1tI"), Layout = n("Bl7J");
+        t["default"] = function(props) {
+            return React.createElement(Layout["a"], Object.assign({}, props, {title: "\u961f\u5217\u76d1\u63a7"}),
+                window.RuntimeMonitor.section(React));
+        };
     },
     Ji7U: function(e, t, n) {
         "use strict";
@@ -116423,7 +116269,7 @@
                     enable: 0,
                     provider: "openai",
                     base_url: "https://api.openai.com/v1",
-                    model: "gpt-5-nano",
+                    model: "gpt-6-luna",
                     log_limit: 80,
                     block_score: 80,
                     api_key: "",
@@ -117015,18 +116861,8 @@
                     value: e.model,
                     onChange: e=>this.updateAiConfig("model", e.target.value)
                 }, i.a.createElement("option", {
-                    value: "gpt-5-nano"
-                }, "GPT-5 nano（推荐，最低成本）"), i.a.createElement("option", {
-                    value: "gpt-4o-mini"
-                }, "GPT-4o mini（便宜稳定）"), i.a.createElement("option", {
-                    value: "gpt-5-mini"
-                }, "GPT-5 mini（更强判断）"), i.a.createElement("option", {
-                    value: "gpt-4.1-nano"
-                }, "GPT-4.1 nano（快速低价）"), i.a.createElement("option", {
-                    value: "gpt-4.1-mini"
-                }, "GPT-4.1 mini（稳定通用）"), i.a.createElement("option", {
-                    value: "gpt-4.1"
-                }, "GPT-4.1（高质量，较贵）"))), i.a.createElement("label", {
+                    value: "gpt-6-luna"
+                }, "GPT-6 Luna"))), i.a.createElement("label", {
                     className: "v2-ai-risk-field"
                 }, i.a.createElement("span", null, "日志条数"), i.a.createElement("input", {
                     type: "number",
@@ -117085,7 +116921,7 @@
                     onClick: ()=>this.runAiAnalysis()
                 }, this.state.aiRunning ? "分析中..." : "开始分析")), i.a.createElement("p", {
                     className: "v2-ai-risk-note"
-                }, "使用 gpt-5-nano 进行实时风控；分析按钮只做风险概览，规则动作选 AI 审查时会实时判断是否拦截。")), this.renderAiRejections(), t ? i.a.createElement("div", {
+                }, "使用 GPT-6 Luna 进行实时风控；分析按钮只做风险概览，规则动作选 AI 审查时会实时判断是否拦截。")), this.renderAiRejections(), t ? i.a.createElement("div", {
                     className: "v2-ai-risk-result"
                 }, i.a.createElement("div", {
                     className: "v2-ai-risk-result-box"

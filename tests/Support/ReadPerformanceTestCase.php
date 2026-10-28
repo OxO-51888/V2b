@@ -149,7 +149,7 @@ abstract class ReadPerformanceTestCase extends TestCase
         return array_map(fn($x) => [$x], ['order', 'ticket', 'staff_ticket', 'coupon', 'giftcard', 'log', 'stat', 'invite']);
     }
 
-    /** @dataProvider endpoints */
+    #[\PHPUnit\Framework\Attributes\DataProvider('endpoints')]
     public function testPaginationIsBoundedAndKeepsNormalPages(string $endpoint): void
     {
         $this->seedLists();
@@ -203,7 +203,7 @@ abstract class ReadPerformanceTestCase extends TestCase
             ['2028-03-01 00:00:01'], ['2026-12-31 23:59:59']];
     }
 
-    /** @dataProvider dates */
+    #[\PHPUnit\Framework\Attributes\DataProvider('dates')]
     public function testDashboardExactlyMatchesLegacyAtTimeBoundaries(string $date): void
     {
         $now = ReadPerformanceClock::$now = strtotime($date);
@@ -254,7 +254,7 @@ abstract class ReadPerformanceTestCase extends TestCase
 
     public static function rankCases(): array { return [[false, false], [true, false], [false, true], [true, true]]; }
 
-    /** @dataProvider rankCases */
+    #[\PHPUnit\Framework\Attributes\DataProvider('rankCases')]
     public function testRankingMatchesLegacyIncludingRatesMissingUsersAndTies(bool $yesterday, bool $empty): void
     {
         $now = ReadPerformanceClock::$now;
@@ -290,13 +290,13 @@ abstract class ReadPerformanceTestCase extends TestCase
         return [[null, null, null], [0, -300, -1], [5, -299, -300], [12, -299, -299], [false, 1, 1], ['0', 0, 0]];
     }
 
-    /** @dataProvider nodeCases */
+    #[\PHPUnit\Framework\Attributes\DataProvider('nodeCases')]
     public function testNodeStatusMatchesLegacyAndReadsUniqueKeysOnce($online, $check, $push): void
     {
         $cache = new class($this->cacheStore()) extends Repository {
             public $gets = 0;
             public $batches = [];
-            public function get($key, $default = null) { $this->gets++; return parent::get($key, $default); }
+            public function get($key, $default = null): mixed { $this->gets++; return parent::get($key, $default); }
             public function many($keys) { $this->batches[] = $keys; return parent::many($keys); }
         };
         Cache::swap($cache);
@@ -317,7 +317,7 @@ abstract class ReadPerformanceTestCase extends TestCase
         $expected = LegacyReadQueries::serverStatus($servers, $now);
         $this->assertSame(96, $cache->gets);
         $cache->gets = 0;
-        $method = new \ReflectionMethod(ServerService::class, 'mergeData'); $method->setAccessible(true);
+        $method = new \ReflectionMethod(ServerService::class, 'mergeData');
         $args = [&$servers]; $method->invokeArgs(new ServerService(), $args);
         $this->assertSame($expected, $servers);
         $this->assertSame(0, $cache->gets);
@@ -331,7 +331,7 @@ abstract class ReadPerformanceTestCase extends TestCase
     {
         Cache::shouldReceive('get')->never(); Cache::shouldReceive('many')->never();
         $servers = [];
-        $method = new \ReflectionMethod(ServerService::class, 'mergeData'); $method->setAccessible(true);
+        $method = new \ReflectionMethod(ServerService::class, 'mergeData');
         $args = [&$servers]; $method->invokeArgs(new ServerService(), $args);
         $this->assertSame([], $servers);
     }

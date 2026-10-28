@@ -22,7 +22,7 @@ class ServerController extends Controller
             $servers = $serverService->getAvailableServers($user);
         }
         $eTag = sha1(json_encode(array_column($servers, 'cache_key')));
-        if (strpos($request->header('If-None-Match'), $eTag) !== false ) {
+        if (strpos((string)$request->header('If-None-Match', ''), $eTag) !== false ) {
             abort(304);
         }
 

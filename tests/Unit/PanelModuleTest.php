@@ -67,10 +67,32 @@ class PanelModuleTest extends TestCase
         $router = new Router(new Dispatcher($this->app), $this->app);
         (new PanelModuleRoute())->map($router);
         $routes = iterator_to_array($router->getRoutes());
-        $this->assertCount(10, $routes);
+        $this->assertCount(9, $routes);
+        $this->assertNotContains('fixture-admin/modules/gateway/configure', array_map(fn($route) => $route->uri(), $routes));
         foreach ($routes as $route) {
             if (strpos($route->uri(), 'fixture-admin/') === 0) $this->assertContains('admin', $route->middleware());
         }
+    }
+    public function testSubscriptionEntryRoutesAreExplicitAndCanBeDisabled(): void
+    {
+        $router = new Router(new Dispatcher($this->app), $this->app);
+        $this->app->instance('router', $router);
+        $router->group(['middleware' => 'api'], function () {
+            require __DIR__ . '/../../routes/client-gateway.php';
+        });
+        $routes = iterator_to_array($router->getRoutes());
+        $this->assertCount(6, $routes);
+        $this->assertSame(['health', 'api/public-key', 'api/client/verify', 'api/client/heartbeat',
+            'api/client/deactivate', 'api/gateway/panel/{path}'], array_map(fn($route) => $route->uri(), $routes));
+        foreach ($routes as $route) $this->assertContains('api', $route->middleware());
+        $this->assertSame(['POST'], $routes[2]->methods());
+        $this->assertSame('api/client/verify', $routes[2]->defaults['endpoint']);
+        config(['panel_modules.enabled' => false]);
+        $disabled = new Router(new Dispatcher($this->app), $this->app);
+        $this->app->instance('router', $disabled);
+        Facade::clearResolvedInstance('router');
+        require __DIR__ . '/../../routes/client-gateway.php';
+        $this->assertCount(0, $disabled->getRoutes());
     }
     public function testOwnTenantAndCredentialsArePinnedServerSide(): void
     {
@@ -127,7 +149,6 @@ class PanelModuleTest extends TestCase
     public function testMiddlewareUserContextIsAcceptedWithoutWideningInputScope(): void
     {
         $method = new \ReflectionMethod(PanelModuleController::class, 'exact');
-        $method->setAccessible(true);
         $request = Request::create('/', 'GET', ['offset' => 0]);
         $request->merge(['user' => ['id' => 1, 'is_admin' => 1]]);
         $method->invoke(new PanelModuleController(), $request, ['offset']);

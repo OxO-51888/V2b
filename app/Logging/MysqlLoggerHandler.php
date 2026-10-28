@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Logger;
+use Monolog\LogRecord;
 use App\Models\Log as LogModel;
 
 class MysqlLoggerHandler extends AbstractProcessingHandler
@@ -14,13 +15,14 @@ class MysqlLoggerHandler extends AbstractProcessingHandler
         parent::__construct($level, $bubble);
     }
 
-    protected function write(array $record): void
+    protected function write(LogRecord $record): void
     {
         try{
             $request = request();
             $safe = new SafeLogData();
             $body = $request->isJson() ? $request->json()->all() : $request->request->all();
             $query = $request->query->all();
+            $safe->rememberSecrets($request->headers->all());
             $safe->rememberSecrets($body);
             $safe->rememberSecrets($query);
             $safe->rememberSecrets($record['context'] ?? []);

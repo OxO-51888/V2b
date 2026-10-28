@@ -20,7 +20,7 @@ class Client
     public function handle($request, Closure $next)
     {
         $token = $request->input('token');
-        if (empty($token)) {
+        if (!is_string($token) || $token === '' || strlen($token) > 4096) {
             abort(403, 'token is null');
         }
         $submethod = (int)config('v2board.show_subscribe_method', 0);
@@ -67,13 +67,17 @@ class Client
                 break;
         }
 
+        if (!is_string($token) || $token === '' || strlen($token) > 4096) {
+            abort(403, 'token is error');
+        }
         $blockedResponse = SubscriptionRuleService::blockedPullResponseForToken($token);
         if ($blockedResponse) {
             return $blockedResponse;
         }
 
         $user = User::where('token', $token)->first();
-        if (!$user) {
+        // MySQL string coercion/collation must never decide credential equality.
+        if (!$user || !is_string($user->token) || !hash_equals($user->token, $token)) {
             abort(403, 'token is error');
         }
         $request->merge([

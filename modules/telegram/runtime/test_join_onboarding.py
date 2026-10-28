@@ -151,7 +151,8 @@ class JoinOnboardingTests(unittest.TestCase):
         self.private('123456')
         self.api.approve_chat_join_request.assert_not_called()
         self.assertIn('请点击“获取订阅”', self.api.send_message.call_args_list[0].args[1])
-        self.assertIn('重试入群验证', self.api.send_message.call_args.args[1])
+        self.assertIn('返回群组查看', self.api.send_message.call_args.args[1])
+        self.assertNotIn('重试入群验证', self.api.send_message.call_args.args[1])
         self.assertEqual(1, len(self.db.pending_joins_for(7)))
 
     def test_failed_telegram_approval_can_be_retried(self):

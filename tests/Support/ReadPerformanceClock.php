@@ -12,6 +12,6 @@ namespace App\Http\Controllers\V1\Admin {
     function date($format, $timestamp = null) { return \date($format, $timestamp ?? time()); }
 }
 
-namespace App\Services {
+namespace App\Modules\Core {
     function time() { return \Tests\Support\ReadPerformanceClock::$now ?? \time(); }
 }

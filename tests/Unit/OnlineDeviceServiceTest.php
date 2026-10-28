@@ -38,6 +38,7 @@ class OnlineDeviceServiceTest extends TestCase
         $capsule->bootEloquent();
         $this->db = $capsule->getConnection();
         $this->app->instance('db', $capsule->getDatabaseManager());
+        $this->app->bind('db.schema', fn () => $this->db->getSchemaBuilder());
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication($this->app);
         (new \CreateClientGatewayTable())->up();

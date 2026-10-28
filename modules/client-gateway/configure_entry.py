@@ -24,10 +24,13 @@ def valid_domain(value):
 def fastcgi(site, extra=''):
     root = site['root']
     panel = site['panel_id']
+    socket = site.get('php_socket', '/tmp/php-cgi-85.sock')
     if not re.fullmatch(r'/www/wwwroot/[a-zA-Z0-9._-]+', root) or not re.fullmatch(r'panel_[0-9]{2}', panel):
         raise ValueError('Invalid trusted site policy')
+    if socket != '/tmp/php-cgi-85.sock':
+        raise ValueError('Invalid trusted PHP socket')
     return f'''    include /www/server/nginx/conf/fastcgi_params;
-    fastcgi_pass unix:/tmp/php-cgi-81.sock;
+    fastcgi_pass unix:{socket};
     fastcgi_param SCRIPT_FILENAME {root}/public/index.php;
     fastcgi_param SCRIPT_NAME /index.php;
     fastcgi_param DOCUMENT_ROOT {root}/public;

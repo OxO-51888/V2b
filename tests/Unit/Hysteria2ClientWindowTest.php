@@ -49,7 +49,6 @@ class Hysteria2ClientWindowTest extends TestCase
     private function build(array $server): array
     {
         $method = new ReflectionMethod(ClashMeta::class, 'buildHysteria2');
-        $method->setAccessible(true);
         return $method->invoke(new ClashMeta([], []), 'fixture-password', $server);
     }
 
@@ -129,7 +128,6 @@ class Hysteria2ClientWindowTest extends TestCase
     public function test_clash_party_default_user_agent_selects_mihomo_subscription(): void
     {
         $method = new ReflectionMethod(ClientController::class, 'normalizeClientFlag');
-        $method->setAccessible(true);
         foreach (['mihomo.party/v1.8.7 (clash.meta)', 'mihomo.party/v2.0.0 (clash.meta)', 'mihomo/1.19.27'] as $agent) {
             $this->assertSame('meta', $method->invoke(new ClientController(), 'clash', $agent));
         }
@@ -142,7 +140,6 @@ class Hysteria2ClientWindowTest extends TestCase
     {
         foreach ([ClashMeta::class, ClashVerge::class, ClashNyanpasu::class] as $class) {
             $method = new ReflectionMethod($class, 'buildHysteria2');
-            $method->setAccessible(true);
             $instance = new $class([], []);
             $this->configure([]);
             $before = $method->invoke($instance, 'fixture-password', $this->server());
@@ -158,7 +155,6 @@ class Hysteria2ClientWindowTest extends TestCase
     public function test_singbox_windows_require_supported_core_version(): void
     {
         $method = new ReflectionMethod(Singbox::class, 'buildHysteria2');
-        $method->setAccessible(true);
         $before = $method->invoke(new Singbox([], []), 'fixture-password', $this->server());
         $this->configure([$this->host => ['stream' => 33554432, 'connection' => 67108864]]);
         foreach ([null, '', '1.11.15', '1.12.0', '1.13.9', '1.14.0-beta.1', 'invalid'] as $version) {

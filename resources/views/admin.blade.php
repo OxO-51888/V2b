@@ -35,7 +35,10 @@
 <link rel="stylesheet" href="/assets/admin/panel-modules.css?v={{filemtime(public_path('assets/admin/panel-modules.css'))}}">
 <script src="/assets/admin/panel-modules.js?v={{filemtime(public_path('assets/admin/panel-modules.js'))}}"></script>
 @endif
+    <link rel="stylesheet" href="/assets/admin/runtime-monitor.css?v={{ filemtime(public_path('assets/admin/runtime-monitor.css')) }}">
+    <script src="/assets/admin/runtime-monitor.js?v={{ filemtime(public_path('assets/admin/runtime-monitor.js')) }}"></script>
 <script src="/assets/admin/umi.js?v={{$version}}-{{filemtime(public_path('assets/admin/umi.js'))}}"></script>
 </body>
 
 </html>
+

@@ -1,6 +1,8 @@
 #!/usr/bin/env php
 <?php
 
+require_once __DIR__ . '/bootstrap/runtime.php';
+
 define('LARAVEL_START', microtime(true));
 
 /*

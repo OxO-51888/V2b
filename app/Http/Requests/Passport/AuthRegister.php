@@ -15,7 +15,8 @@ class AuthRegister extends FormRequest
     {
         return [
             'email' => 'required|email:strict',
-            'password' => 'required|min:8'
+            'password' => 'required|string|min:8',
+            'invite_code' => 'nullable|string|max:255'
         ];
     }
 

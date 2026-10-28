@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SubscriptionRuleSave;
 use App\Models\SubscriptionRule;
 use App\Models\SubscriptionRuleLog;
-use App\Services\AiRiskService;
+use App\Modules\Security\AiRiskService;
+use App\Modules\Security\SubscriptionClientIp;
 use App\Services\NodeExitIpService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -36,7 +37,7 @@ class SubscriptionRuleController extends Controller
         'ua_social' => ['condition' => null, 'name' => '微信QQ/Telegram内置打开订阅'],
         'ua_browser' => ['condition' => null, 'name' => '浏览器直接打开订阅链接'],
         'ua_cli_fetch' => ['condition' => null, 'name' => 'curl/wget/PowerShell命令行抓取'],
-        'ua_api_fetch' => ['condition' => null, 'name' => 'Python/Go/Node接口工具抓取'],
+        'ua_api_fetch' => ['condition' => null, 'name' => 'Python/Node接口工具抓取'],
         'ua_converter' => ['condition' => null, 'name' => '订阅转换器UA访问'],
         'ua_vendor' => ['condition' => null, 'name' => '厂商/电商App内置打开订阅'],
         'converter_query' => ['condition' => null, 'name' => '订阅转换器参数访问'],
@@ -70,6 +71,10 @@ class SubscriptionRuleController extends Controller
         $rules->each(function (SubscriptionRule $rule) {
             if ($rule->type === 'node_alive_ip_over_limit') {
                 $rule->remark = self::NODE_ALIVE_REMARK;
+            }
+            if ($rule->type === 'ua_api_fetch') {
+                if ($rule->name === 'Python/Go/Node接口工具抓取') $rule->name = self::RULE_DEFAULTS['ua_api_fetch']['name'];
+                $rule->remark = '命中 python-requests、axios、undici、reqwest、Postman 等接口工具时拦截；保留 Go-http-client 兼容例外，避免误伤使用 Go 默认请求头的客户端。';
             }
         });
 
@@ -435,6 +440,8 @@ class SubscriptionRuleController extends Controller
         try {
             $latestLog = SubscriptionRuleLog::where('action', 'ai_review')
                 ->whereNotNull('ai_decision')
+                ->where('ai_reason', 'not like', '本地规则：%')
+                ->where('ai_reason', 'not like', 'AI review is %')
                 ->orderBy('id', 'DESC')
                 ->first(['created_at', 'ai_decision', 'ai_score', 'ai_reason']);
             if ($latestLog) {
@@ -513,7 +520,7 @@ class SubscriptionRuleController extends Controller
     {
         $items = $this->splitConfigList($value);
         foreach ($items as $ip) {
-            if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            if (!filter_var($ip, FILTER_VALIDATE_IP)) {
                 abort(500, 'Trusted proxy IP is invalid: ' . $ip);
             }
         }
@@ -524,7 +531,7 @@ class SubscriptionRuleController extends Controller
     {
         $items = $this->splitConfigList($value);
         foreach ($items as $cidr) {
-            if (!$this->isValidIpv4Cidr($cidr)) {
+            if (!SubscriptionClientIp::validCidr($cidr)) {
                 abort(500, 'Trusted proxy CIDR is invalid: ' . $cidr);
             }
         }
@@ -546,24 +553,6 @@ class SubscriptionRuleController extends Controller
             }
         }
         return $items;
-    }
-
-    private function isValidIpv4Cidr($cidr)
-    {
-        $parts = explode('/', (string)$cidr, 2);
-        if (count($parts) !== 2) {
-            return false;
-        }
-
-        $mask = $parts[1];
-        if (!ctype_digit($mask)) {
-            return false;
-        }
-
-        $mask = (int)$mask;
-        return $mask >= 0
-            && $mask <= 32
-            && filter_var($parts[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4);
     }
 
     private function writeV2boardConfig(array $config)
@@ -675,8 +664,7 @@ class SubscriptionRuleController extends Controller
             return $parts[0] . '.' . $parts[1] . '.' . $parts[2] . '.0/24';
         }
         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-            $parts = explode(':', $ip);
-            return implode(':', array_slice($parts, 0, 4)) . '::/64';
+            return inet_ntop(substr(inet_pton($ip), 0, 8) . str_repeat("\0", 8)) . '/64';
         }
         return $this->trimText($ip, 45);
     }
@@ -684,10 +672,7 @@ class SubscriptionRuleController extends Controller
     private function trimText($text, $length)
     {
         $text = trim($text);
-        if (function_exists('mb_substr')) {
-            return mb_substr($text, 0, $length);
-        }
-        return substr($text, 0, $length);
+        return mb_substr($text, 0, $length);
     }
 
     public function show(Request $request)

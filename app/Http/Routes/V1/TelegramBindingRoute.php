@@ -17,6 +17,9 @@ class TelegramBindingRoute
             $router->post('verify', 'V1\\Guest\\TelegramBindingController@verify');
             $router->post('account/subscription', 'V1\\Guest\\TelegramBindingController@readSubscription');
             $router->post('account/plan', 'V1\\Guest\\TelegramBindingController@readPlan');
+            $router->post('account/publication', 'V1\\Guest\\TelegramBindingController@readPublication');
+            $router->post('account/subscription/reset/prepare', 'V1\\Guest\\TelegramBindingController@prepareSubscriptionReset');
+            $router->post('account/subscription/reset/confirm', 'V1\\Guest\\TelegramBindingController@confirmSubscriptionReset');
         });
     }
 }

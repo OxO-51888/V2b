@@ -3,6 +3,8 @@
 namespace App\Payments;
 
 class Coinbase {
+    public $config;
+
     public function __construct($config) {
         $this->config = $config;
     }
@@ -96,7 +98,7 @@ class Coinbase {
             $ch, CURLOPT_HTTPHEADER, array('X-CC-Api-Key:' .$this->config['coinbase_api_key'], 'X-CC-Version: 2018-03-22')
         );
         $result = curl_exec($ch);
-        curl_close($ch);
+        unset($ch);
         return $result;
     }
 
@@ -108,21 +110,7 @@ class Coinbase {
      */
     public function hashEqual($str1, $str2)
     {
-        if (function_exists('hash_equals')) {
-            return \hash_equals($str1, $str2);
-        }
-
-        if (strlen($str1) != strlen($str2)) {
-            return false;
-        } else {
-            $res = $str1 ^ $str2;
-            $ret = 0;
-
-            for ($i = strlen($res) - 1; $i >= 0; $i--) {
-                $ret |= ord($res[$i]);
-            }
-            return !$ret;
-        }
+        return \hash_equals($str1, $str2);
     }
     
 }

@@ -9,6 +9,8 @@ use Stripe\Source;
 use Stripe\Stripe;
 
 class StripeAlipay {
+    public $config;
+
     public function __construct($config)
     {
         $this->config = $config;

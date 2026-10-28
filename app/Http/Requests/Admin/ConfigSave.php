@@ -90,10 +90,6 @@ class ConfigSave extends FormRequest
         'email_encryption' => '',
         'email_from_address' => '',
         // telegram
-        'telegram_bot_enable' => 'in:0,1',
-        'telegram_bot_token' => '',
-        'telegram_discuss_id' => '',
-        'telegram_channel_id' => '',
         'telegram_discuss_link' => 'nullable|url',
         // app
         'windows_version' => '',

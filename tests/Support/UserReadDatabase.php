@@ -17,6 +17,15 @@ class UserReadDatabase
         [$app, $db] = OrderDatabase::boot($connection);
         foreach (['v2_order', 'v2_user', 'v2_plan'] as $table) $db->getSchemaBuilder()->dropIfExists($table);
         OrderDatabase::schema($db);
+        $db->getSchemaBuilder()->dropIfExists('v2_hy2_online');
+        $db->getSchemaBuilder()->create('v2_hy2_online', function ($table) {
+            $table->integer('node_id');
+            $table->integer('user_id');
+            $table->text('ips');
+            $table->integer('observed_at');
+            $table->integer('expires_at');
+            $table->primary(['node_id', 'user_id']);
+        });
         $db->getSchemaBuilder()->table('v2_user', function ($table) {
             foreach (['email', 'token', 'uuid', 'remarks'] as $field) $table->text($field)->nullable();
             foreach (['commission_balance', 'remind_expire', 'remind_traffic', 'banned', 'is_admin'] as $field) {

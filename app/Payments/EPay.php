@@ -3,6 +3,8 @@
 namespace App\Payments;
 
 class EPay {
+    public $config;
+
     public function __construct($config)
     {
         $this->config = $config;

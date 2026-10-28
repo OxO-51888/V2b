@@ -20,6 +20,9 @@ return [
 
     'default' => env('CACHE_DRIVER', 'file'),
 
+    // Panel caches contain arrays and scalars, never executable PHP objects.
+    'serializable_classes' => false,
+
     /*
     |--------------------------------------------------------------------------
     | Cache Stores

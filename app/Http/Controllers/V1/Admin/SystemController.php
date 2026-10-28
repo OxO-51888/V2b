@@ -5,6 +5,7 @@ namespace App\Http\Controllers\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Log as LogModel;
 use App\Utils\CacheKey;
+use App\Services\RuntimeMonitorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -18,22 +19,27 @@ use Laravel\Horizon\WaitTimeCalculator;
 
 class SystemController extends Controller
 {
-    public function getSystemStatus()
+    public function getRealtimeStatus(RuntimeMonitorService $monitor, \App\Modules\System\RuntimeTelemetry $telemetry)
     {
-        return response([
-            'data' => [
-                'schedule' => $this->getScheduleStatus(),
-                'horizon' => $this->getHorizonStatus(),
-                'schedule_last_runtime' => Cache::get(CacheKey::get('SCHEDULE_LAST_CHECK_AT', null))
-            ]
-        ]);
+        $data = ['checked_at' => time(), 'errors' => [], 'stats' => null, 'queues' => null, 'signals' => null, 'activity' => null];
+        foreach (['activity' => fn() => $telemetry->snapshot(),
+            'stats' => fn() => json_decode($this->getQueueStats()->getContent(), true)['data'],
+            'queues' => fn() => $monitor->workload(app(WorkloadRepository::class)),
+            'signals' => fn() => $monitor->liveSignals()] as $key => $read) {
+            try { $data[$key] = $read(); }
+            catch (\Throwable $e) { $data['errors'][$key] = '读取失败'; }
+        }
+        return response()->json(['data' => $data])->header('Cache-Control', 'no-store, private');
     }
 
-    public function getQueueWorkload(WorkloadRepository $workload)
+    public function getSystemStatus(RuntimeMonitorService $monitor)
     {
-        return response([
-            'data' => collect($workload->get())->sortBy('name')->values()->toArray()
-        ]);
+        return response(['data' => $monitor->snapshot()]);
+    }
+
+    public function getQueueWorkload(WorkloadRepository $workload, RuntimeMonitorService $monitor)
+    {
+        return response(['data' => $monitor->workload($workload)]);
     }
 
     protected function getScheduleStatus():bool
@@ -117,3 +123,4 @@ class SystemController extends Controller
         ]);
     }
 }
+

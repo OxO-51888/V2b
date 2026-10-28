@@ -134,7 +134,7 @@ class UserController extends Controller
                         'd' => 0
                     ]
                 )) {
-                    throw new \Exception(__('Save failed'));
+                    abort(500, __('Save failed'));
                 }
             } else {
                 abort(500, __('You do not have enough time to renew your subscription'));
@@ -144,9 +144,9 @@ class UserController extends Controller
             return response([
                 'data' => true
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            abort(500, $e->getMessage());
+            throw $e;
         }
     }
 
@@ -278,7 +278,7 @@ class UserController extends Controller
             }
 
             if (!$user->save() || !$giftcard->save()) {
-                throw new \Exception(__('Save failed'));
+                abort(500, __('Save failed'));
             }
 
             DB::commit();
@@ -288,9 +288,9 @@ class UserController extends Controller
                 'type' => $giftcard->type,
                 'value' => $giftcard->value
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            abort(500, $e->getMessage());
+            throw $e;
         }
     }
 
@@ -370,7 +370,7 @@ class UserController extends Controller
 
         //统计在线设备
         $countalive = 0;
-        $ips_array = Cache::get('ALIVE_IP_USER_' . $request->user['id']);
+        $ips_array = (new \App\Modules\Core\Hy2Online())->states([(int)$request->user['id']])[(int)$request->user['id']];
         if ($ips_array) {
             $countalive = $ips_array['alive_ip'];
         }
@@ -393,20 +393,6 @@ class UserController extends Controller
     {
         return response([
             'data' => (new SubscriptionRuleExplanationService())->recentForUser($request->user['id'], $request->input('limit', 10))
-        ]);
-    }
-
-    public function unbindTelegram(Request $request)
-    {
-        $user = User::find($request->user['id']);
-        if (!$user) {
-            abort(500, __('The user does not exist'));
-        }
-        if (!$user->update(['telegram_id' => null])) {
-            abort(500, __('Unbind telegram failed'));
-        }
-        return response([
-            'data' => true
         ]);
     }
 

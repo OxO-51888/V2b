@@ -41,6 +41,10 @@ $app['config']->set('v2board.app_url', 'https://panel.example.invalid');
 function hardeningRequest($class, array $params) {
     $request = new $class();
     $request->initialize([], $params, [], [], [], ['REQUEST_METHOD'=>'POST','REMOTE_ADDR'=>'192.0.2.77']);
+    if ($request instanceof CommSendEmailVerify) {
+        $factory = new Illuminate\Validation\Factory(app('translator'), app());
+        $request->setValidator($factory->make($params, $request->rules()));
+    }
     return $request;
 }
 function rejectionMessage(callable $callback) {
@@ -197,13 +201,13 @@ testCase('mail_uses_registered_address_and_retains_resend_limit', function () us
     Bus::fake(); $app[Illuminate\Cache\RateLimiter::class]->clear('192.0.2.77');
     $user=fixtureUser();
     $request=hardeningRequest(CommSendEmailVerify::class,['email'=>strtoupper($user->email),'isforget'=>1]);
-    $response=(new CommController())->sendEmailVerify($request);expectTrue($response->getStatusCode()===200);
+    $response=$app->make(CommController::class)->sendEmailVerify($request);expectTrue($response->getStatusCode()===200);
     $jobs=Bus::dispatched(App\Jobs\SendEmailJob::class);expectTrue($jobs->count()===1);
-    $reflection=new ReflectionProperty(App\Jobs\SendEmailJob::class,'params');$reflection->setAccessible(true);
+    $reflection=new ReflectionProperty(App\Jobs\SendEmailJob::class,'params');
     $params=$reflection->getValue($jobs->first());expectTrue($params['email']===$user->email);
     expectTrue(preg_match('/\A[0-9]{6}\z/',$params['template_value']['code'])===1);
     expectTrue(Cache::get(CacheKey::get('EMAIL_VERIFY_CODE',$user->email))===$params['template_value']['code']);
-    expectTrue(denied(fn() => (new CommController())->sendEmailVerify($request)));
+    expectTrue(denied(fn() => $app->make(CommController::class)->sendEmailVerify($request)));
     expectTrue(Bus::dispatched(App\Jobs\SendEmailJob::class)->count()===1);
 });
 testCase('login_email_case_cannot_reset_failure_counter', function () {
@@ -217,7 +221,7 @@ testCase('login_email_case_cannot_reset_failure_counter', function () {
 testCase('locked_verification_does_not_queue_an_unusable_code', function () use ($app) {
     Bus::fake();$app[Illuminate\Cache\RateLimiter::class]->clear('192.0.2.77');
     $user=fixtureUser();Cache::put(CacheKey::get('FORGET_REQUEST_LIMIT',$user->email),3,300);
-    expectTrue(denied(fn()=>(new CommController())->sendEmailVerify(hardeningRequest(CommSendEmailVerify::class,['email'=>$user->email,'isforget'=>1]))));
+    expectTrue(denied(fn()=>$app->make(CommController::class)->sendEmailVerify(hardeningRequest(CommSendEmailVerify::class,['email'=>$user->email,'isforget'=>1]))));
     expectTrue(Bus::dispatched(App\Jobs\SendEmailJob::class)->count()===0);
     expectTrue(!Cache::has(CacheKey::get('EMAIL_VERIFY_CODE',$user->email)));
 });

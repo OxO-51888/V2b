@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../bootstrap/runtime.php';
+
 /**
  * Laravel - A PHP Framework For Web Artisans
  *

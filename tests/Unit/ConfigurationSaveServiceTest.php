@@ -28,6 +28,7 @@ class ConfigurationSaveServiceTest extends TestCase
         $this->app = new Application($this->directory);
         $this->initial = [
             'app' => ['locale' => 'zh-CN', 'name' => 'Isolated fixture'],
+            'logging' => ['default' => 'fixture', 'channels' => ['fixture' => ['driver' => 'single', 'path' => $this->directory . '/fixture.log']]],
             'v2board' => ['frontend_domestic_default_theme' => 0, 'frontend_theme' => 'default', 'app_name' => 'Original panel', 'currency' => 'CNY'],
             'database' => ['default' => 'fixture-only'],
             'mail' => ['mailer' => 'fixture-only'],
@@ -218,7 +219,6 @@ class ConfigurationSaveServiceTest extends TestCase
     {
         $controller = new \App\Http\Controllers\V1\Admin\SubscriptionRuleController();
         $method = new \ReflectionMethod($controller, 'writeV2boardConfig');
-        $method->setAccessible(true);
         $method->invoke($controller, $this->updated());
         $this->assertSame($this->updated(), require $this->source);
         $this->assertSame($this->updated(), (require $this->cache)['v2board']);
@@ -226,18 +226,16 @@ class ConfigurationSaveServiceTest extends TestCase
         $this->assertNoCandidates();
     }
 
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     * @dataProvider opcacheAvailability
-     */
+    #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
+    #[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
+    #[\PHPUnit\Framework\Attributes\DataProvider('opcacheAvailability')]
     public function testUnavailableOrDisabledOpcacheDoesNotFailOrResetOtherSites(bool $invalidateAvailable): void
     {
         // Process-local PHP function shims exercise the real invalidate implementation.
         $GLOBALS['config_test_invalidate_available'] = $invalidateAvailable;
         $GLOBALS['config_test_invalidations'] = [];
         $GLOBALS['config_test_resets'] = 0;
-        eval('namespace App\\Services;
+        eval('namespace App\\Modules\\System;
             function function_exists($name) {
                 if ($name === "opcache_invalidate") return $GLOBALS["config_test_invalidate_available"];
                 if ($name === "opcache_reset") return true;

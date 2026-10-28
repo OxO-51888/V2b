@@ -36,7 +36,7 @@ class ScheduledTaskLockTest extends TestCase
     private function holder(string $command = 'traffic:update'): array
     {
         $source = (new \ReflectionClass(ScheduledTaskLock::class))->getFileName();
-        $code = 'require ' . var_export($source, true) . '; (new App\\Services\\ScheduledTaskLock('
+        $code = 'require ' . var_export($source, true) . '; (new App\\Modules\\System\\ScheduledTaskLock('
             . var_export($this->directory, true) . '))->run(' . var_export($command, true)
             . ', function () { echo "locked\\n"; fflush(STDOUT); fgets(STDIN); });';
         $process = proc_open([PHP_BINARY, '-r', $code], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);

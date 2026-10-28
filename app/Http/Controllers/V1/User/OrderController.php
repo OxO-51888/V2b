@@ -8,9 +8,11 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\User;
+use App\Modules\Core\PlanPurchasePolicy;
 use App\Services\CouponService;
 use App\Services\OrderService;
 use App\Services\PaymentService;
+use App\Services\PaymentAttemptService;
 use App\Services\PlanService;
 use App\Services\UserService;
 use App\Utils\Helper;
@@ -116,38 +118,7 @@ class OrderController extends Controller
         $plan = $planService->plan;
         $user = User::find($request->user['id']);
 
-        if (!$plan) {
-            abort(500, __('Subscription plan does not exist'));
-        }
-
-        if ($user->plan_id !== $plan->id && !$planService->haveCapacity() && $request->input('period') !== 'reset_price') {
-            abort(500, __('Current product is sold out'));
-        }
-
-        if ($plan[$request->input('period')] === NULL) {
-            abort(500, __('This payment period cannot be purchased, please choose another period'));
-        }
-
-        if ($request->input('period') === 'reset_price') {
-            if (!$userService->isAvailable($user) || $plan->id !== $user->plan_id) {
-                abort(500, __('Subscription has expired or no active subscription, unable to purchase Data Reset Package'));
-            }
-        }
-
-        if ((!$plan->show && !$plan->renew) || (!$plan->show && $user->plan_id !== $plan->id)) {
-            if ($request->input('period') !== 'reset_price') {
-                abort(500, __('This subscription has been sold out, please choose another subscription'));
-            }
-        }
-
-        if (!$plan->renew && $user->plan_id == $plan->id && $request->input('period') !== 'reset_price') {
-            abort(500, __('This subscription cannot be renewed, please change to another subscription'));
-        }
-
-
-        if (!$plan->show && $plan->renew && !$userService->isAvailable($user)) {
-            abort(500, __('This subscription has expired, please change to another subscription'));
-        }
+        (new PlanPurchasePolicy())->assertPurchasable($user, $planService, $request->input('period'));
 
         DB::beginTransaction();
         $order = new Order();
@@ -227,12 +198,7 @@ class OrderController extends Controller
         $payment = Payment::find($method);
         if (!$payment || $payment->enable !== 1) abort(500, __('Payment method is not available'));
         $paymentService = new PaymentService($payment->payment, $payment->id);
-        $order->handling_amount = NULL;
-        if ($payment->handling_fee_fixed || $payment->handling_fee_percent) {
-            $order->handling_amount = round(($order->total_amount * ($payment->handling_fee_percent / 100)) + $payment->handling_fee_fixed);
-        }
-        $order->payment_id = $method;
-        if (!$order->save()) abort(500, __('Request failed, please try again later'));
+        $order = (new PaymentAttemptService())->prepareCheckout((string)$tradeNo, (int)$request->user['id'], $payment);
         $result = $paymentService->pay([
             'trade_no' => $tradeNo,
             'total_amount' => isset($order->handling_amount) ? ($order->total_amount + $order->handling_amount) : $order->total_amount,

@@ -43,7 +43,6 @@ class UserReadMemoryTest extends TestCase
     {
         return Bus::dispatched(SendEmailJob::class)->map(function ($job) {
             $property = new \ReflectionProperty($job, 'params');
-            $property->setAccessible(true);
             return ['queue' => $job->queue, 'params' => $property->getValue($job)];
         })->all();
     }
@@ -101,7 +100,7 @@ class UserReadMemoryTest extends TestCase
         ];
     }
 
-    /** @dataProvider filters */
+    #[\PHPUnit\Framework\Attributes\DataProvider('filters')]
     public function testFiltersHaveIdenticalRecipientsListTotalsAndCsvRows(array $filter, array $where): void
     {
         $query = User::query();
@@ -149,30 +148,40 @@ class UserReadMemoryTest extends TestCase
         return [[null, 10], [1, 10], [-20, 10], [10, 10], [50, 50], [100, 100], [150, 150], [1000000, 150]];
     }
 
-    /** @dataProvider pageSizes */
+    #[\PHPUnit\Framework\Attributes\DataProvider('pageSizes')]
     public function testPageSizePreservesUiChoicesAndRejectsUnboundedReads($input, int $expected): void
     {
         $result = (new UserController())->fetch(new UserFetch(['pageSize' => $input, 'current' => -1]));
         $this->assertCount($expected, json_decode($result->getContent(), true)['data']);
     }
 
-    public function testOnlineDataUsesOneBulkReadWithLegacyIpOrderAndNoStaleCache(): void
+    public function testOnlineDataUsesOneBulkReadWithDistinctIpsAndNoStaleCache(): void
     {
-        $value = ['alive_ip' => 3, 'vless_1' => ['aliveips' => ['192.0.2.1_node', '2001:db8::1_node']],
-            'hy2_2' => ['aliveips' => ['192.0.2.1_node']]];
-        Cache::shouldReceive('many')->twice()->with(array_map(function ($id) { return 'ALIVE_IP_USER_' . $id; }, range(1, 10)))
-            ->andReturn(['ALIVE_IP_USER_1' => $value], []);
+        $now = now()->timestamp;
+        $this->db->table('v2_hy2_online')->insert([
+            ['node_id' => 1, 'user_id' => 1, 'ips' => '["192.0.2.1","2001:db8::1"]', 'observed_at' => $now, 'expires_at' => $now + 120],
+            ['node_id' => 2, 'user_id' => 1, 'ips' => '["192.0.2.1"]', 'observed_at' => $now, 'expires_at' => $now + 120],
+            ['node_id' => 3, 'user_id' => 2, 'ips' => '["192.0.2.2"]', 'observed_at' => $now - 200, 'expires_at' => $now - 1],
+        ]);
+        Cache::put('ALIVE_IP_USER_1', ['alive_ip' => 99]);
+        $queries = [];
+        $this->db->listen(function ($query) use (&$queries) {
+            if (str_contains($query->sql, 'v2_hy2_online') && str_starts_with($query->sql, 'select')) $queries[] = $query->sql;
+        });
         $controller = new UserController();
         $request = new UserFetch(['sort' => 'id', 'sort_type' => 'ASC']);
         $data = json_decode($controller->fetch($request)->getContent(), true)['data'];
-        $this->assertSame(3, $data[0]['alive_ip']);
-        $this->assertSame('192.0.2.1_vless_1, 2001:db8::1_vless_1, 192.0.2.1_hy2_2', $data[0]['ips']);
+        $this->assertCount(1, $queries);
+        $this->assertSame(2, $data[0]['alive_ip']);
+        $this->assertEqualsCanonicalizing(['192.0.2.1_v2node1', '2001:db8::1_v2node1', '192.0.2.1_v2node2'], explode(', ', $data[0]['ips']));
         $this->assertSame('Plan A', $data[0]['plan_name']);
         $this->assertArrayNotHasKey('plan_name', $data[2]);
         $this->assertSame(0, $data[1]['alive_ip']);
         $this->assertSame('', $data[1]['ips']);
+        $this->db->table('v2_hy2_online')->update(['expires_at' => $now - 1]);
         $again = json_decode($controller->fetch($request)->getContent(), true)['data'];
         $this->assertSame(0, $again[0]['alive_ip']);
+        $this->assertCount(2, $queries);
     }
 
     public function testReminderRecipientsAndThrottleMatchOriginalWithoutUnlimitedMemory(): void

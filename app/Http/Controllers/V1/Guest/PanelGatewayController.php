@@ -6,9 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Services\PanelModuleService;
 use Illuminate\Http\Request;
 use App\Services\ClientGateway\Gateway;
+use App\Services\ClientGateway\SubscriptionEntry;
 
 class PanelGatewayController extends Controller
 {
+    public function entry(Request $request, PanelModuleService $service, string $endpoint)
+    {
+        $service->assertEnabled();
+        abort_unless(SubscriptionEntry::accepts($request), 404);
+        $request->attributes->set('native_gateway_entry', true);
+        return $this->relay($request, $service, $endpoint);
+    }
+
+    public function panelEntry(Request $request, PanelModuleService $service, string $path)
+    {
+        return $this->entry($request, $service, 'api/gateway/panel/' . $path);
+    }
+
     public function relay(Request $request, PanelModuleService $service, string $endpoint)
     {
         $service->assertEnabled();

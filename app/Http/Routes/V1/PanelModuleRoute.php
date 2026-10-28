@@ -20,7 +20,6 @@ class PanelModuleRoute
             $controller = 'V1\\Admin\\PanelModuleController@';
             $router->get('/gateway', $controller . 'gateway');
             $router->post('/gateway', $controller . 'gatewaySave');
-            $router->post('/gateway/configure', $controller . 'gatewayConfigure');
             $router->get('/gateway/devices', $controller . 'devices');
             $router->get('/telegram', $controller . 'telegram');
             $router->post('/telegram', $controller . 'telegramSave');

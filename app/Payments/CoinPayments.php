@@ -3,6 +3,8 @@
 namespace App\Payments;
 
 class CoinPayments {
+    public $config;
+
     public function __construct($config) {
         $this->config = $config;
     }

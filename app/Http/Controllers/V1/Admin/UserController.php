@@ -78,16 +78,16 @@ class UserController extends Controller
         $res = $userModel->forPage($current, $pageSize)
             ->get();
         $plan = Plan::pluck('name', 'id');
-        $aliveKeys = $res->map(function ($user) { return 'ALIVE_IP_USER_' . $user->id; })->all();
-        $alive = $aliveKeys ? Cache::many($aliveKeys) : [];
+        $aliveIds = $res->pluck('id')->map(fn ($id) => (int)$id)->all();
+        $alive = $aliveIds ? (new \App\Modules\Core\Hy2Online())->states($aliveIds) : [];
         for ($i = 0; $i < count($res); $i++) {
-            if ($plan->has($res[$i]['plan_id'])) {
+            if ($res[$i]['plan_id'] !== null && $plan->has($res[$i]['plan_id'])) {
                 $res[$i]['plan_name'] = $plan[$res[$i]['plan_id']];
             }
             //统计在线设备
             $countalive = 0;
             $ips = [];
-            $ips_array = $alive['ALIVE_IP_USER_' . $res[$i]['id']] ?? null;
+            $ips_array = $alive[$res[$i]['id']] ?? null;
             if ($ips_array) {
                 $countalive = $ips_array['alive_ip'];
                 foreach($ips_array as $nodetypeid => $data) {
@@ -185,7 +185,7 @@ class UserController extends Controller
                 $transferEnable = $user['transfer_enable'] ? $user['transfer_enable'] / 1073741824 : 0;
                 $deviceLimit = $user['devce_limit'] ? $user['devce_limit'] : NULL;
                 $notUseFlow = (($user['transfer_enable'] - ($user['u'] + $user['d'])) / 1073741824) ?? 0;
-                $planName = $plan[$user['plan_id']] ?? '无订阅';
+                $planName = $plan[$user['plan_id'] ?? ''] ?? '无订阅';
                 $subscribeUrl =  Helper::getSubscribeUrl($user['token']);
                 echo "{$user['email']},{$balance},{$commissionBalance},{$transferEnable}, {$deviceLimit}, {$notUseFlow},{$expireDate},{$planName},{$subscribeUrl}\r\n";
             });

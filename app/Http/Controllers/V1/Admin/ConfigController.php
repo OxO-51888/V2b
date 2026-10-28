@@ -5,7 +5,6 @@ namespace App\Http\Controllers\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ConfigSave;
 use App\Jobs\SendEmailJob;
-use App\Services\TelegramService;
 use App\Utils\Dict;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -51,17 +50,6 @@ class ConfigController extends Controller
         return response([
             'data' => true,
             'log' => $obj->handle()
-        ]);
-    }
-
-    public function setTelegramWebhook(Request $request)
-    {
-        $hookUrl = secure_url('/api/v1/guest/telegram/webhook?access_token=' . md5(config('v2board.telegram_bot_token', $request->input('telegram_bot_token'))));
-        $telegramService = new TelegramService($request->input('telegram_bot_token'));
-        $telegramService->getMe();
-        $telegramService->setWebhook($hookUrl);
-        return response([
-            'data' => true
         ]);
     }
 
@@ -158,8 +146,6 @@ class ConfigController extends Controller
                 'email_from_address' => config('v2board.email_from_address')
             ],
             'telegram' => [
-                'telegram_bot_enable' => config('v2board.telegram_bot_enable', 0),
-                'telegram_bot_token' => config('v2board.telegram_bot_token'),
                 'telegram_discuss_link' => config('v2board.telegram_discuss_link')
             ],
             'app' => [

@@ -89,7 +89,6 @@ class TicketAiPersistenceTest extends TestCase
     private function persist($ticket, $messageId)
     {
         $method = new ReflectionMethod(TicketService::class, 'createAiReplyMessage');
-        $method->setAccessible(true);
         return $method->invoke(new TicketService(), $ticket, $messageId, 2, '亲亲，我是 AI 小助手。请核对节点测试的具体提示。');
     }
 

@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\Services\TrafficBuffer;
+use App\Modules\System\MailLogRetention;
 
 class ResetLog extends Command
 {
@@ -58,6 +59,7 @@ class ResetLog extends Command
         $receipts = DB::table('v2_accounting_receipt')->where('created_at', '<', strtotime('-3 month'));
         if (isset($pending['id'])) $receipts->where('id', '!=', 'traffic:' . $pending['id']);
         $this->prune($receipts);
+        (new MailLogRetention())->prune();
     }
 
     private function prune($query): void

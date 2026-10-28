@@ -61,7 +61,7 @@ class CommunityAccessTest extends TestCase
         }, 404);
     }
 
-    /** @dataProvider invalidAuthorizations */
+    #[\PHPUnit\Framework\Attributes\DataProvider('invalidAuthorizations')]
     public function testEnabledUserEndpointRejectsMissingOrInvalidCredentials(?string $authorization): void
     {
         $this->app['config']->set('community.enabled', true);
@@ -90,7 +90,7 @@ class CommunityAccessTest extends TestCase
         }
     }
 
-    /** @dataProvider invalidConsoleHeaders */
+    #[\PHPUnit\Framework\Attributes\DataProvider('invalidConsoleHeaders')]
     public function testConsoleRejectsInvalidSignaturesBeforeStorage(array $overrides): void
     {
         $this->app['config']->set('community.enabled', true);

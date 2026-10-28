@@ -17,7 +17,7 @@ class UAfilter
     public function handle(Request $request, Closure $next)
     {
         if (defined('isWEBMAN') && isWEBMAN) {
-            if(str_contains($request->header('Content-Type'), 'application/json')) {
+            if(str_contains((string)$request->header('Content-Type', ''), 'application/json')) {
                 $phpInput = json_encode($_POST);
                 $decodedData = json_decode($phpInput, true);
                 if (json_last_error() === JSON_ERROR_NONE) {
@@ -25,7 +25,8 @@ class UAfilter
                 }
             }
         }
-        if (strpos($request->header('User-Agent'), 'MicroMessenger') !== false || strpos($request->header('User-Agent'), 'QQ/') !== false) {
+        $agent = (string)$request->header('User-Agent', '');
+        if (strpos($agent, 'MicroMessenger') !== false || strpos($agent, 'QQ/') !== false) {
             $html = <<<HTML
 <!DOCTYPE html>
 <html lang="en">
@@ -49,7 +50,7 @@ HTML;
             return response($html, 200)->header('Content-Type', 'text/html');
         }
 
-        if (strpos($request->header('User-Agent'), 'python-requests')) {
+        if (strpos($agent, 'python-requests')) {
             return response('', 200);
         }
 

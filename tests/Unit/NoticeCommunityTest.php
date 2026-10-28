@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Unit;
+
 use App\Http\Controllers\V1\Admin\NoticeController as AdminNotice;
 use App\Http\Controllers\V1\User\NoticeController as UserNotice;
 use App\Models\Notice;
@@ -15,6 +17,7 @@ use Illuminate\Translation\ArrayLoader;
 use Illuminate\Translation\Translator;
 use Illuminate\Validation\Factory;
 use PHPUnit\Framework\TestCase;
+use Mockery;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class NoticeCommunityTest extends TestCase
@@ -149,7 +152,7 @@ class NoticeCommunityTest extends TestCase
         $this->assertSame(0,$this->fetch(['community'=>1])['total']);
     }
 
-    /** @dataProvider switchCombinations */
+    #[\PHPUnit\Framework\Attributes\DataProvider('switchCombinations')]
     public function testAllSwitchCombinationsForListAndDetail(int $show,int $community): void
     {
         $notice=$this->notice($show,$community);
@@ -174,7 +177,7 @@ class NoticeCommunityTest extends TestCase
         catch(HttpException $e) { $this->assertSame(404,$e->getStatusCode()); }
     }
 
-    /** @dataProvider invalidRequests */
+    #[\PHPUnit\Framework\Attributes\DataProvider('invalidRequests')]
     public function testInvalidRequestsCannotWrite(array $params): void
     {
         $notice=$this->notice(); $before=$notice->getAttributes();

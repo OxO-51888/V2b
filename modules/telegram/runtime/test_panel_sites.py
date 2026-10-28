@@ -71,6 +71,13 @@ class MultiSiteTests(unittest.TestCase):
     def select(self, key, user=7):
         self.dispatch('/start ' + self.sites.entry_payload(key), user)
 
+    def click_confirmation(self, text, user=7):
+        markup = self.api.send_message.call_args.kwargs['reply_markup']
+        button = next(b for row in markup['inline_keyboard'] for b in row if b['text'] == text)
+        bot.handle_account_callback(self.api, self.db, self.checker, {
+            'id': 'fixture-query', 'from': {'id': user}, 'data': button['callback_data'],
+            'message': {'message_id': 99, 'chat': {'id': user, 'type': 'private'}}})
+
     def reset_calls(self):
         self.api.reset_mock()
         for client in self.sites.clients.values():
@@ -124,7 +131,7 @@ class MultiSiteTests(unittest.TestCase):
             call = self.api.send_message.call_args
             self.assertTrue(call.args[1].startswith(self.sites.sites[key]['label'] + '\n'))
             rows = call.kwargs['reply_markup']['keyboard']
-            self.assertEqual([3, 3], [len(row) for row in rows])
+            self.assertEqual([4, 3], [len(row) for row in rows])
             self.assertFalse(self.switch_visible())
         self.assertTrue(all(call.args[0] == 'verify' for client in self.sites.clients.values()
                             for call in client.call.call_args_list))
@@ -134,7 +141,7 @@ class MultiSiteTests(unittest.TestCase):
         for text in ['/start', '/help', '/start ' + self.sites.entry_payload('clash'), '绑定邮箱']:
             self.dispatch(text)
             self.assertFalse(self.switch_visible())
-            self.assertEqual([3, 3], [len(r) for r in self.api.send_message.call_args.kwargs['reply_markup']['keyboard']])
+            self.assertEqual([4, 3], [len(r) for r in self.api.send_message.call_args.kwargs['reply_markup']['keyboard']])
 
     def test_single_bound_site_other_entry_hides_switch_before_binding_second(self):
         self.bound.add('clash')
@@ -187,7 +194,8 @@ class MultiSiteTests(unittest.TestCase):
         for text in ['OvO机场', '/start b_' + '0' * 32, '/start site_ovo']:
             self.dispatch(text)
             self.assertFalse(self.switch_visible())
-            self.assertEqual('clash', self.sites.current(7))
+            self.assertIsNone(self.sites.current(7))
+            self.assertTrue(self.sites.awaiting_choice(7))
 
     def test_failed_discovery_does_not_invent_binding_or_show_switch(self):
         for client in self.sites.clients.values():
@@ -213,7 +221,7 @@ class MultiSiteTests(unittest.TestCase):
     def test_unbinding_all_sites_hides_switch_immediately(self):
         self.bound.add('clash'); self.select('ovo'); self.assertFalse(self.switch_visible())
         self.dispatch('切换机场'); self.dispatch('Clash机场')
-        self.dispatch('解绑邮箱'); self.dispatch('确认解绑')
+        self.dispatch('解绑邮箱'); self.click_confirmation('确认解绑')
         self.assertFalse(self.switch_visible())
         self.assertEqual(set(), self.bound)
 
@@ -226,13 +234,13 @@ class MultiSiteTests(unittest.TestCase):
     def test_unbind_from_two_sites_to_one_hides_switch_even_at_other_entry(self):
         self.bound.update(['clash', 'ovo']); self.select('ovo')
         self.assertTrue(self.switch_visible())
-        self.dispatch('解绑邮箱'); self.dispatch('确认解绑')
+        self.dispatch('解绑邮箱'); self.click_confirmation('确认解绑')
         self.assertEqual({'clash'}, self.bound)
         self.assertFalse(self.switch_visible())
 
     def test_unbind_from_three_sites_to_two_keeps_switch(self):
         self.bound.update(['clash', 'ovo', 'gm']); self.select('ovo')
-        self.dispatch('解绑邮箱'); self.dispatch('确认解绑')
+        self.dispatch('解绑邮箱'); self.click_confirmation('确认解绑')
         self.assertEqual({'clash', 'gm'}, self.bound)
         self.assertTrue(self.switch_visible())
 
@@ -250,7 +258,8 @@ class MultiSiteTests(unittest.TestCase):
             text = self.api.send_message.call_args.args[1]
             if key == 'clash':
                 self.assertIn('请点击“获取订阅”', text)
-                self.assertIn('重试入群验证', text)
+                self.assertIn('返回群组查看', text)
+                self.assertNotIn('重试入群验证', text)
             else:
                 self.assertIn('请直接在本私聊发送', text)
                 self.assertIn('6位验证码', text)
@@ -313,7 +322,7 @@ class MultiSiteTests(unittest.TestCase):
 
     def test_unbind_stays_on_selected_site_for_all_six_sites(self):
         for key in self.sites.sites:
-            self.select(key); self.reset_calls(); self.dispatch('解绑邮箱'); self.dispatch('确认解绑')
+            self.select(key); self.reset_calls(); self.dispatch('解绑邮箱'); self.click_confirmation('确认解绑')
             self.assert_only_site_called(key, allow_discovery=True)
             self.assertEqual(['email/unbind/prepare', 'email/unbind/confirm'],
                              [c.args[0] for c in self.sites.clients[key].call.call_args_list if c.args[0] != 'verify'])
@@ -341,7 +350,7 @@ class MultiSiteTests(unittest.TestCase):
         self.assertIn('请点击“获取订阅”', self.api.send_message.call_args.args[1])
         self.select('ovo'); self.dispatch('绑定邮箱')
         self.assertIn('请点击“获取订阅”', self.api.send_message.call_args.args[1])
-        self.reset_calls(); self.dispatch('解绑邮箱'); self.dispatch('确认解绑')
+        self.reset_calls(); self.dispatch('解绑邮箱'); self.click_confirmation('确认解绑')
         self.assertEqual({'clash'}, self.bound)
         self.assert_only_site_called('ovo', allow_discovery=True)
 
@@ -430,7 +439,85 @@ class MultiSiteTests(unittest.TestCase):
         self.dispatch('OvO机场')
         self.assertEqual('ovo', self.sites.current(7))
         self.dispatch('囡囡喵机场')
+        self.assertIsNone(self.sites.current(7))
+
+    def expire_discovery(self, user=7):
+        _, keys, incomplete = self.sites.discoveries[user]
+        self.sites.discoveries[user] = (0, keys, incomplete)
+
+    def test_expired_switch_menu_rechecks_binding_and_routes_to_clicked_site(self):
+        self.bound.update(['pianyi', 'gm'])
+        self.select('pianyi'); self.dispatch('切换机场')
+        self.expire_discovery(); self.reset_calls()
+        self.dispatch('光喵机场')
+        self.assertEqual('gm', self.sites.current(7))
+        self.assertTrue(self.api.send_message.call_args.args[1].startswith('光喵机场\n'))
+        self.assertIn('请点击“获取订阅”', self.api.send_message.call_args.args[1])
+        self.assertTrue(all(c.args[0] == 'verify' for client in self.sites.clients.values()
+                            for c in client.call.call_args_list))
+        self.reset_calls(); self.dispatch('查看套餐')
+        self.assert_only_site_called('gm')
+
+    def test_expired_switch_menu_selects_each_of_six_sites(self):
+        self.bound.update(self.sites.sites)
+        for key, site in self.sites.sites.items():
+            with self.subTest(site=key):
+                self.select('ovo' if key != 'ovo' else 'clash')
+                self.dispatch('切换机场'); self.expire_discovery()
+                self.dispatch(site['label'])
+                self.assertEqual(key, self.sites.current(7))
+                self.assertTrue(self.api.send_message.call_args.args[1].startswith(site['label'] + '\n'))
+
+    def test_expired_start_menu_selects_target_without_extra_click(self):
+        self.bound.update(['pianyi', 'gm'])
+        self.dispatch('/start'); self.expire_discovery()
+        self.dispatch('光喵机场')
+        self.assertEqual('gm', self.sites.current(7))
+        self.assertTrue(self.api.send_message.call_args.args[1].startswith('光喵机场\n'))
+
+    def test_stale_switch_button_after_unbind_never_enters_previous_site_handler(self):
+        self.bound.update(['pianyi', 'gm'])
+        self.select('pianyi'); self.dispatch('切换机场')
+        self.bound.remove('gm'); self.expire_discovery(); self.reset_calls()
+        self.dispatch('光喵机场')
+        reply = self.api.send_message.call_args
+        self.assertIsNone(self.sites.current(7))
+        self.assertNotIn('便宜机场', reply.args[1])
+        self.assertNotIn('6位', reply.args[1])
+        self.assertEqual({'remove_keyboard': True}, reply.kwargs['reply_markup'])
+        self.assertTrue(all(c.args[0] == 'verify' for client in self.sites.clients.values()
+                            for c in client.call.call_args_list))
+
+    def test_expired_switch_target_unavailable_does_not_fall_back_or_reveal_errors(self):
+        self.bound.update(['pianyi', 'gm'])
+        self.select('pianyi'); self.dispatch('切换机场'); self.expire_discovery()
+        self.sites.clients['gm'].call.side_effect = BindingError('private diagnostic')
+        self.reset_calls(); self.dispatch('光喵机场')
+        reply = self.api.send_message.call_args
+        self.assertIsNone(self.sites.current(7))
+        self.assertNotIn('便宜机场', reply.args[1])
+        self.assertNotIn('private diagnostic', reply.args[1])
+        self.assertNotIn('6位', reply.args[1])
+        self.assertEqual({'remove_keyboard': True}, reply.kwargs['reply_markup'])
+        self.assertTrue(all(c.args[0] == 'verify' for client in self.sites.clients.values()
+                            for c in client.call.call_args_list))
+
+    def test_expired_switch_still_works_when_unrelated_site_is_unavailable(self):
+        self.bound.update(['pianyi', 'gm'])
+        self.select('pianyi'); self.dispatch('切换机场'); self.expire_discovery()
+        self.sites.clients['ovo'].call.side_effect = BindingError('offline')
+        self.dispatch('光喵机场')
+        self.assertEqual('gm', self.sites.current(7))
+        self.assertTrue(self.api.send_message.call_args.args[1].startswith('光喵机场\n'))
+
+    def test_expired_switch_discards_previous_site_pending_actions(self):
+        self.bound.update(['clash', 'ovo'])
+        self.select('clash'); self.dispatch('解绑邮箱')
+        self.expire_discovery(); self.dispatch('OvO机场')
         self.assertEqual('ovo', self.sites.current(7))
+        self.reset_calls(); self.dispatch('确认解绑')
+        self.assertTrue(all(not client.call.called for client in self.sites.clients.values()))
+        self.assertIn('解绑确认已过期或未开始', self.api.send_message.call_args.args[1])
 
     def test_sole_existing_binding_is_restored_without_listing_other_sites(self):
         self.bound.add('clash'); self.dispatch('/start')

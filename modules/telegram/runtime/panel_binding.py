@@ -41,6 +41,7 @@ class PanelBindingClient:
         self.opener = urllib.request.build_opener(NoRedirect())
         self.email_requests = {}
         self.unbind_confirmations = {}
+        self.reset_confirmations = {}
 
     def recent_email_request(self, telegram_id):
         current = time.monotonic()
@@ -141,7 +142,43 @@ class PanelBindingClient:
             raise BindingError('邮箱绑定未完成，请重新核对验证码')
         self.email_requests.pop(telegram_id, None)
         self.unbind_confirmations.pop(telegram_id, None)
+        self.cancel_subscription_reset(telegram_id)
         return data
+
+    def prepare_subscription_reset(self, telegram_id):
+        current = time.monotonic()
+        self.reset_confirmations = {key: value for key, value in self.reset_confirmations.items()
+                                    if value['expires_at'] > current}
+        self.cancel_subscription_reset(telegram_id)
+        data = self.call('account/subscription/reset/prepare', {'telegram_id': telegram_id})
+        token, ttl = data.get('confirmation_token'), data.get('expires_in')
+        if (data.get('status') != 'confirmation_required' or not isinstance(token, str)
+                or not re.fullmatch(r'[a-f0-9]{32}', token) or type(ttl) is not int or not 0 < ttl <= 300
+                or not isinstance(data.get('emailMasked'), str) or not data['emailMasked']):
+            raise BindingError('重置确认暂不可用，请稍后重试')
+        self.reset_confirmations[telegram_id] = {'token': token, 'expires_at': current + ttl,
+                                                'ui_token': secrets.token_hex(16)}
+        return {'emailMasked': data['emailMasked']}
+
+    def cancel_subscription_reset(self, telegram_id):
+        self.reset_confirmations.pop(telegram_id, None)
+
+    def confirm_subscription_reset(self, telegram_id):
+        pending = self.reset_confirmations.get(telegram_id)
+        if not pending or pending['expires_at'] <= time.monotonic():
+            self.cancel_subscription_reset(telegram_id)
+            raise BindingError('重置确认已过期或未开始，请重新点击“重置订阅”。')
+        data = self.call('account/subscription/reset/confirm', {'telegram_id': telegram_id,
+                         'confirmation_token': pending['token']})
+        if data.get('status') != 'reset':
+            raise BindingError('重置未确认成功，请稍后重试')
+        url = self.web_url(data.get('subscribe_url'))
+        self.cancel_subscription_reset(telegram_id)
+        return url
+
+    def get_publication(self, telegram_id):
+        data = self.call('account/publication', {'telegram_id': telegram_id})
+        return self.web_url(data.get('publication_url'))
 
     def prepare_unbind(self, telegram_id):
         current = time.monotonic()
@@ -158,8 +195,21 @@ class PanelBindingClient:
                 or not isinstance(data.get('emailMasked'), str) or not data['emailMasked']):
             raise BindingError('解绑状态异常，请稍后重试')
         self.unbind_confirmations[telegram_id] = {'token': token, 'expires_at': current + ttl,
-                                                 'request_id': secrets.token_hex(16)}
+                                                 'request_id': secrets.token_hex(16), 'ui_token': secrets.token_hex(16)}
         return {'status': data['status'], 'emailMasked': data['emailMasked']}
+
+    def confirmation_button_token(self, telegram_id, operation):
+        pending = (self.reset_confirmations if operation == 'reset' else self.unbind_confirmations).get(telegram_id)
+        if not pending or pending['expires_at'] <= time.monotonic():
+            raise BindingError('确认已过期，请重新点击对应操作按钮。')
+        return pending['ui_token']
+
+    def matches_confirmation_button(self, telegram_id, operation, token):
+        try:
+            expected = self.confirmation_button_token(telegram_id, operation)
+        except BindingError:
+            return False
+        return isinstance(token, str) and hmac.compare_digest(expected, token)
 
     def cancel_unbind(self, telegram_id):
         self.unbind_confirmations.pop(telegram_id, None)
@@ -175,6 +225,7 @@ class PanelBindingClient:
             raise BindingError('解绑未确认成功，请稍后重试')
         self.cancel_unbind(telegram_id)
         self.email_requests.pop(telegram_id, None)
+        self.cancel_subscription_reset(telegram_id)
         return data
 
     def verify(self, telegram_id, require_active=False):
@@ -185,7 +236,10 @@ class PanelBindingClient:
 
     def get_subscription(self, telegram_id):
         data = self.call('account/subscription', {'telegram_id': telegram_id})
-        url = data.get('subscribe_url')
+        return self.web_url(data.get('subscribe_url'))
+
+    @staticmethod
+    def web_url(url):
         if not isinstance(url, str) or len(url) > 2048 or any(ord(c) <= 32 or ord(c) == 127 for c in url):
             raise BindingError('订阅信息异常，请稍后重试或登录网站查看')
         try:

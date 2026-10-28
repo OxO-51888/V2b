@@ -104,7 +104,7 @@ class Helper
         if (empty($path)) {
             $path = '/api/v1/client/subscribe';
         }
-        $subscribeBase = config('v2board.subscribe_url');
+        $subscribeBase = (string) config('v2board.subscribe_url', '');
         $subscribeUrls = explode(',', $subscribeBase);
         $subscribeUrl = $subscribeUrls[rand(0, count($subscribeUrls) - 1)];
         switch ($submethod) {

@@ -174,7 +174,6 @@ class AccountingSafetyTest extends TestCase
     {
         $job = new StatUserJob([1 => [10, 20]], ['rate' => 1], 'hysteria');
         $property = new \ReflectionProperty($job, 'reportedAt');
-        $property->setAccessible(true);
         $yesterday = strtotime('yesterday 23:59:59');
         $property->setValue($job, $yesterday);
         $job->handle();
@@ -228,7 +227,7 @@ class AccountingSafetyTest extends TestCase
         $this->assertSame([], Redis::getFacadeRoot()->values);
     }
 
-    /** @dataProvider resetCases */
+    #[\PHPUnit\Framework\Attributes\DataProvider('resetCases')]
     public function testResetMethodsKeepExistingEligibility($method, $default, $now, $expires, $expected): void
     {
         $this->app['config']->set('v2board.reset_traffic_method', $default);
@@ -298,6 +297,7 @@ class AccountingSafetyTest extends TestCase
     {
         $this->db->getSchemaBuilder()->create('v2_stat_server', function ($t) { $t->increments('id'); $t->integer('record_at'); });
         $this->db->getSchemaBuilder()->create('v2_subscription_rule_log', function ($t) { $t->increments('id'); });
+        $this->db->getSchemaBuilder()->create('v2_mail_log', function ($t) { $t->increments('id'); $t->integer('created_at'); });
         $pendingId = str_repeat('a', 32);
         Redis::swap(new class($pendingId) {
             private $id;
@@ -317,7 +317,6 @@ class AccountingSafetyTest extends TestCase
     {
         $job = new StatUserJob([1 => [10, 20]], ['rate' => 1], 'hysteria');
         $property = new \ReflectionProperty($job, 'reportedAt');
-        $property->setAccessible(true);
         $property->setValue($job, strtotime('-4 month'));
         $job->handle();
         $this->assertSame(0, $this->db->table('v2_stat_user')->count());

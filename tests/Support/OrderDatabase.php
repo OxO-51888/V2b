@@ -22,6 +22,7 @@ class OrderDatabase
         $capsule->setEventDispatcher(new EventDispatcher($app));
         $capsule->bootEloquent();
         $app->instance('db', $capsule->getDatabaseManager());
+        $app->bind('db.schema', fn () => $capsule->getConnection()->getSchemaBuilder());
         $bus = new Dispatcher($app);
         $app->instance('bus', $bus);
         $app->instance(DispatcherContract::class, $bus);

@@ -5,6 +5,8 @@ use Stripe\Stripe;
 use App\Models\User;
 
 class StripeALL {
+    public $config;
+
     public function __construct($config)
     {
         $this->config = $config;

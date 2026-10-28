@@ -75,16 +75,16 @@ class TelegramBindingTest extends TestCase
             $table->integer('updated_at')->nullable();
         });
         $this->jobs = [];
-        $dispatcher = $this->createMock(Dispatcher::class);
+        $dispatcher = $this->createStub(Dispatcher::class);
         $dispatcher->method('dispatch')->willReturnCallback(function ($job) { $this->jobs[] = $job; });
         $this->app->instance(Dispatcher::class, $dispatcher);
-        $macros = new \ReflectionProperty(Request::class, 'macros'); $macros->setAccessible(true);
+        $macros = new \ReflectionProperty(Request::class, 'macros');
         $this->macros = $macros->getValue();
         $validator = new Validator(new Translator(new ArrayLoader(), 'en'), $this->app);
         Request::macro('validate', function (array $rules) use ($validator) {
             return $validator->make($this->all(), $rules)->validate();
         });
-        $responses = $this->createMock(ResponseFactory::class);
+        $responses = $this->createStub(ResponseFactory::class);
         $responses->method('json')->willReturnCallback(fn($data) => new JsonResponse($data));
         $this->app->instance(ResponseFactory::class, $responses);
         $this->service = new TelegramBindingService();
@@ -93,7 +93,7 @@ class TelegramBindingTest extends TestCase
 
     protected function tearDown(): void
     {
-        $macros = new \ReflectionProperty(Request::class, 'macros'); $macros->setAccessible(true); $macros->setValue(null, $this->macros);
+        $macros = new \ReflectionProperty(Request::class, 'macros'); $macros->setValue(null, $this->macros);
         Capsule::connection()->disconnect();
         User::unsetConnectionResolver();
         Facade::clearResolvedInstances();
@@ -108,7 +108,6 @@ class TelegramBindingTest extends TestCase
         $this->service->requestCode($tg, $email, $this->id());
         $job = end($this->jobs);
         $property = new \ReflectionProperty(SendTelegramBindingEmail::class, 'code');
-        $property->setAccessible(true);
         return [$property->getValue($job), $job];
     }
 
@@ -358,7 +357,7 @@ class TelegramBindingTest extends TestCase
     public function test_failed_enqueue_discards_challenge(): void
     {
         $dispatcher = $this->createMock(Dispatcher::class);
-        $dispatcher->method('dispatch')->willThrowException(new \RuntimeException('offline'));
+        $dispatcher->expects($this->once())->method('dispatch')->willThrowException(new \RuntimeException('offline'));
         $this->app->instance(Dispatcher::class, $dispatcher);
         $this->failsWith(503, fn() => $this->pending());
         $this->assertFalse(Cache::has(TelegramBindingService::key('challenge:7')));
@@ -610,7 +609,7 @@ class TelegramBindingTest extends TestCase
         $response = $this->route('email/request', ['telegram_id' => 7, 'email' => 'member@example.invalid', 'request_id' => $this->id()]);
         $this->assertSame(200, $response->status());
         $this->assertSame('queued', $response->getData(true)['data']['status']);
-        $property = new \ReflectionProperty(SendTelegramBindingEmail::class, 'code'); $property->setAccessible(true);
+        $property = new \ReflectionProperty(SendTelegramBindingEmail::class, 'code');
         $code = $property->getValue($this->jobs[0]);
         $response = $this->route('email/confirm', ['telegram_id' => 7, 'code' => $code, 'request_id' => $this->id()]);
         $this->assertSame('bound', $response->getData(true)['data']['status']);

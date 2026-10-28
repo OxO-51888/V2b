@@ -8,6 +8,7 @@ class CreateCommunityIdentitiesTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('community_identities')) return;
         Schema::create('community_identities', function (Blueprint $table) {
             $table->string('site', 32);
             $table->unsignedBigInteger('user_id');

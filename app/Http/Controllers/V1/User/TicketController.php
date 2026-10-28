@@ -5,11 +5,8 @@ namespace App\Http\Controllers\V1\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\TicketSave;
 use App\Http\Requests\User\TicketWithdraw;
-use App\Jobs\SendTelegramJob;
 use App\Models\User;
-use App\Models\Plan;
 use App\Models\Order;
-use App\Services\TelegramService;
 use App\Services\TicketService;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
@@ -54,7 +51,7 @@ class TicketController extends Controller
         try {
             DB::beginTransaction();
             if ((int)Ticket::where('status', 0)->where('user_id', $request->user['id'])->lockForUpdate()->count()) {
-                throw new \Exception(__('There are other unresolved tickets'));
+                abort(500, __('There are other unresolved tickets'));
             }
 
             // 获取工单状态
@@ -71,16 +68,16 @@ class TicketController extends Controller
                         ->exists();
 
                     if (!$hasOrder) {
-                        throw new \Exception(__('请先购买套餐'));
+                        abort(500, __('请先购买套餐'));
                     }
                     break;
                 case 2:
                     // 完全禁止所有工单
-                    throw new \Exception(__('当前套餐不允许发起工单'));
+                    abort(500, __('当前套餐不允许发起工单'));
                     break;
                 default:
                     // 处理未知状态
-                    throw new \Exception(__('未知的工单状态'));
+                    abort(500, __('未知的工单状态'));
             }
 
             $ticketData = $request->only(['subject', 'level']) + ['user_id' => $request->user['id']];
@@ -93,14 +90,13 @@ class TicketController extends Controller
             ]);
 
             DB::commit();
-            $this->sendNotify($ticket, $request->input('message'),$request->user['id']);
             $this->scheduleAiAutoReply($ticket, $request->input('message'), 'new_ticket');
             return response([
                 'data' => true
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            abort(500, $e->getMessage());
+            throw $e;
         }
     }
 
@@ -134,7 +130,6 @@ class TicketController extends Controller
 		) {
             abort(500, __('Ticket reply failed'));
         }
-        $this->sendNotify($ticket, $request->input('message'), $request->user['id']);
         $this->scheduleAiAutoReply($ticket, $request->input('message'), 'user_reply');
         return response([
             'data' => true
@@ -228,65 +223,9 @@ class TicketController extends Controller
             abort(500, __('Failed to open ticket'));
         }
         DB::commit();
-        $this->sendNotify($ticket, $message);
         return response([
             'data' => true
         ]);
     }
 
-    private function sendNotify(Ticket $ticket, string $message, $userid = null)
-	{
-		$telegramService = new TelegramService();
-		if (!empty($userid)) {
-			$user = User::find($userid);
-
-			if ($user) {
-				$transfer_enable = $this->getFlowData($user->transfer_enable); // 总流量
-				$remaining_traffic = $this->getFlowData($user->transfer_enable - $user->u - $user->d); // 剩余流量
-				$u = $this->getFlowData($user->u); // 上传
-				$d = $this->getFlowData($user->d); // 下载
-				$expired_at = date("Y-m-d H:i:s", $user->expired_at); // 到期时间
-				if (isset($_SERVER['HTTP_X_REAL_IP'])) {
-				$ip_address = $_SERVER['HTTP_X_REAL_IP'];
-				} elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-					$ip_address = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
-				} else {
-					$ip_address = $_SERVER['REMOTE_ADDR'];
-				}
-
-				$api_url = "http://ip-api.com/json/{$ip_address}?fields=520191&lang=zh-CN";
-				$response = file_get_contents($api_url);
-				$user_location = json_decode($response, true);
-				if ($user_location && $user_location['status'] === 'success') {
-					$location =  $user_location['city'] . ", " . $user_location['country'];
-				} else {
-					$location =  "无法确定用户地址";
-				}
-
-				$plan = Plan::where('id', $user->plan_id)->first();
-				$planName = $plan ? $plan->name : '未找到套餐信息'; // Check if plan data is available
-
-				$money = $user->balance / 100;
-				$affmoney = $user->commission_balance / 100;
-				$telegramService->sendMessageWithAdmin("📮工单提醒 #{$ticket->id}\n———————————————\n邮箱：\n`{$user->email}`\n用户位置：\n`{$location}`\nIP:\n{$ip_address}\n套餐与流量：\n`{$planName} of {$transfer_enable}/{$remaining_traffic}`\n上传/下载：\n`{$u}/{$d}`\n到期时间：\n`{$expired_at}`\n余额/佣金余额：\n`{$money}/{$affmoney}`\n主题：\n`{$ticket->subject}`\n内容：\n {$message} ", true);
-			} else {
-				// Handle case where user data is not found
-				$telegramService->sendMessageWithAdmin("User data not found for user ID: {$userid}", true);
-			}
-		} else {
-			$telegramService->sendMessageWithAdmin("📮工单提醒 #{$ticket->id}\n———————————————\n主题：\n`{$ticket->subject}`\n内容：\n {$message} ", true);
-		}
-	}
-
-    private function getFlowData($b)
-    {
-        $g = $b / (1024 * 1024 * 1024); // 转换流量数据
-        $m = $b / (1024 * 1024);
-        if ($g >= 1) {
-            $text = round($g, 2) . "GB";
-        } else {
-            $text = round($m, 2) . "MB";
-        }
-        return $text;
-    }
 }

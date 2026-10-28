@@ -6,10 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Passport\AuthForget;
 use App\Http\Requests\Passport\AuthLogin;
 use App\Http\Requests\Passport\AuthRegister;
-use App\Jobs\SendEmailJob;
 use App\Models\InviteCode;
 use App\Models\Plan;
 use App\Models\User;
+use App\Modules\Security\PassportRejection;
 use App\Services\AuthService;
 use App\Services\EmailVerificationService;
 use App\Utils\CacheKey;
@@ -26,16 +26,16 @@ class AuthController extends Controller
         if ((int)config('v2board.register_limit_by_ip_enable', 0)) {
             $registerCountByIP = Cache::get(CacheKey::get('REGISTER_IP_RATE_LIMIT', $request->ip())) ?? 0;
             if ((int)$registerCountByIP >= (int)config('v2board.register_limit_count', 3)) {
-                abort(500, __('Register frequently, please try again after :minute minute', [
+                PassportRejection::RegisterRateLimited->reject([
                     'minute' => config('v2board.register_limit_expire', 60)
-                ]));
+                ]);
             }
         }
         if ((int)config('v2board.recaptcha_enable', 0)) {
             $recaptcha = new ReCaptcha(config('v2board.recaptcha_key'));
             $recaptchaResp = $recaptcha->verify($request->input('recaptcha_data'));
             if (!$recaptchaResp->isSuccess()) {
-                abort(500, __('Invalid code is incorrect'));
+                PassportRejection::InvalidCaptcha->reject();
             }
         }
         if ((int)config('v2board.email_whitelist_enable', 0)) {
@@ -43,33 +43,33 @@ class AuthController extends Controller
                 $request->input('email'),
                 config('v2board.email_whitelist_suffix', Dict::EMAIL_WHITELIST_SUFFIX_DEFAULT))
             ) {
-                abort(500, __('Email suffix is not in the Whitelist'));
+                PassportRejection::EmailNotAllowed->reject();
             }
         }
         if ((int)config('v2board.email_gmail_limit_enable', 0)) {
             $prefix = explode('@', $request->input('email'))[0];
             if (strpos($prefix, '.') !== false || strpos($prefix, '+') !== false) {
-                abort(500, __('Gmail alias is not supported'));
+                PassportRejection::EmailAliasNotAllowed->reject();
             }
         }
         if ((int)config('v2board.stop_register', 0)) {
-            abort(500, __('Registration has closed'));
+            PassportRejection::RegistrationClosed->reject();
         }
         if ((int)config('v2board.invite_force', 0)) {
             if (empty($request->input('invite_code'))) {
-                abort(500, __('You must use the invitation code to register'));
+                PassportRejection::InviteRequired->reject();
             }
         }
         $email = $request->input('email');
         if (User::where('email', $email)->exists()) {
-            abort(500, __('Email already exists'));
+            PassportRejection::EmailAlreadyExists->reject();
         }
         if ((int)config('v2board.invite_force', 0)
             && !InviteCode::where('code', $request->input('invite_code'))->where('status', 0)->exists()) {
-            abort(500, __('Invalid invitation code'));
+            PassportRejection::InvalidInvite->reject();
         }
         $create = function () use ($request, $email) {
-            if (User::where('email', $email)->exists()) abort(500, __('Email already exists'));
+            if (User::where('email', $email)->exists()) PassportRejection::EmailAlreadyExists->reject();
             return $this->createUser($request, $email);
         };
         $user = (int)config('v2board.email_verify', 0)
@@ -103,7 +103,7 @@ class AuthController extends Controller
                 ->first();
             if (!$inviteCode) {
                 if ((int)config('v2board.invite_force', 0)) {
-                    abort(500, __('Invalid invitation code'));
+                    PassportRejection::InvalidInvite->reject();
                 }
             } else {
                 $user->invite_user_id = $inviteCode->user_id ? $inviteCode->user_id : null;
@@ -150,15 +150,15 @@ class AuthController extends Controller
         if ((int)config('v2board.password_limit_enable', 1)) {
             $passwordErrorCount = (int)Cache::get(CacheKey::get('PASSWORD_ERROR_LIMIT', $email), 0);
             if ($passwordErrorCount >= (int)config('v2board.password_limit_count', 5)) {
-                abort(500, __('There are too many password errors, please try again after :minute minutes.', [
+                PassportRejection::LoginRateLimited->reject([
                     'minute' => config('v2board.password_limit_expire', 60)
-                ]));
+                ]);
             }
         }
 
         $user = EmailVerificationService::findUser($email);
         if (!$user) {
-            abort(500, __('Incorrect email or password'));
+            PassportRejection::InvalidCredentials->reject();
         }
         if (!Helper::multiPasswordVerify(
             $user->password_algo,
@@ -173,11 +173,11 @@ class AuthController extends Controller
                     60 * (int)config('v2board.password_limit_expire', 60)
                 );
             }
-            abort(500, __('Incorrect email or password'));
+            PassportRejection::InvalidCredentials->reject();
         }
 
         if ($user->banned) {
-            abort(500, __('Your account has been suspended'));
+            PassportRejection::AccountSuspended->reject();
         }
 
         $authService = new AuthService($user);
@@ -229,15 +229,15 @@ class AuthController extends Controller
         $password  = $request->input('password');
 
         if (!is_string($email) || !is_string($inputCode) || !is_string($password)) {
-            abort(500, __('Incorrect email verification code'));
+            PassportRejection::InvalidEmailCode->reject();
         }
         if (!preg_match('/^\d{6}$/', $inputCode)) {
-            abort(500, __('Incorrect email verification code'));
+            PassportRejection::InvalidEmailCode->reject();
         }
 
         EmailVerificationService::verifyAndRun($email, $inputCode, function () use ($email, $password) {
             $user = EmailVerificationService::findUser($email);
-            if (!$user) abort(500, __('This email is not registered in the system'));
+            if (!$user) PassportRejection::EmailNotRegistered->reject();
             (new AuthService($user))->resetPassword($password);
         });
         return response([

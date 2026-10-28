@@ -5,6 +5,8 @@ namespace App\Payments;
 use \Curl\Curl;
 
 class BEasyPaymentUSDT {
+    public $config;
+
     public function __construct($config)
     {
         $this->config = $config;

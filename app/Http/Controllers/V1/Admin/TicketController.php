@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
-use App\Services\AiRiskService;
+use App\Modules\Support\TicketAiService as AiRiskService;
 use App\Services\TicketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;

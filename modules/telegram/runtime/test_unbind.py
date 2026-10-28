@@ -123,11 +123,11 @@ class UnbindBotTests(unittest.TestCase):
 
     def test_confirmation_preserves_manual_rules_pending_joins_and_group_flags(self):
         self.db.save_group({'chat_id': -123, 'enabled': 1, 'verify_join': 1, 'verify_message': 1})
-        self.db.save_registered_user({'telegram_id': 7, 'status': 'blocked', 'note': 'keep'})
+        self.db.save_registered_user({'telegram_id': 7, 'status': 'active', 'note': 'keep'})
         self.db.remember_pending_join(-123, 7, 9007, bot.now_ts())
         before_user = dict(self.db.get_registered_user(7))
         before_pending = [dict(r) for r in self.db.pending_joins_for(7)]
-        self.dispatch('确认解绑')
+        bot.handle_unbind_message(self.api, self.db, self.checker, 7, 1, 7, '确认解绑', confirmed=True)
         self.checker.email_client.confirm_unbind.assert_called_once_with(7)
         self.assertIn('需要重新绑定，请在这里发送网站注册邮箱', self.api.send_message.call_args.args[1])
         self.assertEqual(before_user, dict(self.db.get_registered_user(7)))
@@ -154,7 +154,7 @@ class UnbindBotTests(unittest.TestCase):
 
     def test_failed_confirmation_does_not_claim_unbound(self):
         self.checker.email_client.confirm_unbind.side_effect = BindingError('确认已过期')
-        self.dispatch('确认解绑')
+        bot.handle_unbind_message(self.api, self.db, self.checker, 7, 1, 7, '确认解绑', confirmed=True)
         self.assertIn('确认已过期', self.api.send_message.call_args.args[1])
         self.assertNotIn('需要重新绑定，请在这里发送网站注册邮箱', self.api.send_message.call_args.args[1])
         self.assertEqual('unbind_failed', self.db.list_events()[0]['action'])

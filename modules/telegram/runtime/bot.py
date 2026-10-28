@@ -170,14 +170,19 @@ class TelegramBot:
     def get_updates(self, offset: int | None, timeout: int) -> list[dict[str, Any]]:
         payload: dict[str, Any] = {
             "timeout": timeout,
-            "allowed_updates": ["message", "chat_join_request", "chat_member"],
+            "allowed_updates": ["message", "chat_join_request", "chat_member", "callback_query"],
         }
         if offset is not None:
             payload["offset"] = offset
         return self.request("getUpdates", payload)["result"]
 
+    def answer_callback_query(self, query_id, text='', *, show_alert=False):
+        return self.request('answerCallbackQuery', {'callback_query_id': query_id,
+                            'text': text, 'show_alert': show_alert, 'cache_time': 0})
+
     def send_message(self, chat_id: int, text: str, reply_to_message_id: int | None = None,
-                     *, reply_markup: dict[str, Any] | None = None) -> dict[str, Any]:
+                     *, reply_markup: dict[str, Any] | None = None,
+                     entities: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         payload: dict[str, Any] = {
             "chat_id": chat_id,
             "text": text,
@@ -188,6 +193,8 @@ class TelegramBot:
             payload['allow_sending_without_reply'] = True
         if reply_markup is not None:
             payload['reply_markup'] = reply_markup
+        if entities is not None:
+            payload['entities'] = entities
         return self.request("sendMessage", payload)
 
     def delete_message(self, chat_id: int, message_id: int) -> None:
@@ -811,7 +818,8 @@ def bind_help_text() -> str:
 def bound_help_text() -> str:
     return (
         '请点击“获取订阅”获取订阅链接，或点击“查看套餐”查看流量和有效期。\n'
-        '需要入群，请从网站的加群入口继续；提交过申请但仍未入群，请点击“重试入群验证”。\n'
+        '需要更换订阅链接，请点击“重置订阅”并确认；查找网站入口，请点击“发布页”。\n'
+        '需要入群，请从网站的加群入口提交申请；完成邮箱绑定后，请返回群组查看。\n'
         '更换绑定邮箱，请点击“解绑邮箱”并确认，再发送新的注册邮箱。'
     )
 
@@ -827,8 +835,8 @@ def binding_resend_keyboard() -> dict[str, Any]:
 
 def binding_account_keyboard() -> dict[str, Any]:
     return {
-        'keyboard': [[{'text': '绑定邮箱'}, {'text': '获取订阅'}, {'text': '查看套餐'}],
-                     [{'text': '重试入群验证'}, {'text': '重新发送验证码'}, {'text': '解绑邮箱'}]],
+        'keyboard': [[{'text': '发布页'}, {'text': '获取订阅'}, {'text': '查看套餐'}, {'text': '重置订阅'}],
+                     [{'text': '绑定邮箱'}, {'text': '重新发送验证码'}, {'text': '解绑邮箱'}]],
         'resize_keyboard': True,
         'is_persistent': False,
         'one_time_keyboard': False,
@@ -857,10 +865,24 @@ def account_plan_text(data: dict[str, Any]) -> str:
     return '\n'.join(lines)
 
 
+def publication_display_url(url: str) -> str:
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        host = parsed.hostname.encode('ascii').decode('idna')
+        netloc = f'[{host}]' if ':' in host else host
+        if parsed.port:
+            netloc += ':' + str(parsed.port)
+        path = '' if parsed.path == '/' else parsed.path
+        return urllib.parse.urlunsplit(parsed._replace(netloc=netloc, path=path))
+    except (ValueError, UnicodeError, AttributeError):
+        raise BindingError('发布页地址异常，请联系管理员') from None
+
+
 def handle_account_read(bot: TelegramBot, db: AppDatabase, checker: PanelUserChecker,
                         chat_id: int, message_id: int, user_id: int, text: str) -> None:
     if not user_id:
         return
+    entities = None
     try:
         local = db.get_registered_user(user_id)
         if local and local['status'] == 'blocked':
@@ -868,16 +890,100 @@ def handle_account_read(bot: TelegramBot, db: AppDatabase, checker: PanelUserChe
         if text == '获取订阅':
             url = checker.email_client.get_subscription(user_id)
             message = '你的订阅链接（仅供本人使用，请勿转发）：\n' + url
+        elif text == '发布页':
+            url = checker.email_client.get_publication(user_id)
+            display = publication_display_url(url)
+            prefix = '请打开本站发布页，选择可用的网站入口：\n'
+            message = prefix + display
+            entities = [{'type': 'text_link', 'offset': len(prefix.encode('utf-16-le')) // 2,
+                         'length': len(display.encode('utf-16-le')) // 2, 'url': url}]
         else:
             message = account_plan_text(checker.email_client.get_plan(user_id))
     except BindingError as error:
         message = str(error)
     # Subscription credentials and account details must not be recorded in bot events.
-    bot.send_message(chat_id, message, message_id, reply_markup=binding_account_keyboard())
+    if entities:
+        bot.send_message(chat_id, message, message_id, reply_markup=binding_account_keyboard(), entities=entities)
+    else:
+        bot.send_message(chat_id, message, message_id, reply_markup=binding_account_keyboard())
+
+
+def account_confirmation_keyboard(client, user_id, operation):
+    token = client.confirmation_button_token(user_id, operation)
+    confirm, cancel = ('确认重置订阅', '取消重置') if operation == 'reset' else ('确认解绑', '取消解绑')
+    return {'inline_keyboard': [[{'text': confirm, 'callback_data': f'ac:{operation}:yes:{token}'},
+                                 {'text': cancel, 'callback_data': f'ac:{operation}:no:{token}'}]]}
+
+
+def handle_account_callback(bot, db, checker, query):
+    query_id, payload = query.get('id'), query.get('data')
+    message, sender = query.get('message') or {}, query.get('from') or {}
+    chat = message.get('chat') or {}
+    user_id, chat_id, message_id = sender.get('id'), chat.get('id'), message.get('message_id')
+    match = re.fullmatch(r'ac:(reset|unbind):(yes|no):([a-f0-9]{32})', payload) if isinstance(payload, str) else None
+    if (not isinstance(query_id, str) or not query_id or not match or type(user_id) is not int or user_id <= 0
+            or chat.get('type') != 'private' or chat_id != user_id or type(message_id) is not int or message_id <= 0):
+        if isinstance(query_id, str) and query_id:
+            bot.answer_callback_query(query_id, '请在机器人私聊中重新点击操作按钮。', show_alert=True)
+        return
+    local = db.get_registered_user(user_id)
+    if local and local['status'] == 'blocked':
+        bot.answer_callback_query(query_id, '当前Telegram账号不可操作，请联系管理员。', show_alert=True)
+        return
+    sites = site_registry(checker)
+    current = sites.current(user_id) if sites else None
+    if sites and current is None:
+        bot.answer_callback_query(query_id, '请先选择机场，再重新点击操作按钮。', show_alert=True)
+        return
+    if sites:
+        checker = checker.for_site(current)
+    operation, decision, token = match.groups()
+    if not checker.email_client.matches_confirmation_button(user_id, operation, token):
+        bot.answer_callback_query(query_id, '此确认已失效，请在当前机场重新点击操作按钮。', show_alert=True)
+        return
+    # Acknowledge before the panel request; failure must not perform a write.
+    bot.answer_callback_query(query_id)
+    if sites:
+        bot = SitePrivateBot(bot, sites.sites[current]['label'], sites, user_id)
+    if operation == 'reset':
+        handle_subscription_reset(bot, db, checker, chat_id, message_id, user_id,
+                                  '确认重置订阅' if decision == 'yes' else '取消重置', confirmed=True)
+    else:
+        handle_unbind_message(bot, db, checker, chat_id, message_id, user_id,
+                              '确认解绑' if decision == 'yes' else '取消解绑', confirmed=True)
+
+
+def handle_subscription_reset(bot, db, checker, chat_id, message_id, user_id, text, *, confirmed=False):
+    if not user_id:
+        return
+    keyboard = binding_account_keyboard()
+    try:
+        local = db.get_registered_user(user_id)
+        if local and local['status'] == 'blocked':
+            raise BindingError('当前Telegram账号不可操作，请联系管理员')
+        if text == '取消重置':
+            checker.email_client.cancel_subscription_reset(user_id)
+            message = '已退出重置确认。需要查看当前订阅，请点击“获取订阅”。'
+        elif text == '重置订阅':
+            data = checker.email_client.prepare_subscription_reset(user_id)
+            message = (f"绑定邮箱：{data['emailMasked']}\n"
+                       '确认重置本站订阅吗？旧订阅链接和节点连接凭据将失效，所有设备需要重新导入新订阅。\n'
+                       '账号密码、套餐、有效期和流量不变。\n'
+                       '请在5分钟内点击“确认重置订阅”；不需要更换请点击“取消重置”。')
+            keyboard = account_confirmation_keyboard(checker.email_client, user_id, 'reset')
+        else:
+            if not confirmed:
+                raise BindingError('重置确认已过期或未开始，请点击本次确认消息下方的按钮；旧按钮请重新点击“重置订阅”。')
+            url = checker.email_client.confirm_subscription_reset(user_id)
+            message = '请在所有设备重新导入以下新订阅，旧订阅已失效。链接仅供本人使用，请勿转发：\n' + url
+    except BindingError as error:
+        message = str(error)
+    # Neither confirmation secrets nor subscription credentials belong in event logs.
+    bot.send_message(chat_id, message, message_id, reply_markup=keyboard)
 
 
 def handle_unbind_message(bot: TelegramBot, db: AppDatabase, checker: PanelUserChecker,
-                          chat_id: int, message_id: int, user_id: int, text: str) -> None:
+                          chat_id: int, message_id: int, user_id: int, text: str, *, confirmed=False) -> None:
     if not user_id:
         return
     action = 'unbind_cancelled'
@@ -898,10 +1004,11 @@ def handle_unbind_message(bot: TelegramBot, db: AppDatabase, checker: PanelUserC
                            '网站账号、套餐和流量不会删除或改变，也不会自动将你踢出群。'
                            '解绑后，群聊仍按现有规则校验身份，可能需要重新绑定才能发言或入群。\n'
                            '请在5分钟内确认，误触请点“取消解绑”。')
-                keyboard = {'keyboard': [[{'text': '确认解绑'}, {'text': '取消解绑'}]],
-                            'resize_keyboard': True, 'one_time_keyboard': True}
+                keyboard = account_confirmation_keyboard(checker.email_client, user_id, 'unbind')
                 action = 'unbind_confirmation_requested'
         else:
+            if not confirmed:
+                raise BindingError('解绑确认已过期或未开始，请点击本次确认消息下方的按钮；旧按钮请重新点击“解绑邮箱”。')
             checker.email_client.confirm_unbind(user_id)
             sites = site_registry(checker)
             if sites:
@@ -955,13 +1062,13 @@ def hold_join_for_binding(bot: TelegramBot, db: AppDatabase, join_request: dict[
     if sites:
         key = sites.for_group(chat_id)
         # A second group request must not silently switch an ongoing private operation.
-        if sites.current(user_id) is None:
+        if sites.current(user_id) is None and not sites.awaiting_choice(user_id):
             sites.select(user_id, key)
         label = sites.sites[key]['label']
         bot.send_message(private_id,
             f'加入「{title}」，请点击下方“验证网站账号”，在私聊发送{label}的注册邮箱。\n'
             '收到邮件后直接发送6位验证码；收件箱没有请检查垃圾邮件。\n'
-            '完成过该站绑定的用户，无需重复绑定，请返回群组查看；仍待审批时，点击私聊中的“重试入群验证”。\n'
+            '完成过该站绑定的用户，无需重复绑定，请返回群组查看；申请已过期时，请从网站重新申请入群。\n'
             '请在5分钟内完成验证；超时仅拒绝本次申请，不会封禁，可重新申请。\n'
             '只验证网站注册身份，无需购买套餐。请勿发送邮箱密码或订阅链接。',
             reply_markup={'inline_keyboard': [[{'text': '验证网站账号',
@@ -971,7 +1078,7 @@ def hold_join_for_binding(bot: TelegramBot, db: AppDatabase, join_request: dict[
         f"加入「{title}」，请直接在本私聊发送网站注册邮箱，收到邮件后直接发送6位验证码，无需输入命令。\n"
         "收件箱没找到验证码邮件，请检查垃圾邮件文件夹。"
         "验证成功后，我会自动批准本次入群申请，无需购买套餐。\n\n"
-        "下方可直接点击“绑定邮箱”查看步骤；完成过绑定的用户无需重复绑定，请返回群组查看，仍未入群请点“重试入群验证”。\n"
+        "下方可直接点击“绑定邮箱”查看步骤；完成过绑定的用户无需重复绑定，请返回群组查看；申请已过期时，请从网站重新申请入群。\n"
         "不要发送邮箱密码或订阅链接。请在5分钟内完成验证；超时仅拒绝本次申请，不会封禁，可重新申请。",
         reply_markup=binding_resend_keyboard())
     return 'guidance_sent'
@@ -981,6 +1088,10 @@ def approve_pending_joins(bot: TelegramBot, db: AppDatabase, checker: PanelUserC
     allowed_ids = parse_chat_ids(os.getenv('TELEGRAM_ALLOWED_CHAT_IDS'))
     pending = [row for row in db.pending_joins_for(user_id) if row['enabled'] and row['verify_join']
                and join_onboarding_enabled(row['chat_id']) and should_reply(row['chat_id'], allowed_ids)]
+    sites = site_registry(checker)
+    selected = getattr(checker, 'site_id', None)
+    if sites and selected:
+        pending = [row for row in pending if sites.groups.get(row['chat_id']) == selected]
     if not pending:
         return [], False
     local = db.get_registered_user(user_id)
@@ -1108,7 +1219,7 @@ def join_approval_text(approved: list[str], pending: bool) -> str:
     if approved:
         message += '\n请返回「' + '、'.join(approved) + '」开始群聊。'
     if pending:
-        message += '\n还没进入群组，请稍后点击“重试入群验证”；如已取消申请，请从网站重新申请入群。'
+        message += '\n请稍后返回群组查看；如申请已取消或过期，请从网站重新申请入群。'
     return message
 
 
@@ -1426,7 +1537,7 @@ def handle_command(
             "亲亲，我是群组验证小助手。\n\n"
             "绑定网站账号请直接在私聊发送注册邮箱，收到邮件后直接发送收到的6位验证码，无需输入命令。\n"
             "收件箱没找到验证码邮件，请检查垃圾邮件文件夹。\n"
-            "私聊下方可直接点击“绑定邮箱”查看步骤；已绑定的用户可点击“重试入群验证”。",
+            "私聊下方可直接点击“绑定邮箱”查看步骤；入群请从网站的加群入口提交申请，完成邮箱绑定后返回群组查看。",
             message_id,
             reply_markup=binding_account_keyboard() if private else None,
         )
@@ -1524,21 +1635,30 @@ def handle_message(
             bot.send_message(chat_id, '当前Telegram账号不可操作，请联系管理员。',
                              message_id, reply_markup={'remove_keyboard': True})
             return
-        choice = sites.choice(sender_id, text)
-        if choice:
-            try:
+        try:
+            if text in {'切换机场', '/sites'}:
+                sites.begin_switch(sender_id)
+            choice = sites.choice(sender_id, text)
+            if choice:
                 sites.select(sender_id, choice)
-            except BindingError as error:
-                bot.send_message(chat_id, str(error), message_id)
-                return
+        except BindingError as error:
+            try:
+                sites.begin_switch(sender_id)
+            except BindingError:
+                pass
+            bot.send_message(chat_id, str(error), message_id, reply_markup={'remove_keyboard': True})
+            return
+        if choice:
             SitePrivateBot(bot, sites.sites[choice]['label'], sites, sender_id).send_message(
                 chat_id, site_help_text(sites, sender_id, choice),
                 message_id, reply_markup=binding_account_keyboard())
             return
         current = sites.current(sender_id)
         if text in {'切换机场', '/sites'} or current is None:
+            sites.clear_pending(sender_id)
             keys, incomplete = sites.bound_sites(sender_id)
-            if current is None and len(keys) == 1 and text not in {'切换机场', '/sites'}:
+            if (current is None and len(keys) == 1 and not sites.awaiting_choice(sender_id)
+                    and text not in {'切换机场', '/sites'}):
                 sites.select(sender_id, keys[0])
                 SitePrivateBot(bot, sites.sites[keys[0]]['label'], sites, sender_id).send_message(
                     chat_id, bound_help_text(),
@@ -1559,8 +1679,11 @@ def handle_message(
         return
 
     if chat_type == "private":
-        if text in {'获取订阅', '查看套餐'}:
+        if text in {'获取订阅', '查看套餐', '发布页'}:
             handle_account_read(bot, db, checker, chat_id, message_id, sender_id, text)
+            return
+        if text in {'重置订阅', '确认重置订阅', '取消重置'}:
+            handle_subscription_reset(bot, db, checker, chat_id, message_id, sender_id, text)
             return
         if text == '绑定邮箱':
             handle_bind_command(bot, db, checker, chat_id, chat_type, chat_name, message_id, sender, '/绑定')
@@ -1676,7 +1799,7 @@ def run_bot(stop_requested=None, on_ready=None) -> None:
             received = time.monotonic()
             received_at = time.time()
             for update in updates:
-                kind = next((k for k in ('chat_join_request', 'chat_member') if update.get(k)), 'message')
+                kind = next((k for k in ('chat_join_request', 'chat_member', 'callback_query') if update.get(k)), 'message')
                 timestamp = (update.get(kind) or {}).get('date')
                 log_timing('update_received', update_id=update['update_id'], kind=kind,
                            age_ms=round((received_at - timestamp) * 1000) if type(timestamp) is int else None,
@@ -1690,6 +1813,10 @@ def run_bot(stop_requested=None, on_ready=None) -> None:
 
                 if update.get("chat_join_request"):
                     handle_join_request(bot, db, checker, allowed_chat_ids, update["chat_join_request"])
+                    continue
+
+                if update.get('callback_query'):
+                    handle_account_callback(bot, db, checker, update['callback_query'])
                     continue
 
                 message = update.get("message") or {}

@@ -6,6 +6,8 @@
 namespace App\Payments;
 
 class AlipayF2F {
+    public $config;
+
     public function __construct($config)
     {
         $this->config = $config;
@@ -57,7 +59,8 @@ class AlipayF2F {
                 'data' => $gateway->getQrCodeUrl()
             ];
         } catch (\Exception $e) {
-            abort(500, $e->getMessage());
+            \Illuminate\Support\Facades\Log::warning('Alipay order creation failed', ['exception' => $e]);
+            abort(500, __('Failed to create order'));
         }
     }
 

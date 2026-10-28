@@ -7,12 +7,12 @@
 - aaPanel：纯净版
 - Nginx：面板推荐版本
 - MySQL：5.7
-- PHP：8.1，选择 Fast install
+- PHP：8.5.12 或更新的 8.5 补丁版本
 - Redis：必须安装
 - Supervisor Manager：必须安装，用来守护队列
 - Git：必须安装，用来拉取和更新仓库
 
-不要使用 PHP 7.4 新装。PHP 7.4 版本较低，部分组件和依赖已经不再支持；本仓库使用 PHP 8.1。
+本仓库仅支持 PHP 8.5.12 及以上的 8.5 补丁版本，依赖版本由 `composer.lock` 锁定。网站和命令行均需使用 PHP 8.5。
 
 ## 1. 安装环境
 
@@ -21,15 +21,14 @@
 ```text
 Nginx
 MySQL 5.7
-PHP 8.1
+PHP 8.5.12+
 Redis
 Supervisor Manager
 ```
 
 注意：
 
-- PHP 8.1 选择 `Fast install`
-- 不选 `Compile install`
+- PHP 8.5 安装后检查实际补丁版本，必须达到 8.5.12
 - Supervisor Manager 是 App Store 里的独立插件，需要单独安装
 
 SSH 安装并检查 Git：
@@ -39,12 +38,12 @@ apt update && apt install -y git
 git --version
 ```
 
-## 2. 配置 PHP 8.1
+## 2. 配置 PHP 8.5
 
 进入：
 
 ```text
-App Store -> PHP-8.1 -> Setting
+App Store -> PHP-8.5 -> Setting
 ```
 
 安装扩展：
@@ -52,12 +51,13 @@ App Store -> PHP-8.1 -> Setting
 ```text
 redis
 fileinfo
+sodium
 ```
 
 进入：
 
 ```text
-PHP-8.1 -> Setting -> Disabled functions
+PHP-8.5 -> Setting -> Disabled functions
 ```
 
 删除：
@@ -69,19 +69,19 @@ pcntl_alarm
 pcntl_signal
 ```
 
-保存后重启 PHP 8.1。
+保存后重启 PHP 8.5。
 
 SSH 检查：
 
 ```bash
 php -v
-php -m | grep -E 'redis|fileinfo|pcntl'
+php -m | grep -E 'redis|fileinfo|pcntl|sodium'
 ```
 
-如果 SSH 里的 `php -v` 不是 PHP 8.1，在 aaPanel 里设置：
+如果 SSH 里的 `php -v` 不是 PHP 8.5，在 aaPanel 里设置：
 
 ```text
-Website -> PHP CLI version -> PHP-8.1
+Website -> PHP CLI version -> PHP-8.5
 ```
 
 ## 3. 添加站点和数据库
@@ -96,7 +96,7 @@ Website -> Add site
 
 - Domain：你的面板域名
 - Database：MySQL
-- PHP Version：PHP-81
+- PHP Version：PHP-85
 
 记下数据库名、数据库用户名、数据库密码，安装 V2Board 时要用。
 

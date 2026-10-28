@@ -12,7 +12,6 @@ class TicketAiReplyTest extends TestCase
     {
         $service = new AiRiskService();
         $reflection = new ReflectionMethod($service, $method);
-        $reflection->setAccessible(true);
         return $reflection->invokeArgs($service, $args);
     }
 
@@ -89,7 +88,7 @@ class TicketAiReplyTest extends TestCase
         $text = $this->invoke('ticketKnowledgeSearchText', [$context]);
         $this->assertStringNotContainsString('Clash', $text);
         $this->assertStringNotContainsString('国内站', $text);
-        $knowledge = $this->invoke('selectTicketKnowledge', [$context, ['ticket_ai_knowledge_path' => dirname(__DIR__, 2) . '/resources/ai/ticket_knowledge_extra.json'], 4]);
+        $knowledge = $this->invoke('selectTicketKnowledge', [$context, ['ticket_ai_knowledge_path' => dirname(__DIR__) . '/Fixtures/ticket_knowledge_extra.json'], 4]);
         $this->assertSame('testflight_beta_full', $knowledge[0]['id']);
         $this->assertNotContains('publish_page_domestic_overseas_entry', array_column($knowledge, 'id'));
     }
@@ -255,7 +254,7 @@ class TicketAiReplyTest extends TestCase
 
     public function test_image_and_certificate_knowledge_does_not_require_unavailable_capabilities(): void
     {
-        $knowledge = json_decode(file_get_contents(dirname(__DIR__, 2) . '/resources/ai/ticket_knowledge_extra.json'), true);
+        $knowledge = json_decode(file_get_contents(dirname(__DIR__) . '/Fixtures/ticket_knowledge_extra.json'), true);
         $byId = array_column($knowledge, null, 'id');
         $this->assertCount(120, $byId);
         foreach (['admin_needs_log_screenshot', 'ticket_image_not_supported'] as $id) {
@@ -266,7 +265,7 @@ class TicketAiReplyTest extends TestCase
 
     public function test_known_meta_import_error_is_retrieved_for_error_and_client_variants(): void
     {
-        $config = ['ticket_ai_knowledge_path' => dirname(__DIR__, 2) . '/resources/ai/ticket_knowledge_extra.json'];
+        $config = ['ticket_ai_knowledge_path' => dirname(__DIR__) . '/Fixtures/ticket_knowledge_extra.json'];
         $cases = [
             ['clash meta 2.11.25导入订阅失败', '保存订阅时显示java.security.cert.certpathvalidatorexception: Trust anchor for certification path notfound.'],
             ['添加不了配置', 'Clash URL保存时报x509: certificate signed by unknown authority'],
@@ -292,14 +291,14 @@ class TicketAiReplyTest extends TestCase
             ['from' => 'user', 'message' => 'Get订阅地址 x509: certificate signed by unknown authority'],
             ['from' => 'staff', 'is_ai' => true, 'message' => '必须人工核对服务端证书链。']
         ]]];
-        $items = $this->invoke('selectTicketKnowledge', [$context, ['ticket_ai_knowledge_path' => dirname(__DIR__, 2) . '/resources/ai/ticket_knowledge_extra.json'], 4]);
+        $items = $this->invoke('selectTicketKnowledge', [$context, ['ticket_ai_knowledge_path' => dirname(__DIR__) . '/Fixtures/ticket_knowledge_extra.json'], 4]);
         $this->assertSame('proxy_ip_certificate_warning', $items[0]['id']);
         $this->assertStringContainsString('先前AI误导查证书时纠正方向', implode(' ', $items[0]['answer_points']));
     }
 
     public function test_different_tls_failures_keep_their_specific_knowledge(): void
     {
-        $config = ['ticket_ai_knowledge_path' => dirname(__DIR__, 2) . '/resources/ai/ticket_knowledge_extra.json'];
+        $config = ['ticket_ai_knowledge_path' => dirname(__DIR__) . '/Fixtures/ticket_knowledge_extra.json'];
         $cases = [
             ['Shadowrocket 小火箭订阅证书无效，无法换客户端', 'shadowrocket_vpn_cert_warning'],
             ['Clash Meta 导入订阅 TLS handshake timeout', 'subscription_tls_handshake_timeout'],

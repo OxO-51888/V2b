@@ -30,12 +30,11 @@ class CommunityMessageSystemTest extends TestCase
         $app->instance(CacheRateLimiter::class, new CacheRateLimiter($cache));
         $validator = new Validator(new Translator(new ArrayLoader(), 'en'), $app);
         $macros = new \ReflectionProperty(Request::class, 'macros');
-        $macros->setAccessible(true);
         $this->requestMacros = $macros->getValue();
         Request::macro('validate', function (array $rules) use ($validator) {
             return $validator->make($this->all(), $rules)->validate();
         });
-        $responses = $this->createMock(ResponseFactory::class);
+        $responses = $this->createStub(ResponseFactory::class);
         $responses->method('json')->willReturnCallback(function ($data = []) { return new JsonResponse($data); });
         $app->instance(ResponseFactory::class, $responses);
         Facade::clearResolvedInstances();
@@ -45,7 +44,6 @@ class CommunityMessageSystemTest extends TestCase
     protected function tearDown(): void
     {
         $macros = new \ReflectionProperty(Request::class, 'macros');
-        $macros->setAccessible(true);
         $macros->setValue(null, $this->requestMacros);
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication(null);
@@ -55,7 +53,6 @@ class CommunityMessageSystemTest extends TestCase
     public function test_browser_signals_become_only_a_coarse_system_label(): void
     {
         $method = new \ReflectionMethod(CommunityController::class, 'messageSystem');
-        $method->setAccessible(true);
         foreach ([
             ['Mozilla/5.0 (Linux; Android 15; Pixel 9)', '', 'Android'],
             ['Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)', '', 'iOS'],

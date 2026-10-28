@@ -11,7 +11,9 @@ class PanelModuleController extends Controller
     public function gateway(PanelModuleService $service)
     {
         $data = $service->request('gateway', 'GET', '/api/admin/panels');
-        $data['public_url'] = config('panel_modules.gateway.public_url');
+        $data['entry_urls'] = \App\Services\ClientGateway\SubscriptionEntry::upstreams();
+        $data['entry_url'] = $data['entry_urls'][0] ?? '';
+        $data['public_url'] = $data['entry_url'] === '' ? '' : $data['entry_url'] . '/api/v1/client-gateway';
         return response()->json(['data' => $data])->header('Cache-Control', 'no-store');
     }
 
@@ -24,16 +26,6 @@ class PanelModuleController extends Controller
         ]);
         $data['panelId'] = config('panel_modules.gateway.panel_id');
         return ['data' => $service->request('gateway', 'POST', '/api/admin/panels/update', $data)];
-    }
-
-    public function gatewayConfigure(Request $request, PanelModuleService $service,
-        \App\Services\ClientGateway\Entry $entry, \App\Services\ClientGateway\Gateway $gateway)
-    {
-        $service->assertEnabled();
-        abort_unless(config('panel_modules.gateway.entry_enabled'), 503, '本站入口尚未部署');
-        $this->exact($request, ['domain', 'revision']);
-        $data = $request->validate(['domain' => 'required|string|max:261', 'revision' => 'required|string|size:64']);
-        return ['data' => $entry->configure($gateway, $data['domain'], $data['revision'])];
     }
 
     public function devices(Request $request, PanelModuleService $service)

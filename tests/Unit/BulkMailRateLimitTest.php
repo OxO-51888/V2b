@@ -175,7 +175,6 @@ class BulkMailRateLimitTest extends TestCase
         $queue = new SyncQueue();
         $queue->setContainer($this->app);
         $createPayload = new \ReflectionMethod($queue, 'createPayload');
-        $createPayload->setAccessible(true);
         foreach (['send_email_mass' => 0, 'send_email' => 3] as $name => $tries) {
             $job = new SendEmailJob($this->params(), $name);
             $payload = json_decode($createPayload->invoke($queue, $job, $name), true);
@@ -192,7 +191,6 @@ class BulkMailRateLimitTest extends TestCase
     {
         $job = new SendEmailJob($this->params(), 'send_email_mass');
         $method = new \ReflectionMethod($job, 'bulkRateLimitKey');
-        $method->setAccessible(true);
         $first = $method->invoke($job);
         $this->app->setBasePath('/fixture/site-two');
         $second = $method->invoke($job);

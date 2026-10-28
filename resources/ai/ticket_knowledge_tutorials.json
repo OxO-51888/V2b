@@ -1,0 +1,170 @@
+[
+  {
+    "id": "tutorial_new_user_quick_start",
+    "title": "新用户快速开始",
+    "keywords": ["新手", "不会用", "怎么用", "如何使用", "使用教程", "怎么连接", "第一次用"],
+    "answer_points": ["先问用户设备类型：iPhone、Android、Windows、Mac或软路由", "通用步骤是：登录面板，复制订阅链接，打开代理客户端，选择添加订阅或URL导入，更新订阅，选择节点，开启连接", "不要让用户在浏览器地址栏打开订阅链接", "如果用户已经说明设备或客户端，直接给对应客户端步骤，不要再泛泛回答"]
+  },
+  {
+    "id": "tutorial_client_choose",
+    "title": "按设备推荐客户端",
+    "keywords": ["用哪个客户端", "推荐客户端", "下载哪个", "客户端选择", "软件推荐"],
+    "answer_points": ["iPhone可使用Shadowrocket、Loon、Stash或Surge，具体以用户已有客户端为准", "Android可使用Hiddify、Clash Meta for Android、sing-box类客户端", "Windows可使用v2rayN、Clash Verge/Mihomo类客户端或Hiddify", "Mac可使用Clash Verge/Mihomo、Surge、Stash或Hiddify", "软路由优先使用OpenClash的Mihomo核心，或PassWall支持当前协议的核心"]
+  },
+  {
+    "id": "tutorial_subscription_link_safety",
+    "title": "订阅链接安全使用",
+    "keywords": ["订阅链接怎么用", "订阅地址", "复制订阅", "打开订阅", "链接安全", "订阅泄露"],
+    "answer_points": ["订阅链接不要发到聊天群、公开网站或陌生转换站", "不要在浏览器地址栏直接打开订阅链接", "正确做法是复制完整订阅链接，再到代理客户端的订阅入口导入", "如果已经把订阅发给别人或发到群里，建议重置订阅后重新导入"]
+  },
+  {
+    "id": "tutorial_shadowrocket_ios",
+    "title": "Shadowrocket小火箭导入订阅",
+    "keywords": ["小火箭怎么用", "Shadowrocket怎么用", "小火箭导入", "小火箭添加订阅", "iPhone小火箭", "ios小火箭"],
+    "answer_points": ["先关闭正在连接的VPN或代理", "回面板复制完整订阅链接", "打开Shadowrocket，点击右上角加号，类型选择Subscribe或订阅，粘贴URL并保存", "保存后手动更新订阅，选择节点再开启连接", "如果提示URL或证书错误，不要继续确认不可信提示，重新复制面板里的完整域名订阅"]
+  },
+  {
+    "id": "tutorial_loon_ios",
+    "title": "Loon导入订阅",
+    "keywords": ["Loon怎么用", "Loon导入", "Loon添加订阅", "Loon教程", "Loon远程配置"],
+    "answer_points": ["先关闭代理或VPN，再复制面板完整订阅链接", "在Loon里添加到订阅或远程配置入口，不要添加成单个节点", "导入后进入订阅详情手动刷新，确认有更新时间和节点数量", "如果显示更新成功但节点为0，检查是否导入位置错误或旧配置缓存"]
+  },
+  {
+    "id": "tutorial_stash_ios",
+    "title": "Stash导入订阅",
+    "keywords": ["Stash怎么用", "Stash导入", "Stash教程", "Stash远程配置", "Stash订阅"],
+    "answer_points": ["复制面板里的完整订阅链接", "打开Stash，在配置或Profile中添加远程配置URL", "下载配置后启用该配置，再选择节点或策略组", "如果导入后没有节点，删除旧配置缓存后重新下载"]
+  },
+  {
+    "id": "tutorial_surge_ios_mac",
+    "title": "Surge导入订阅",
+    "keywords": ["Surge怎么用", "Surge导入", "Surge教程", "Surge远程配置", "Surge策略组"],
+    "answer_points": ["Surge需要把订阅作为远程配置或外部资源导入，不能填到单个节点位置", "复制面板完整订阅链接后，在Surge配置页面添加并下载", "下载成功后切换到该配置，检查策略组是否出现节点", "如果策略组为空，删除旧配置后重新下载，并收集更新日志"]
+  },
+  {
+    "id": "tutorial_hiddify_android",
+    "title": "Hiddify导入订阅",
+    "keywords": ["Hiddify怎么用", "Hiddify导入", "Hiddify教程", "Android Hiddify", "安卓Hiddify"],
+    "answer_points": ["复制面板完整订阅链接", "打开Hiddify，选择从剪贴板导入或添加配置链接", "导入后更新配置，选择节点并连接", "如果导入后为空，先升级Hiddify版本，再关闭代理后重新导入"]
+  },
+  {
+    "id": "tutorial_clash_meta_android",
+    "title": "Clash Meta for Android导入订阅",
+    "keywords": ["Clash Meta Android", "CFA", "安卓Clash", "Clash for Android", "Meta for Android", "Clash Meta怎么用"],
+    "answer_points": ["确认使用的是支持Mihomo/HY2的新版本，不建议使用太旧的Clash内核", "复制面板完整订阅链接，在配置或Profile里添加URL", "下载配置后启用，再到代理页面选择节点", "如果提示配置解析失败或策略组缺失，优先升级内核或换支持Mihomo/HY2的客户端"]
+  },
+  {
+    "id": "tutorial_clash_verge_windows",
+    "title": "Windows Clash Verge/Mihomo导入订阅",
+    "keywords": ["Clash Verge怎么用", "Clash Verge导入", "Windows Clash", "Mihomo Party", "Clash Party怎么用", "clash verge rev"],
+    "answer_points": ["Windows建议使用支持Mihomo的新版本客户端", "复制面板完整订阅链接，在Profiles或配置页面选择从URL导入", "导入后启用该配置，进入代理页面选择节点或策略组", "如果旧Clash提示proxy group not found，优先换支持Mihomo/HY2的客户端或内核"]
+  },
+  {
+    "id": "tutorial_v2rayn_windows",
+    "title": "v2rayN导入订阅",
+    "keywords": ["v2rayN怎么用", "v2rayn导入", "v2rayN教程", "Windows v2rayN", "订阅分组"],
+    "answer_points": ["复制面板完整订阅链接", "打开v2rayN，在订阅分组里添加订阅地址，不要手动添加成单个节点", "添加后更新订阅，检查节点列表是否出现", "如果没有节点，升级v2rayN后删除旧分组重新添加"]
+  },
+  {
+    "id": "tutorial_singbox_client",
+    "title": "sing-box类客户端导入订阅",
+    "keywords": ["sing-box怎么用", "singbox教程", "SFI", "SFA", "sing-box导入", "singbox导入"],
+    "answer_points": ["先确认客户端版本支持当前订阅格式和节点协议", "复制面板完整订阅链接，在配置或Profile入口导入", "如果提示配置错误，收集错误文本和客户端版本", "不要手动修改订阅链接参数"]
+  },
+  {
+    "id": "tutorial_macos_client",
+    "title": "Mac客户端使用教程",
+    "keywords": ["Mac怎么用", "mac客户端", "苹果电脑怎么用", "mac导入订阅", "macOS"],
+    "answer_points": ["Mac可使用Clash Verge/Mihomo、Surge、Stash或Hiddify", "复制面板订阅链接后，在客户端配置或订阅入口从URL导入", "首次连接可能需要授予网络或代理权限", "如果网页能登录但客户端不行，收集Mac系统版本、客户端版本和报错截图"]
+  },
+  {
+    "id": "tutorial_openclash_basic",
+    "title": "OpenClash基础导入订阅",
+    "keywords": ["OpenClash怎么用", "OpenClash教程", "OpenClash导入订阅", "OpenClash添加订阅", "软路由OpenClash"],
+    "answer_points": ["OpenClash用户直接在配置订阅页面添加面板完整订阅URL，不要把链接填到单个节点位置", "如果订阅里有HY2，优先确认OpenClash正在使用支持HY2的Mihomo核心", "保存订阅后点击更新配置，再应用新配置并重启核心", "如果节点为空或提示解析失败，先清理旧配置缓存，再重新拉取订阅并查看日志里的具体错误行"]
+  },
+  {
+    "id": "tutorial_openclash_hy2",
+    "title": "OpenClash使用HY2订阅",
+    "keywords": ["OpenClash HY2", "OpenClash Hysteria2", "OpenClash不支持HY2", "OpenClash Mihomo", "HY2软路由"],
+    "answer_points": ["HY2需要OpenClash使用支持Hysteria2/HY2的Mihomo核心，旧Clash核心通常不够用", "旧核心可能出现节点为空、策略组缺失或解析失败", "升级核心后重新拉取面板原始订阅，不要沿用旧配置缓存", "如果仍失败，优先提供OpenClash插件版本、核心版本和日志中的具体错误行"]
+  },
+  {
+    "id": "tutorial_passwall_basic",
+    "title": "PassWall基础导入订阅",
+    "keywords": ["PassWall怎么用", "PassWall教程", "PassWall导入订阅", "PassWall添加订阅", "软路由PassWall"],
+    "answer_points": ["PassWall用户在节点订阅或订阅管理入口添加完整订阅URL，不要填到单个节点位置", "更新订阅前尽量关闭正在运行的代理或使用直连网络，避免软路由绕着节点拉订阅", "更新后检查节点列表是否出现，并应用配置", "如果节点为空或只显示部分节点，通常是核心或插件不支持部分协议，需要看订阅更新日志"]
+  },
+  {
+    "id": "tutorial_passwall_hy2",
+    "title": "PassWall使用HY2订阅",
+    "keywords": ["PassWall HY2", "PassWall Hysteria2", "PassWall不支持HY2", "PassWall2 HY2", "PassWall节点为空"],
+    "answer_points": ["PassWall是否支持HY2取决于插件版本和所用核心，不能只看订阅链接本身", "旧版本可能无法识别HY2节点，导致节点为空或只显示部分节点", "建议升级到支持HY2的核心后重新更新面板原始订阅", "仍失败时收集PassWall版本、核心版本和订阅更新日志，不要先反复重置订阅"]
+  },
+  {
+    "id": "tutorial_shellcrash_basic",
+    "title": "ShellCrash导入订阅",
+    "keywords": ["ShellCrash怎么用", "ShellCrash教程", "ShellCrash订阅", "软路由ShellCrash"],
+    "answer_points": ["在ShellCrash菜单中选择配置文件或订阅管理，填入完整订阅URL", "更新配置后重启核心，再测试节点", "如果订阅含HY2等新协议，需要确认所用核心支持", "遇到解析失败时保留错误日志，不要反复重置订阅"]
+  },
+  {
+    "id": "tutorial_router_general",
+    "title": "软路由通用使用说明",
+    "keywords": ["软路由怎么用", "软路由教程", "OpenWrt怎么用", "路由器导入订阅", "旁路由"],
+    "answer_points": ["软路由要在插件里导入订阅URL，不是在浏览器里打开订阅", "导入前最好临时关闭代理或使用直连网络，避免订阅通过节点自己拉取", "插件更新配置后要应用配置并重启核心", "如果全屋设备都走软路由，在线设备数量可能和实际设备数接近，这是正常现象"]
+  },
+  {
+    "id": "tutorial_router_dns",
+    "title": "软路由DNS和分流基础",
+    "keywords": ["软路由DNS", "OpenClash DNS", "PassWall DNS", "fake-ip", "redir-host", "DNS分流"],
+    "answer_points": ["订阅能导入但网页打不开时，重点检查DNS模式和分流设置", "不要同时开多套DNS插件，容易互相影响", "先使用插件默认DNS设置测试，再逐步调整", "提供DNS设置截图和插件日志，方便判断"]
+  },
+  {
+    "id": "tutorial_router_logs",
+    "title": "软路由日志怎么看",
+    "keywords": ["OpenClash日志", "PassWall日志", "软路由日志", "解析失败日志", "核心日志"],
+    "answer_points": ["让用户复制报错附近几行即可，不要发送完整订阅链接", "OpenClash重点看配置下载、配置解析、核心启动三类日志", "PassWall重点看订阅更新和节点解析日志", "日志里如果出现协议不支持，优先升级核心或插件"]
+  },
+  {
+    "id": "tutorial_tvbox_router",
+    "title": "电视盒子和软路由使用",
+    "keywords": ["电视盒子怎么用", "盒子怎么用", "电视盒子代理", "盒子软路由", "TVBox"],
+    "answer_points": ["电视盒子可以单独装客户端，也可以通过软路由统一代理", "如果走软路由，盒子会算作一个实际使用设备或连接来源", "盒子不能用时先确认其它设备是否正常，再判断是盒子设置还是节点问题", "收集盒子系统、所用插件或客户端名称"]
+  },
+  {
+    "id": "tutorial_no_public_converter",
+    "title": "不建议使用公开订阅转换",
+    "keywords": ["订阅转换教程", "转换订阅给软路由", "公开转换", "subconverter教程", "转换后怎么用"],
+    "answer_points": ["优先使用原始订阅直接导入支持的客户端或软路由插件", "公开订阅转换可能保存订阅链接，也可能丢失策略组或节点信息", "如必须转换，建议使用可信自建转换服务", "已经把订阅交给陌生转换站时，建议重置订阅"]
+  },
+  {
+    "id": "tutorial_ask_device_when_unknown",
+    "title": "教程问题缺少设备信息",
+    "keywords": ["不会设置", "怎么设置", "不知道用哪个", "不会导入", "能教我吗"],
+    "answer_points": ["如果用户没有说明设备和客户端，先只问一个关键问题：你用的是iPhone、Android、Windows、Mac还是软路由", "不要在同一条回复里塞满所有客户端教程", "用户回复设备后，再给对应教程步骤", "语气要简单，不要让新手被术语吓到"]
+  },
+  {
+    "id": "tutorial_update_subscription",
+    "title": "如何更新订阅",
+    "keywords": ["怎么更新订阅", "订阅更新", "刷新订阅", "更新节点", "节点没更新"],
+    "answer_points": ["打开客户端里的订阅或配置页面，选择手动更新订阅", "更新前先关闭代理或VPN更稳", "更新后确认当前启用的是新配置，不要还停留在旧配置", "如果频繁自动更新失败，删除旧订阅后重新导入完整链接"]
+  },
+  {
+    "id": "tutorial_reset_subscription_after_change",
+    "title": "重置订阅后如何重新导入",
+    "keywords": ["重置订阅后怎么用", "重置后导入", "新订阅怎么用", "旧订阅失效"],
+    "answer_points": ["重置订阅后旧链接会失效，所有客户端都需要重新导入新链接", "先删除客户端里的旧订阅，再复制面板最新订阅链接添加", "不要继续刷新旧订阅", "新链接只保存在自己的设备里，不要发到聊天软件或群里"]
+  },
+  {
+    "id": "support_all_nodes_timeout_local_ip",
+    "title": "全部节点超时优先排查本地出口IP",
+    "keywords": ["节点全部超时", "全部节点超时", "所有节点超时", "节点全红", "全部timeout", "全都timeout", "延迟全部超时", "连不到海外", "本地IP", "反向墙", "重启光猫", "重新拨号", "飞行模式", "换IP"],
+    "answer_points": ["如果账号、套餐和订阅都正常，且多个国家和多种协议的节点全部超时，回复第一步先按本地出口IP连不到海外处理，不要先问客户端版本", "家庭宽带优先让用户重启光猫或重新拨号，断电等待3到5分钟后再开机，尽量拿到新的运营商出口IP；只重启路由器通常不会更换出口IP", "手机流量用户让他先打开飞行模式，等待10到20秒，再关闭飞行模式恢复移动网络，然后重新测试节点", "家庭宽带用户可再用手机流量热点测试同一客户端；如果热点正常、家里宽带全超时，就更像家庭宽带出口IP问题", "不要一上来就让用户重置订阅；只有命中记录或后台说明显示订阅已重置/节点域名已变更时，才让用户删除旧订阅并复制最新订阅"]
+  },
+  {
+    "id": "support_recent_ops_change_context",
+    "title": "最近节点或订阅变动说明",
+    "keywords": ["最近变动", "后台变动", "节点变动", "节点域名变动", "订阅换新", "订阅域名变动", "换节点域名", "换订阅地址"],
+    "answer_points": ["如果后台提供了近期变动说明，回复时可以用通俗话告诉用户：最近确实调整过订阅或节点入口，需要刷新或重新导入最新订阅", "如果没有近期变动说明，不要编造节点、域名、后台或订阅变化", "如果近期命中记录显示订阅被重置，告诉用户旧链接可能已经失效，需要从面板复制最新订阅并重新导入", "如果只是节点全部超时且没有变动记录，优先按本地网络出口IP问题排查"]
+  }
+]

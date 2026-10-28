@@ -6,6 +6,8 @@ use Omnipay\Omnipay;
 use Omnipay\WechatPay\Helper;
 
 class WechatPayNative {
+    public $config;
+
     public function __construct($config)
     {
         $this->config = $config;

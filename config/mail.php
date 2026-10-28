@@ -1,5 +1,7 @@
 <?php
 
+$encryption = env('MAIL_ENCRYPTION', 'tls');
+
 return [
 
     /*
@@ -72,6 +74,9 @@ return [
     */
 
     'encryption' => env('MAIL_ENCRYPTION', 'tls'),
+    'scheme' => $encryption === 'ssl' ? 'smtps' : 'smtp',
+    'auto_tls' => $encryption === 'tls',
+    'require_tls' => $encryption === 'tls',
 
     /*
     |--------------------------------------------------------------------------

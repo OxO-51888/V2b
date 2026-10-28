@@ -4,6 +4,8 @@ namespace App\Payments;
 
 
 class BTCPay {
+    public $config;
+
     public function __construct($config) {
         $this->config = $config;
     }
@@ -114,7 +116,7 @@ class BTCPay {
             $ch, CURLOPT_HTTPHEADER, array('Authorization:' .'token '.$this->config['btcpay_api_key'], 'Content-Type: application/json')
         );
         $result = curl_exec($ch);
-        curl_close($ch);
+        unset($ch);
         return $result;
     }
 
@@ -127,21 +129,7 @@ class BTCPay {
     private function hashEqual($str1, $str2)
     {   
 
-        if (function_exists('hash_equals')) {
-            return \hash_equals($str1, $str2);
-        }
-
-        if (strlen($str1) != strlen($str2)) {
-            return false;
-        } else {
-            $res = $str1 ^ $str2;
-            $ret = 0;
-
-            for ($i = strlen($res) - 1; $i >= 0; $i--) {
-                $ret |= ord($res[$i]);
-            }
-            return !$ret;
-        }
+        return \hash_equals($str1, $str2);
     }
     
 }

@@ -128,7 +128,7 @@ class OrderConcurrencyTest extends TestCase
         Bus::assertDispatchedTimes(OrderHandleJob::class, 1);
     }
 
-    /** @dataProvider inactiveStatuses */
+    #[\PHPUnit\Framework\Attributes\DataProvider('inactiveStatuses')]
     public function testOpenDoesNothingForNonPaidOrders(int $status): void
     {
         $order = $this->order(['status' => $status, 'type' => 9, 'total_amount' => 500]);
@@ -137,7 +137,7 @@ class OrderConcurrencyTest extends TestCase
         $this->assertSame(1000, $this->user->fresh()->balance);
     }
 
-    public function inactiveStatuses(): array { return [[0], [2], [3], [4]]; }
+    public static function inactiveStatuses(): array { return [[0], [2], [3], [4]]; }
 
     public function testDuplicateRechargeJobCreditsBonusOnlyOnce(): void
     {
@@ -306,7 +306,7 @@ class OrderConcurrencyTest extends TestCase
         $order = $this->order();
         $originalBus = $this->app[Dispatcher::class];
         $bus = $this->createMock(Dispatcher::class);
-        $bus->method('dispatch')->willThrowException(new \RuntimeException('queue unavailable'));
+        $bus->expects($this->once())->method('dispatch')->willThrowException(new \RuntimeException('queue unavailable'));
         $this->app->instance(Dispatcher::class, $bus);
         $this->assertFalse($this->service($order)->paid('receipt'));
         $this->assertSame(1, $order->fresh()->status);
@@ -335,7 +335,6 @@ class OrderConcurrencyTest extends TestCase
         $this->scan();
         $jobs = Bus::dispatched(OrderHandleJob::class);
         $property = new \ReflectionProperty(OrderHandleJob::class, 'tradeNo');
-        $property->setAccessible(true);
         $this->assertSame([$paid->trade_no, $expired->trade_no], $jobs->map(fn($job) => $property->getValue($job))->values()->all());
         $this->assertSame($limit, ini_get('memory_limit'));
     }
@@ -345,9 +344,8 @@ class OrderConcurrencyTest extends TestCase
         for ($i = 0; $i < 405; $i++) $this->order(['status' => 1]);
         $bus = $this->createMock(Dispatcher::class);
         $seen = [];
-        $bus->method('dispatch')->willReturnCallback(function ($job) use (&$seen) {
+        $bus->expects($this->exactly(405))->method('dispatch')->willReturnCallback(function ($job) use (&$seen) {
             $property = new \ReflectionProperty($job, 'tradeNo');
-            $property->setAccessible(true);
             $trade = $property->getValue($job);
             $seen[] = $trade;
             Order::where('trade_no', $trade)->update(['status' => 3]);

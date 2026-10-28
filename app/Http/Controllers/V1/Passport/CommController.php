@@ -4,105 +4,28 @@ namespace App\Http\Controllers\V1\Passport;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Passport\CommSendEmailVerify;
-use App\Jobs\SendEmailJob;
 use App\Models\InviteCode;
-use App\Models\User;
-use App\Services\EmailVerificationService;
-use App\Utils\CacheKey;
-use App\Utils\Dict;
-use App\Utils\Helper;
-use Illuminate\Http\Exceptions\HttpResponseException;
+use App\Modules\Security\EmailVerificationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Mail;
-use ReCaptcha\ReCaptcha;
-use Illuminate\Support\Facades\RateLimiter;
-
-use function PHPUnit\Framework\isEmpty;
 
 class CommController extends Controller
 {
-    private function isEmailVerify()
+    public function __construct(private readonly EmailVerificationService $verification)
     {
-        return response([
-            'data' => (int)config('v2board.email_verify', 0) ? 1 : 0
-        ]);
     }
 
-    public function sendEmailVerify(CommSendEmailVerify $request)
+    public function sendEmailVerify(CommSendEmailVerify $request): JsonResponse
     {
-        $ip = $request->ip();
-        if (RateLimiter::tooManyAttempts($ip, 3)) {
-            abort(429, __('Too many requests, please try again later.'));
-        }
-        RateLimiter::hit($ip, 60);
+        $input = $request->validated();
+        $this->verification->send(
+            $input['email'],
+            isset($input['isforget']) ? (bool) $input['isforget'] : null,
+            (string) $request->ip(),
+            $input['recaptcha_data'] ?? null,
+        );
 
-        if ((int)config('v2board.recaptcha_enable', 0)) {
-            $recaptcha = new ReCaptcha(config('v2board.recaptcha_key'));
-            $recaptchaResp = $recaptcha->verify($request->input('recaptcha_data'));
-            if (!$recaptchaResp->isSuccess()) {
-                abort(500, __('Invalid code is incorrect'));
-            }
-        }
-        $email = $request->input('email');
-        $cacheKeyEmail = EmailVerificationService::normalize($email);
-        $isforget = $request->input('isforget');
-        $user = User::where('email', $cacheKeyEmail)->first();
-        if ($user && !EmailVerificationService::matches($user->email, $email)) {
-            abort(500, __('Email format is incorrect'));
-        }
-        $email_exists = (bool) $user;
-        //检查是否在白名单内
-        if ((int)config('v2board.email_whitelist_enable', 0)) {
-            if (!Helper::emailSuffixVerify(
-                $request->input('email'),
-                config('v2board.email_whitelist_suffix', Dict::EMAIL_WHITELIST_SUFFIX_DEFAULT))
-            ) {
-                abort(500, __('Email suffix is not in the Whitelist'));
-            }
-        }
-        // 检查是否是gmail别名邮箱
-        if ((int)config('v2board.email_gmail_limit_enable', 0)) {
-            $prefix = explode('@', $request->input('email'))[0];
-            if (strpos($prefix, '.') !== false || strpos($prefix, '+') !== false) {
-                abort(500, __('Gmail alias is not supported'));
-            }
-        }
-        if (isset($isforget)) {
-            if ($isforget == 0 && $email_exists) {
-                abort(500, __('This email is registered'));
-            } 
-            if ($isforget == 1 && !$email_exists) {
-                abort(500, __('This email is not registered in the system'));
-            }
-        }
-        EmailVerificationService::locked($email, function () use ($email, $user, $cacheKeyEmail) {
-            if ((int) Cache::get(CacheKey::get('FORGET_REQUEST_LIMIT', $cacheKeyEmail), 0) >= 3) {
-                abort(500, __('Reset failed, Please try again later'));
-            }
-            if (Cache::get(CacheKey::get('LAST_SEND_EMAIL_VERIFY_TIMESTAMP', $cacheKeyEmail))) {
-                abort(500, __('Email verification code has been sent, please request again later'));
-            }
-            $code = (string) random_int(100000, 999999);
-            $subject = config('v2board.app_name', 'V2Board') . __('Email verification code');
-
-            SendEmailJob::dispatch([
-                'email' => $user ? $user->email : $email,
-                'subject' => $subject,
-                'template_name' => 'verify',
-                'template_value' => [
-                    'name' => config('v2board.app_name', 'V2Board'),
-                    'code' => $code,
-                    'url' => config('v2board.app_url')
-                ]
-            ]);
-
-            Cache::put(CacheKey::get('EMAIL_VERIFY_CODE', $cacheKeyEmail), $code, 300);
-            Cache::put(CacheKey::get('LAST_SEND_EMAIL_VERIFY_TIMESTAMP', $cacheKeyEmail), time(), 60);
-        });
-        return response([
-            'data' => true
-        ]);
+        return response()->json(['data' => true]);
     }
 
     public function pv(Request $request)
@@ -118,12 +41,4 @@ class CommController extends Controller
         ]);
     }
 
-    private function getEmailSuffix()
-    {
-        $suffix = config('v2board.email_whitelist_suffix', Dict::EMAIL_WHITELIST_SUFFIX_DEFAULT);
-        if (!is_array($suffix)) {
-            return preg_split('/,/', $suffix);
-        }
-        return $suffix;
-    }
 }

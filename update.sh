@@ -1,4 +1,8 @@
 #!/bin/bash
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+source scripts/runtime.sh
+panel_check_runtime
 
 if [ ! -d ".git" ]; then
   echo "Please deploy using Git."
@@ -10,31 +14,24 @@ if ! command -v git &> /dev/null; then
     exit 1
 fi
 
-git config --global --add safe.directory $(pwd)
 current_branch=$(git branch --show-current)
 if [ -z "$current_branch" ]; then
     echo "Unable to determine the current Git branch."
     exit 1
 fi
-git fetch origin "$current_branch" && git reset --hard "origin/$current_branch"
-rm -rf composer.lock composer.phar
-wget https://github.com/composer/composer/releases/latest/download/composer.phar -O composer.phar
-php composer.phar update -vvv
-
-php_main_version=$(php -v | head -n 1 | cut -d ' ' -f 2 | cut -d '.' -f 1)
-if [ $php_main_version -ge 8 ]; then
-    php composer.phar require joanhey/adapterman
-    if ! php -m | grep -q "pcntl"; then
-        echo "Adding pcntl extension to cli-php.ini"
-        sed -i '/extension=redis.so/a extension=pcntl.so' cli-php.ini
-    fi
-    php -c cli-php.ini webman.php stop
-    echo "Webman stopped.Please restart it by yourself."
+if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "Tracked files have local changes. Review them before updating." >&2
+    exit 1
 fi
+git fetch origin "$current_branch"
+git merge --ff-only "origin/$current_branch"
+source scripts/runtime.sh
+panel_check_runtime
+panel_install_dependencies
 
-php artisan v2board:update
-php scripts/apply-community-site.php
+"$PHP_BIN" artisan v2board:update
+"$PHP_BIN" scripts/apply-community-site.php
 
 if [ -f "/etc/init.d/bt" ]; then
-  chown -R www $(pwd);
+  chown -R www "$PWD"
 fi

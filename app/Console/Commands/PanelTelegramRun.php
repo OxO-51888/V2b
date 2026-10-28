@@ -11,6 +11,10 @@ class PanelTelegramRun extends Command
 
     public function handle(): int
     {
+        if (!config('outbound.enabled', true)) {
+            $this->warn('Outbound notifications are disabled');
+            return 0;
+        }
         if (!config('panel_modules.enabled') || config('panel_modules.telegram.driver') !== 'local') {
             $this->error('Local Telegram receiver is not enabled for this panel.');
             return 1;

@@ -47,6 +47,7 @@ class FrontendThemeRoutingTest extends TestCase
         $this->app->instance('events', new Dispatcher($this->app));
         $this->app->instance('config', new Repository([
             'app' => ['key' => 'isolated-test-key', 'version' => 'test'],
+            'logging' => ['default' => 'fixture', 'channels' => ['fixture' => ['driver' => 'single', 'path' => $this->directory . '/fixture.log']]],
             'v2board' => ['frontend_theme' => 'NINI', 'app_url' => 'https://overseas.example.test', 'secure_path' => 'test-admin'],
             'frontend' => ['domestic_hosts' => ['origin.example.test']],
             'theme' => ['default' => ['marker' => 'old-config'], 'NINI' => ['marker' => 'new-config']],
@@ -149,7 +150,7 @@ class FrontendThemeRoutingTest extends TestCase
         }
     }
 
-    /** @dataProvider domesticHostVariants */
+    #[\PHPUnit\Framework\Attributes\DataProvider('domesticHostVariants')]
     public function testDomesticOriginHostIsStableAcrossCaseTrailingDotAndPort(string $host): void
     {
         $this->app['config']->set('v2board.frontend_domestic_default_theme', 1);
@@ -171,7 +172,7 @@ class FrontendThemeRoutingTest extends TestCase
         $this->assertTheme('NINI', $this->dispatch('invalid.example.test'));
     }
 
-    /** @dataProvider unrecognizedHosts */
+    #[\PHPUnit\Framework\Attributes\DataProvider('unrecognizedHosts')]
     public function testOnlyExplicitOriginHostsSelectTheOldTheme(string $host): void
     {
         $this->app['config']->set('v2board.frontend_domestic_default_theme', 1);
@@ -229,7 +230,7 @@ class FrontendThemeRoutingTest extends TestCase
         }
     }
 
-    /** @dataProvider safeModeCases */
+    #[\PHPUnit\Framework\Attributes\DataProvider('safeModeCases')]
     public function testSafeModeOnlyAddsExplicitDomesticHostsWhileTheSwitchIsOn($enabled, string $host, array $headers, bool $allowed): void
     {
         $this->app['config']->set('v2board.safe_mode_enable', 1);
@@ -268,7 +269,7 @@ class FrontendThemeRoutingTest extends TestCase
         return [$request, $validator];
     }
 
-    /** @dataProvider switchInputs */
+    #[\PHPUnit\Framework\Attributes\DataProvider('switchInputs')]
     public function testConfigSaveValidatesSwitchValues($value, bool $valid): void
     {
         [, $validator] = $this->validateConfig(['frontend_domestic_default_theme' => $value]);
@@ -283,7 +284,7 @@ class FrontendThemeRoutingTest extends TestCase
         return [[0, true], [1, true], ['0', true], ['1', true], [2, false], [-1, false], ['on', false], [[], false]];
     }
 
-    /** @dataProvider unavailableEntryConditions */
+    #[\PHPUnit\Framework\Attributes\DataProvider('unavailableEntryConditions')]
     public function testEnablingRequiresConfiguredOriginsAndBothThemesButDisablingRemainsPossible(string $missing): void
     {
         if ($missing === 'hosts') {
@@ -390,7 +391,7 @@ class FrontendThemeRoutingTest extends TestCase
         $this->assertSame(require $target, (require $this->app->getCachedConfigPath())['v2board']);
     }
 
-    /** @dataProvider conflictingThemeSaves */
+    #[\PHPUnit\Framework\Attributes\DataProvider('conflictingThemeSaves')]
     public function testOldActivationRequestsCannotContradictAConfiguredMode($mode, string $requested, string $expected): void
     {
         $this->app['config']->set('v2board.frontend_domestic_default_theme', $mode);

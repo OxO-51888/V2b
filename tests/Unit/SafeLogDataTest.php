@@ -32,7 +32,7 @@ class SafeLogDataTest extends TestCase
         $handler = new class extends MysqlLoggerHandler {
             public function fixture($record) { $this->write($record); }
         };
-        $handler->fixture(['message' => $message, 'level_name' => 'ERROR', 'context' => $context, 'datetime' => new \DateTimeImmutable()]);
+        $handler->fixture(new \Monolog\LogRecord(new \DateTimeImmutable(), 'fixture', \Monolog\Level::Error, $message, $context));
         return $this->db->table('v2_log')->latest('id')->first();
     }
 
@@ -56,6 +56,20 @@ class SafeLogDataTest extends TestCase
             json_encode(['password' => 'fixture-json-secret']));
         $row = $this->write($request, [], 'Failure with fixture-json-secret');
         $this->assertStringNotContainsString('fixture-json-secret', json_encode($row));
+    }
+
+    public function testHeaderCredentialsAreRemovedFromExceptionMessages(): void
+    {
+        $request = Request::create('/fixture', 'GET', [], [], [], [
+            'HTTP_AUTHORIZATION' => 'opaque-fixture-credential',
+            'HTTP_X_TG_SIGNATURE' => 'fixture-telegram-signature',
+            'HTTP_COOKIE' => 'fixture-session-cookie',
+        ]);
+        $row = $this->write($request, ['exception' => new \RuntimeException('Failed opaque-fixture-credential')],
+            'Upstream echoed opaque-fixture-credential fixture-telegram-signature fixture-session-cookie');
+        foreach (['opaque-fixture-credential', 'fixture-telegram-signature', 'fixture-session-cookie'] as $secret) {
+            $this->assertStringNotContainsString($secret, json_encode($row));
+        }
     }
 
     public function testExceptionKeepsLocationButNeverSerializesTraceArguments(): void

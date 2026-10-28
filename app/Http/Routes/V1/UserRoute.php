@@ -12,7 +12,7 @@ class UserRoute
             'middleware' => 'user'
         ], function ($router) {
             // User
-            $router->get ('/unbindTelegram', 'V1\\User\\UserController@unbindTelegram');
+            $router->get('/client/state', 'V1\\User\\ClientStateController@show');
             $router->get ('/resetSecurity', 'V1\\User\\UserController@resetSecurity');
             $router->get ('/info', 'V1\\User\\UserController@info');
             $router->post('/newPeriod', 'V1\\User\\UserController@newPeriod');
@@ -52,8 +52,6 @@ class UserRoute
             $router->get ('/server/fetch', 'V1\\User\\ServerController@fetch');
             // Coupon
             $router->post('/coupon/check', 'V1\\User\\CouponController@check');
-            // Telegram
-            $router->get ('/telegram/getBotInfo', 'V1\\User\\TelegramController@getBotInfo');
             // Comm
             $router->get ('/comm/config', 'V1\\User\\CommController@config');
             $router->Post('/comm/getStripePublicKey', 'V1\\User\\CommController@getStripePublicKey');

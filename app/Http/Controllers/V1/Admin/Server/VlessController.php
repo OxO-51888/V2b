@@ -5,7 +5,6 @@ namespace App\Http\Controllers\V1\Admin\Server;
 use App\Http\Controllers\Controller;
 use App\Models\ServerVless;
 use Illuminate\Http\Request;
-use ParagonIE_Sodium_Compat as SodiumCompat;
 use App\Utils\Helper;
 
 class VlessController extends Controller
@@ -34,13 +33,13 @@ class VlessController extends Controller
         ]);
 
         if (isset($params['tls']) && (int)$params['tls'] === 2) {
-            $keyPair = SodiumCompat::crypto_box_keypair();
+            $keyPair = sodium_crypto_box_keypair();
             $params['tls_settings'] = $params['tls_settings'] ?? [];
             if (!isset($params['tls_settings']['public_key'])) {
-                $params['tls_settings']['public_key'] = Helper::base64EncodeUrlSafe(SodiumCompat::crypto_box_publickey($keyPair));
+                $params['tls_settings']['public_key'] = Helper::base64EncodeUrlSafe(sodium_crypto_box_publickey($keyPair));
             }
             if (!isset($params['tls_settings']['private_key'])) {
-                $params['tls_settings']['private_key'] = Helper::base64EncodeUrlSafe(SodiumCompat::crypto_box_secretkey($keyPair));
+                $params['tls_settings']['private_key'] = Helper::base64EncodeUrlSafe(sodium_crypto_box_secretkey($keyPair));
             }
             if (!isset($params['tls_settings']['short_id'])) {
                 $params['tls_settings']['short_id'] = substr(sha1($params['tls_settings']['private_key']), 0, 8);
@@ -84,7 +83,7 @@ class VlessController extends Controller
             $params['network_settings'] = $ns;
         }
         if (isset($params['encryption']) && $params['encryption'] == 'mlkem768x25519plus') {
-            $keyPair = SodiumCompat::crypto_box_keypair();
+            $keyPair = sodium_crypto_box_keypair();
             $params['encryption_settings'] = $params['encryption_settings'] ?? [];
             if (isset($params['encryption_settings']['rtt'])) {
                 if ($params['encryption_settings']['rtt'] == '1rtt') {
@@ -92,10 +91,10 @@ class VlessController extends Controller
                 }
             }
             if (!isset($params['encryption_settings']['private_key'])) {
-                $params['encryption_settings']['private_key'] = Helper::base64EncodeUrlSafe(SodiumCompat::crypto_box_secretkey($keyPair));
+                $params['encryption_settings']['private_key'] = Helper::base64EncodeUrlSafe(sodium_crypto_box_secretkey($keyPair));
             }
             if (!isset($params['encryption_settings']['password'])) {
-                $params['encryption_settings']['password'] = Helper::base64EncodeUrlSafe(SodiumCompat::crypto_box_publickey($keyPair));
+                $params['encryption_settings']['password'] = Helper::base64EncodeUrlSafe(sodium_crypto_box_publickey($keyPair));
             }
         }
         if ($request->input('id')) {

@@ -8,6 +8,7 @@ class CreateClientGatewayTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('v2_client_gateway')) return;
         Schema::create('v2_client_gateway', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('panel_id', 32);

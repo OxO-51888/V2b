@@ -6,23 +6,26 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class CommSendEmailVerify extends FormRequest
 {
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array
-     */
-    public function rules()
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
     {
         return [
-            'email' => 'required|email:strict'
+            'email' => ['required', 'string', 'email:strict'],
+            'isforget' => ['sometimes', 'nullable', 'boolean'],
+            'recaptcha_data' => ['sometimes', 'nullable', 'string', 'max:8192'],
         ];
     }
 
-    public function messages()
+    public function messages(): array
     {
         return [
             'email.required' => __('Email can not be empty'),
-            'email.email' => __('Email format is incorrect')
+            'email.string' => __('Email format is incorrect'),
+            'email.email' => __('Email format is incorrect'),
         ];
     }
 }

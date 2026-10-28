@@ -36,12 +36,11 @@ class CommunityMessageEditTest extends TestCase
         $app->instance(CacheRateLimiter::class, new CacheRateLimiter($cache));
         $validator = new Validator(new Translator(new ArrayLoader(), 'en'), $app);
         $macros = new \ReflectionProperty(Request::class, 'macros');
-        $macros->setAccessible(true);
         $this->requestMacros = $macros->getValue();
         Request::macro('validate', function (array $rules) use ($validator) {
             return $validator->make($this->all(), $rules)->validate();
         });
-        $responses = $this->createMock(ResponseFactory::class);
+        $responses = $this->createStub(ResponseFactory::class);
         $responses->method('json')->willReturnCallback(function ($data = []) { return new JsonResponse($data); });
         $app->instance(ResponseFactory::class, $responses);
         Facade::clearResolvedInstances();
@@ -51,7 +50,6 @@ class CommunityMessageEditTest extends TestCase
     protected function tearDown(): void
     {
         $macros = new \ReflectionProperty(Request::class, 'macros');
-        $macros->setAccessible(true);
         $macros->setValue(null, $this->requestMacros);
         \Mockery::close();
         Facade::clearResolvedInstances();
@@ -98,7 +96,7 @@ class CommunityMessageEditTest extends TestCase
     {
         $admin = new User(); $admin->id = 7; $admin->is_admin = 1;
         $console = $this->getMockBuilder(CommunityConsoleService::class)->onlyMethods(['authenticate'])->getMock();
-        $console->method('authenticate')->willReturn($admin);
+        $console->expects($this->atLeastOnce())->method('authenticate')->willReturn($admin);
         $community = $this->getMockBuilder(CommunityService::class)->onlyMethods(['call'])->getMock();
         $data = ['post_id' => str_repeat('a', 26), 'message' => '修正后的消息'];
         $community->expects($this->once())->method('call')->with($admin, 'edit', $data)->willReturn(['id' => $data['post_id'], 'edited_at' => 100]);

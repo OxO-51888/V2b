@@ -16,7 +16,6 @@ class AdminRoute
             $router->post('/config/save', 'V1\\Admin\\ConfigController@save');
             $router->get ('/config/getEmailTemplate', 'V1\\Admin\\ConfigController@getEmailTemplate');
             $router->get ('/config/getThemeTemplate', 'V1\\Admin\\ConfigController@getThemeTemplate');
-            $router->post('/config/setTelegramWebhook', 'V1\\Admin\\ConfigController@setTelegramWebhook');
             $router->post('/config/testSendMail', 'V1\\Admin\\ConfigController@testSendMail');
             // Plan
             $router->get ('/plan/fetch', 'V1\\Admin\\PlanController@fetch');
@@ -178,6 +177,7 @@ class AdminRoute
             $router->post('/payment/sort', 'V1\\Admin\\PaymentController@sort');
             // System
             $router->get ('/system/getSystemStatus', 'V1\\Admin\\SystemController@getSystemStatus');
+            $router->get ('/system/getRealtimeStatus', 'V1\\Admin\\SystemController@getRealtimeStatus');
             $router->get ('/system/getQueueStats', 'V1\\Admin\\SystemController@getQueueStats');
             $router->get ('/system/getQueueWorkload', 'V1\\Admin\\SystemController@getQueueWorkload');
             $router->get ('/system/getQueueMasters', '\\Laravel\\Horizon\\Http\\Controllers\\MasterSupervisorController@index');

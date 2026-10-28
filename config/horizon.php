@@ -1,10 +1,11 @@
 <?php
 
 use Illuminate\Support\Str;
-use Linfo\Linfo;
 
-$lInfo = new Linfo();
-$parser = $lInfo->getParser();
+$memoryInfo = is_readable('/proc/meminfo') ? file_get_contents('/proc/meminfo') : '';
+$memoryProcesses = preg_match('/^MemTotal:\s+(\d+)\s+kB$/m', (string)$memoryInfo, $memoryMatch)
+    ? (int)ceil((int)$memoryMatch[1] / 1024 / 1024 * 6)
+    : 1;
 
 return [
 
@@ -178,14 +179,13 @@ return [
                     'stat',
                     'send_email',
                     'send_email_mass',
-                    'send_telegram',
                 ],
                 'balance' => 'auto',
                 'minProcesses' => 1,
                 'maxProcesses' => max(
                     1,
                     min(
-                        (int)ceil($parser->getRam()['total'] / 1024 / 1024 / 1024 * 6),
+                        $memoryProcesses,
                         (int)env('HORIZON_MAX_PROCESSES', 19)
                     )
                 ),

@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/bootstrap/runtime.php';
+
 require_once __DIR__ . '/vendor/autoload.php';
 
 use Adapterman\Adapterman;

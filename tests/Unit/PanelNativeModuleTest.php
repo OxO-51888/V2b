@@ -6,7 +6,7 @@ use App\Services\ClientGateway\Crypto;
 use App\Services\ClientGateway\Gateway;
 use App\Services\ClientGateway\GatewayException;
 use App\Services\ClientGateway\PanelProxy;
-use App\Services\ClientGateway\Store;
+use App\Services\ClientGateway\PanelStore;
 use App\Services\PanelTelegramService;
 use Illuminate\Config\Repository;
 use Illuminate\Container\Container;
@@ -26,6 +26,7 @@ class PanelNativeModuleTest extends TestCase
     private $dir;
     private $gateway;
     private $store;
+    private $db;
     private $rsa;
     private $key;
     private $panel;
@@ -36,7 +37,7 @@ class PanelNativeModuleTest extends TestCase
         mkdir($this->dir . '/data', 0700, true);
         $app = new Application($this->dir);
         $app->instance('config', new Repository(['panel_modules' => ['enabled' => true, 'site' => 'pianyi',
-            'gateway' => ['panel_id' => 'panel_06', 'directory' => $this->dir],
+            'gateway' => ['panel_id' => 'panel_06', 'directory' => $this->dir, 'storage' => 'database'],
             'telegram' => ['driver' => 'local', 'directory' => $this->dir, 'chat_id' => '-123', 'username' => 'fixturebot']]]));
         Facade::clearResolvedInstances(); Facade::setFacadeApplication($app);
         $this->panel = ['id' => 'panel_06', 'name' => '便宜机场', 'status' => 'active', 'allowedClientNames' => ['便宜机场'],
@@ -50,20 +51,22 @@ class PanelNativeModuleTest extends TestCase
         file_put_contents($this->dir . '/data/license-public.pem', $pem(hex2bin('302a300506032b6570032100') . sodium_crypto_sign_publickey($pair), 'PUBLIC KEY'));
         config(['panel_modules.gateway.client_key_hash' => hash('sha256', trim(file_get_contents($this->dir . '/data/license-public.pem')))]);
         $this->key = sodium_crypto_sign_publickey($pair);
-        $db = new \PDO('sqlite:' . $this->dir . '/data/gateway.sqlite3');
-        $db->exec('CREATE TABLE devices(id TEXT PRIMARY KEY,data TEXT NOT NULL);
-            CREATE TABLE sessions(id TEXT PRIMARY KEY,device_id TEXT NOT NULL,expires_at TEXT NOT NULL,data TEXT NOT NULL);
-            CREATE TABLE panel_overrides(id TEXT PRIMARY KEY,data TEXT NOT NULL);
-            CREATE TABLE audit_log(id INTEGER PRIMARY KEY,event TEXT NOT NULL,payload TEXT NOT NULL,created_at TEXT NOT NULL)');
-        $db = null;
+        $capsule = new \Illuminate\Database\Capsule\Manager($app);
+        $capsule->addConnection(['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']);
+        $this->db = $capsule->getConnection();
+        $app->instance('db', $capsule->getDatabaseManager());
+        $app->bind('db.schema', fn () => $this->db->getSchemaBuilder());
+        require_once __DIR__ . '/../../database/migrations/2026_10_10_120000_create_client_gateway_table.php';
+        (new \CreateClientGatewayTable())->up();
         $this->rsa = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
-        $this->store = new Store($this->dir . '/data/gateway.sqlite3');
+        $this->store = new PanelStore($this->db, 'panel_06');
         $this->gateway = new Gateway($this->dir);
     }
 
     protected function tearDown(): void
     {
         $this->store = null; $this->gateway = null;
+        $this->db->disconnect();
         Facade::clearResolvedInstances(); Facade::setFacadeApplication(null); Container::setInstance(null);
         $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($this->dir, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::CHILD_FIRST);
         foreach ($files as $file) $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
@@ -109,7 +112,7 @@ class PanelNativeModuleTest extends TestCase
         $this->assertSame(200, $status); $data = $this->open($body);
         $this->assertSame('installer', $data['requestType']); $this->assertSame('panel_06', $data['panelId']);
         $this->assertSame(0, $this->store->devices(0)['total']);
-        $this->assertSame([], $this->store->query('SELECT * FROM sessions'));
+        $this->assertSame(0, $this->db->table(PanelStore::TABLE)->where('record_type', 'sessions')->count());
     }
 
     public function testSessionHeartbeatAndLogout(): void
@@ -124,19 +127,10 @@ class PanelNativeModuleTest extends TestCase
 
     public function testPanelDatabaseStorageKeepsAuthorizationAndAdminContracts(): void
     {
-        $app = Container::getInstance();
-        $capsule = new \Illuminate\Database\Capsule\Manager($app);
-        $capsule->addConnection(['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']);
-        $app->instance('db', $capsule->getDatabaseManager());
-        require_once __DIR__ . '/../../database/migrations/2026_10_10_120000_create_client_gateway_table.php';
-        (new \CreateClientGatewayTable())->up();
-        config(['panel_modules.gateway.storage' => 'database']);
-        $this->gateway = new Gateway($this->dir);
-        $dbStore = new \App\Services\ClientGateway\PanelStore($capsule->getConnection(), 'panel_06');
         [$status, $body] = $this->call('api/client/verify', $this->body());
         $this->assertSame(200, $status); $token = $this->open($body)['sessionToken'];
-        $this->assertSame(1, $dbStore->devices(0)['total']);
-        $this->assertSame(0, $this->store->devices(0)['total']);
+        $this->assertSame(1, $this->store->devices(0)['total']);
+        $this->assertFileDoesNotExist($this->dir . '/data/gateway.sqlite3');
         $this->assertSame(200, $this->call('api/client/heartbeat', [], $token)[0]);
         $panel = $this->gateway->admin('GET', '/api/admin/panels', [])['panels'][0];
         $this->gateway->admin('POST', '/api/admin/panels/update', ['panelId' => 'panel_06', 'name' => $panel['name'],
@@ -144,7 +138,6 @@ class PanelNativeModuleTest extends TestCase
         $this->assertSame(403, $this->call('api/client/heartbeat', [], $token)[0]);
         $this->assertSame(200, $this->call('api/client/deactivate', [], $token)[0]);
         $this->assertSame(401, $this->call('api/client/heartbeat', [], $token)[0]);
-        $capsule->getConnection()->disconnect();
     }
 
     public function testMalformedForeignAndUnencryptedVerifyNeverCreateDevice(): void
@@ -161,7 +154,7 @@ class PanelNativeModuleTest extends TestCase
         $panel = $this->gateway->admin('GET', '/api/admin/panels', [])['panels'][0];
         $save = ['panelId' => 'panel_06', 'name' => $panel['name'], 'clientName' => $panel['clientName'], 'status' => 'active', 'revision' => $panel['revision']];
         $this->gateway->admin('POST', '/api/admin/panels/update', $save);
-        $this->assertSame([], $this->store->query('SELECT * FROM audit_log'));
+        $this->assertSame(0, $this->db->table(PanelStore::TABLE)->where('record_type', 'audit_log')->count());
         [, $envelope] = $this->call('api/client/verify', $this->body()); $token = $this->open($envelope)['sessionToken'];
         $this->assertSame(403, $this->call('api/client/heartbeat', ['clientName' => 'Other'], $token)[0]);
         $this->gateway->admin('POST', '/api/admin/panels/update', array_replace($save, ['status' => 'disabled']));
@@ -174,7 +167,10 @@ class PanelNativeModuleTest extends TestCase
     {
         [, $envelope] = $this->call('api/client/verify', $this->body()); $token = $this->open($envelope)['sessionToken'];
         $id = hash('sha256', $token); $session = $this->store->get('sessions', $id);
-        $session['panelId'] = 'panel_01'; $this->store->put('sessions', $id, $session);
+        $session['panelId'] = 'panel_01';
+        // Deliberately corrupt the fixture to exercise the read-side site guard.
+        $this->db->table(PanelStore::TABLE)->where('record_type', 'sessions')->where('record_key', $id)
+            ->update(['data' => Crypto::json($session)]);
         $this->assertSame(403, $this->call('api/client/heartbeat', [], $token)[0]);
         $session['panelId'] = 'panel_06'; $session['expiresAt'] = '2000-01-01T00:00:00.000Z'; $this->store->put('sessions', $id, $session);
         $this->assertSame(401, $this->call('api/client/heartbeat', [], $token)[0]);
@@ -187,13 +183,16 @@ class PanelNativeModuleTest extends TestCase
         }
     }
 
-    public function testTransactionRollsBackAndMissingStoreNeverAutoCreates(): void
+    public function testTransactionRollsBackAndMissingTableNeverAutoCreates(): void
     {
         try { $this->store->transaction(function () { $this->store->put('devices', 'fixture', ['deviceId' => 'fixture']); throw new \RuntimeException('fixture'); }); }
         catch (\RuntimeException $e) { $this->assertSame('fixture', $e->getMessage()); }
         $this->assertSame(0, $this->store->devices(0)['total']);
-        try { new Store($this->dir . '/missing.sqlite'); $this->fail('must refuse'); } catch (\RuntimeException $e) {}
-        $this->assertFileDoesNotExist($this->dir . '/missing.sqlite');
+        $this->db->getSchemaBuilder()->drop(PanelStore::TABLE);
+        try { $this->call('api/client/verify', $this->body()); $this->fail('must refuse'); }
+        catch (\Illuminate\Database\QueryException $e) {}
+        $this->assertFalse($this->db->getSchemaBuilder()->hasTable(PanelStore::TABLE));
+        $this->assertFileDoesNotExist($this->dir . '/data/gateway.sqlite3');
     }
 
     public function testInvalidStorageCannotFallBackToASeparateDatabase(): void
@@ -201,6 +200,56 @@ class PanelNativeModuleTest extends TestCase
         config(['panel_modules.gateway.storage' => 'databse']);
         $this->expectException(\RuntimeException::class);
         new Gateway($this->dir);
+    }
+
+    public function testStandaloneGatewayStorageIsNotSupported(): void
+    {
+        foreach (['sqlite', null, ''] as $storage) {
+            config(['panel_modules.gateway.storage' => $storage]);
+            try { new Gateway($this->dir); $this->fail('must require panel storage'); }
+            catch (\RuntimeException $e) { $this->assertSame('Gateway requires panel database storage', $e->getMessage()); }
+        }
+        $this->assertFileDoesNotExist($this->dir . '/data/gateway.sqlite3');
+    }
+
+    public function testEntryNetworkCheckRunsOutsideTransactionAndBeforeAnyWrite(): void
+    {
+        $before = $this->gateway->entryPanel();
+        $result = $this->gateway->configureEntry('entry.example.com', $before['revision'], function () {
+            $this->assertSame(0, $this->db->transactionLevel());
+            $this->assertSame(0, $this->db->table(PanelStore::TABLE)->count());
+        });
+        $this->assertSame('entry.example.com', $result['entryDomain']);
+        $this->assertSame(2, $this->db->table(PanelStore::TABLE)->count());
+    }
+
+    public function testEntryRechecksRevisionAfterNetworkCheck(): void
+    {
+        $before = $this->gateway->entryPanel();
+        try {
+            $this->gateway->configureEntry('entry.example.com', $before['revision'], function () use ($before) {
+                $this->gateway->admin('POST', '/api/admin/panels/update', [
+                    'panelId' => 'panel_06', 'name' => 'Concurrent name', 'clientName' => $before['clientName'],
+                    'status' => 'active', 'revision' => $before['revision'],
+                ]);
+            });
+            $this->fail('must reject concurrent change');
+        } catch (HttpException $e) { $this->assertSame(409, $e->getStatusCode()); }
+        $after = $this->gateway->entryPanel();
+        $this->assertSame('Concurrent name', $after['name']);
+        $this->assertSame('', $after['entryDomain']);
+        $this->assertSame(1, $this->db->table(PanelStore::TABLE)->where('record_type', 'audit_log')->count());
+    }
+
+    public function testStaleEntryDoesNotInvokeNetworkOrWrite(): void
+    {
+        $called = false;
+        try {
+            $this->gateway->configureEntry('entry.example.com', str_repeat('0', 64), function () use (&$called) { $called = true; });
+            $this->fail('must reject stale revision');
+        } catch (HttpException $e) { $this->assertSame(409, $e->getStatusCode()); }
+        $this->assertFalse($called);
+        $this->assertSame(0, $this->db->table(PanelStore::TABLE)->count());
     }
 
     public function testNativeProxyPinsDestinationAndSanitizesPayload(): void
@@ -219,16 +268,37 @@ class PanelNativeModuleTest extends TestCase
         $this->assertNotEmpty($sent->getHeaderLine('X-Xiao-Sign'));
     }
 
-    public function testProxyRejectsHtmlRedirectAndUnboundPayment(): void
+    public function testProxyRejectsHtmlAndRedirect(): void
     {
         foreach ([new Response(200, [], '<html>error</html>'), new Response(302, ['Location' => 'https://other.example'])] as $response) {
             $proxy = new PanelProxy(new Client(['handler' => new MockHandler([$response])]));
             try { $proxy->handle(Request::create('/', 'GET'), '/user/info', $this->panel); $this->fail('must reject'); }
             catch (GatewayException $e) { $this->assertSame(502, $e->status); }
         }
-        $proxy = new PanelProxy(new Client(['handler' => new MockHandler([new Response(200, [], '{"data":{"payment_id":2}}')])]));
-        $r = Request::create('/', 'POST', [], [], [], [], '{"trade_no":"123456","method":3}');
-        $this->expectException(GatewayException::class); $proxy->handle($r, '/user/order/checkout', $this->panel);
+    }
+
+    public function testCheckoutDelegatesEligibilityWithoutForwardingIdentityOrTokens(): void
+    {
+        $history = [];
+        $handler = HandlerStack::create(new MockHandler([
+            new Response(200, [], '{"data":{"payment_id":2}}'),
+            new Response(403, [], '{"message":"Order does not belong to this user"}'),
+        ]));
+        $handler->push(Middleware::history($history));
+        $proxy = new PanelProxy(new Client(['handler' => $handler]));
+        $request = Request::create('/', 'POST', [], [], [], ['HTTP_X_PANEL_AUTHORIZATION' => 'fixture-session'],
+            '{"trade_no":"123456","method":3,"token":"injected","user_id":99,"is_admin":1,"payment_id":4}');
+        [$status, $data] = $proxy->handle($request, '/user/order/checkout', $this->panel);
+        $this->assertSame(200, $status);
+        $this->assertSame(2, $data->data->payment_id);
+        $this->assertCount(1, $history);
+        $this->assertSame('/api/v1/user/order/checkout', $history[0]['request']->getUri()->getPath());
+        $this->assertSame('fixture-session', $history[0]['request']->getHeaderLine('Authorization'));
+        $this->assertSame(['trade_no' => '123456', 'method' => 3, 'token' => ''],
+            json_decode((string) $history[0]['request']->getBody(), true));
+        [$status, $data] = $proxy->handle($request, '/user/order/checkout', $this->panel);
+        $this->assertSame(403, $status);
+        $this->assertSame('Order does not belong to this user', $data->message);
     }
 
     private function telegram(): array
@@ -350,7 +420,7 @@ class PanelNativeModuleTest extends TestCase
         try { $entry->configure($this->gateway, 'entry.example.com', $before['revision']); $this->fail('must reject forged probe'); }
         catch (HttpException $e) { $this->assertSame(422, $e->getStatusCode()); }
         $this->assertSame($before, $this->gateway->entryPanel());
-        $this->assertSame([], $this->store->query('SELECT * FROM audit_log'));
+        $this->assertSame(0, $this->db->table(PanelStore::TABLE)->where('record_type', 'audit_log')->count());
         $this->expectException(HttpException::class);
         $entry->configure($this->gateway, 'entry.example.com', str_repeat('0', 64));
     }

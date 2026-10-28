@@ -6,6 +6,8 @@ use Stripe\Stripe;
 use Stripe\Checkout\Session;
 
 class StripeCheckout {
+    public $config;
+
     public function __construct($config)
     {
         $this->config = $config;
@@ -85,8 +87,8 @@ class StripeCheckout {
         try {
             $session = Session::create($params);
         } catch (\Exception $e) {
-            info($e);
-            abort(500, "Failed to create order. Error: {$e->getMessage}");
+            \Illuminate\Support\Facades\Log::warning('Stripe order creation failed', ['exception' => $e]);
+            abort(500, __('Failed to create order'));
         }
         return [
             'type' => 1, // 0:qrcode 1:url

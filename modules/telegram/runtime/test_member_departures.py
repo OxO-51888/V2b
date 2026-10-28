@@ -344,7 +344,7 @@ class DepartureTests(unittest.TestCase):
         api = bot.TelegramBot('fixture')
         api.request = Mock(return_value={'result': []})
         api.get_updates(123, 5)
-        self.assertEqual(['message', 'chat_join_request', 'chat_member'],
+        self.assertEqual(['message', 'chat_join_request', 'chat_member', 'callback_query'],
                          api.request.call_args.args[1]['allowed_updates'])
 
     def run_poll_loop(self, fail=False):

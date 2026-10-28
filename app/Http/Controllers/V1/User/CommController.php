@@ -19,7 +19,6 @@ class CommController extends Controller
 
         return response([
             'data' => [
-                'is_telegram' => (int)config('v2board.telegram_bot_enable', 0),
                 'telegram_discuss_link' => $hasActivePlan
                     ? config('v2board.telegram_discuss_link')
                     : null,
