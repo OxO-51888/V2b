@@ -7480,15 +7480,8 @@
                     defaultValue: t.subscribe_path,
                     onChange: e => this.set("site", "subscribe_path", e.target.value)
                 })), f.a.createElement(m, {
-                    title: "\u7528\u6237\u6761\u6b3e(TOS)URL",
-                    description: "\u7528\u4e8e\u8df3\u8f6c\u5230\u7528\u6237\u6761\u6b3e(TOS)"
-                }, f.a.createElement("input", {
-                    type: "text",
-                    className: "form-control",
-                    placeholder: "\u8bf7\u8f93\u5165\u7528\u6237\u6761\u6b3eURL\uff0c\u672b\u5c3e\u4e0d\u8981/",
-                    defaultValue: t.tos_url,
-                    onChange: e=>this.set("site", "tos_url", e.target.value)
-                })), f.a.createElement(m, {
+                    title: "\u4eea\u8868\u76d8\u9690\u79c1\u6a21\u5f0f"
+                }, f.a.createElement(window.AdminDashboardPrivacy.control(f.a, l["a"], q["b"]))), f.a.createElement(m, {
                     title: "\u505c\u6b62\u65b0\u7528\u6237\u6ce8\u518c",
                     description: "\u5f00\u542f\u540e\u4efb\u4f55\u4eba\u90fd\u5c06\u65e0\u6cd5\u8fdb\u884c\u6ce8\u518c\u3002"
                 }, f.a.createElement(l["a"], {
@@ -8211,10 +8204,17 @@
                 }), f.a.createElement("input", {
                     type: "text",
                     className: "form-control",
-                    "aria-label": "Windows 下载地址",
+                    "aria-label": "Windows 下载1地址",
                     placeholder: "https://xxxx.com/xxx.exe",
                     defaultValue: window.PanelModules && window.PanelModules.displayDownloadUrl ? window.PanelModules.displayDownloadUrl(w.windows_download_url) : w.windows_download_url,
                     onChange: e=>this.set("app", "windows_download_url", e.target.value)
+                }), f.a.createElement("input", {
+                    type: "text",
+                    className: "form-control",
+                    "aria-label": "Windows 下载2地址",
+                    placeholder: "下载2地址（选填）",
+                    defaultValue: window.PanelModules && window.PanelModules.displayDownloadUrl ? window.PanelModules.displayDownloadUrl(w.windows_download_url_2) : w.windows_download_url_2,
+                    onChange: e=>this.set("app", "windows_download_url_2", e.target.value)
                 }))), f.a.createElement(m, {
                     title: "macOS",
                     description: "macOS\u7aef\u7248\u672c\u53f7\u53ca\u4e0b\u8f7d\u5730\u5740"
@@ -8228,10 +8228,17 @@
                 }), f.a.createElement("input", {
                     type: "text",
                     className: "form-control",
-                    "aria-label": "macOS 下载地址",
+                    "aria-label": "macOS 下载1地址",
                     placeholder: "https://xxxx.com/xxx.dmg",
                     defaultValue: window.PanelModules && window.PanelModules.displayDownloadUrl ? window.PanelModules.displayDownloadUrl(w.macos_download_url) : w.macos_download_url,
                     onChange: e=>this.set("app", "macos_download_url", e.target.value)
+                }), f.a.createElement("input", {
+                    type: "text",
+                    className: "form-control",
+                    "aria-label": "macOS 下载2地址",
+                    placeholder: "下载2地址（选填）",
+                    defaultValue: window.PanelModules && window.PanelModules.displayDownloadUrl ? window.PanelModules.displayDownloadUrl(w.macos_download_url_2) : w.macos_download_url_2,
+                    onChange: e=>this.set("app", "macos_download_url_2", e.target.value)
                 }))), f.a.createElement(m, {
                     title: "Android",
                     description: "Android\u7aef\u7248\u672c\u53f7\u53ca\u4e0b\u8f7d\u5730\u5740"
@@ -8245,10 +8252,17 @@
                 }), f.a.createElement("input", {
                     type: "text",
                     className: "form-control",
-                    "aria-label": "Android 下载地址",
+                    "aria-label": "Android 下载1地址",
                     placeholder: "https://xxxx.com/xxx.apk",
                     defaultValue: window.PanelModules && window.PanelModules.displayDownloadUrl ? window.PanelModules.displayDownloadUrl(w.android_download_url) : w.android_download_url,
                     onChange: e=>this.set("app", "android_download_url", e.target.value)
+                }), f.a.createElement("input", {
+                    type: "text",
+                    className: "form-control",
+                    "aria-label": "Android 下载2地址",
+                    placeholder: "下载2地址（选填）",
+                    defaultValue: window.PanelModules && window.PanelModules.displayDownloadUrl ? window.PanelModules.displayDownloadUrl(w.android_download_url_2) : w.android_download_url_2,
+                    onChange: e=>this.set("app", "android_download_url_2", e.target.value)
                 })))), window.PanelModules && window.PanelModules.section(f.a, "gateway")))))
             }
         }
@@ -18634,7 +18648,7 @@
                                 case 2:
                                     return t = e.sent,
                                     e.next = 5,
-                                    Object(c["b"])("/" + window.settings.secure_path + "/config/save", a()({}, t[n]));
+                                    Object(c["b"])("/" + window.settings.secure_path + "/config/save", Object.fromEntries(Object.entries(t[n]).filter(([key]) => key !== "admin_dashboard_privacy")));
                                 case 5:
                                     if (s = e.sent,
                                     200 === s.code) {
@@ -22913,8 +22927,14 @@
                     }]
                 }
             }
-            componentDidMount() {}
+            componentDidMount() {
+                this.privacyUnsubscribe = window.AdminDashboardPrivacy.subscribe(() => this.forceUpdate());
+            }
+            componentWillUnmount() {
+                this.privacyUnsubscribe();
+            }
             renderMenu(e, t, n, r) {
+                if (n === "/dashboard" && window.AdminDashboardPrivacy.enabled()) return null;
                 switch (e) {
                 case "heading":
                     return o.a.createElement("li", {
@@ -83970,7 +83990,7 @@
         }, {
             path: "/dashboard",
             exact: !0,
-            component: n("sFYk").default
+            component: window.AdminDashboardPrivacy.guard(i.a, n("sFYk").default, s["default"])
         }, {
             path: "/",
             exact: !0,

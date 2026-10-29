@@ -115,7 +115,7 @@
   function communityEnabled() {
     return N.communityEnabled ? N.communityEnabled() : N.on((window.settings || {}).community_enabled);
   }
-  const communityURL = () => window.NINI_PREVIEW === true ? 'assets/v1/preview-community.html' : '/community/index.html?client=nini&embedded=1&v=2662eb5fc53c';
+  const communityURL = () => window.NINI_PREVIEW === true ? 'assets/v1/preview-community.html' : '/community/index.html?client=nini&embedded=1&v=2db0f5c3e7f5';
   const ticketCreationEnabled = () => Number((window.settings || {}).ticket_status) !== 2;
   N.pages.community = {
     load: async function () { return { enabled: communityEnabled() }; },

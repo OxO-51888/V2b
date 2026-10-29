@@ -76,7 +76,7 @@
     <script src="/theme/{{$theme}}/assets/vendor/qrcode.min.js?v=1.0.0"></script>
     <script src="/theme/{{$theme}}/assets/v1/core.js?v={{$version}}-nini-1.2.0-4e2cdf211871"></script>
     <script src="/theme/{{$theme}}/assets/v1/commerce.js?v={{$version}}-nini-1.2.0-2927dbff98a5"></script>
-    <script src="/theme/{{$theme}}/assets/v1/support.js?v={{$version}}-nini-1.2.0-1033659ed999"></script>
+    <script src="/theme/{{$theme}}/assets/v1/support.js?v={{$version}}-nini-1.2.0-{{filemtime(public_path('theme/'.$theme.'/assets/v1/support.js'))}}"></script>
     <script src="/theme/{{$theme}}/assets/v1/reference-lettering.js?v={{$version}}-nini-1.2.0-c7923f48a634"></script>
     <script src="/theme/{{$theme}}/assets/v1/fidelity.js?v={{$version}}-nini-1.2.0-1a78c0c3b420"></script>
     <script src="/theme/{{$theme}}/assets/v1/motion.js?v={{$version}}-nini-1.2.0-4c8fd705ce04"></script><script src="/theme/{{$theme}}/assets/v1/landing.js?v={{$version}}-nini-1.2.0-13fea3d8fc2c"></script>

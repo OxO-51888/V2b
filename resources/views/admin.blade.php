@@ -22,13 +22,15 @@
             version: '{{$version}}',
             background_url: '{{$background_url}}',
             logo: '{{$logo}}',
-            secure_path: '{{$secure_path}}'
+            secure_path: '{{$secure_path}}',
+            admin_dashboard_privacy: {{ (int) config('v2board.admin_dashboard_privacy', 0) }}
         }
     </script>
 </head>
 
 <body>
 <div id="root"></div>
+<script src="/assets/admin/dashboard-privacy.js?v={{filemtime(public_path('assets/admin/dashboard-privacy.js'))}}"></script>
 <script src="/assets/admin/vendors.async.js?v={{$version}}"></script>
 <script src="/assets/admin/components.async.js?v={{$version}}"></script>
 @if(config('panel_modules.enabled'))

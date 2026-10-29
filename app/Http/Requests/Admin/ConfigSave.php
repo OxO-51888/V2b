@@ -41,6 +41,7 @@ class ConfigSave extends FormRequest
         'commission_distribution_l2' => 'nullable|numeric',
         'commission_distribution_l3' => 'nullable|numeric',
         // site
+        'admin_dashboard_privacy' => 'in:0,1',
         'logo' => 'nullable|url',
         'force_https' => 'in:0,1',
         'stop_register' => 'in:0,1',
@@ -94,10 +95,13 @@ class ConfigSave extends FormRequest
         // app
         'windows_version' => '',
         'windows_download_url' => '',
+        'windows_download_url_2' => 'nullable|string|max:4096|url:http,https',
         'macos_version' => '',
         'macos_download_url' => '',
+        'macos_download_url_2' => 'nullable|string|max:4096|url:http,https',
         'android_version' => '',
         'android_download_url' => '',
+        'android_download_url_2' => 'nullable|string|max:4096|url:http,https',
         // safe
         'email_whitelist_enable' => 'in:0,1',
         'email_whitelist_suffix' => 'nullable|array',

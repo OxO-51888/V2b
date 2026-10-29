@@ -60,11 +60,8 @@ $supportPath = $root . '/public/theme/NINI/assets/v1/support.js';
 $support = replaceCommunityVersion($supportPath, '~(/community/index\.html\?client=nini&embedded=1&v=)[^\x27\x22]+~', '${1}' . $version);
 $defaultPath = $root . '/public/theme/default/assets/umi.js';
 $default = replaceCommunityVersion($defaultPath, '~(/community/index\.html\?client=default&embedded=1&v=)[^\x22]+~', '${1}' . $version);
-$dashboardPath = $root . '/public/theme/NINI/dashboard.blade.php';
-$dashboard = replaceCommunityVersion($dashboardPath, '~(/assets/v1/support\.js\?v=\{\{\$version\}\}-nini-[^\x22]+-)\w{12}(?=\x22)~', '${1}' . substr(hash('sha256', $support), 0, 12));
 
 writeCommunityAsset($indexPath, $index);
 writeCommunityAsset($supportPath, $support);
 writeCommunityAsset($defaultPath, $default);
-writeCommunityAsset($dashboardPath, $dashboard);
 echo 'Community site assets applied: ' . $site . PHP_EOL;

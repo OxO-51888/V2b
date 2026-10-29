@@ -58,9 +58,11 @@ test('nonintegrated panels keep their existing Telegram controls', () => {
 test('native gateway uses the panel identity without website enrollment controls', () => {
     const { view } = moduleView('gateway');
     view.state.form.id = 'panel_06';
-    view.state.data.public_url = 'https://panel.example.invalid/api/v1/client-gateway';
+    view.state.data.entry_url = 'https://subscription.example.invalid';
     const labels = nodes(view.render()).filter(n => n.props.className === 'pm-field');
-    assert.deepEqual(labels.map(n => n.children[0].children[0]), ['网站名称', '客户端名称', '本站网关地址', '本站标识', '反代域名', '客户端入口上游']);
+    assert.deepEqual(labels.map(n => n.children[0].children[0]), ['网站名称', '客户端名称', '网关上游地址', '本站标识']);
+    assert.equal(labels[2].children[1].props.value, 'https://subscription.example.invalid');
+    assert.equal(labels[2].children[1].props.readOnly, true);
     assert.equal(labels[3].children[1].props.value, 'panel_06');
     assert.equal(labels[3].children[1].props.readOnly, true);
     assert.doesNotMatch(fs.readFileSync(modulePath, 'utf8'), /gateway\/connect|GatewayEntry|EntryConnection/);
@@ -186,24 +188,34 @@ test('Telegram still loads operation records and paginates independently', async
     assert.deepEqual(requests.map(r => r.url), ['/api/v1/fixture/modules/telegram', '/api/v1/fixture/modules/telegram/events?before=0', '/api/v1/fixture/modules/telegram/events?before=8']);
 });
 
-test('gateway domain uses configuration endpoint without sending another site identity', async () => {
+test('gateway save sends only editable settings and never a site identity or domain', async () => {
     const { view, requests } = moduleView('gateway');
-    view.state.form.entryDomain = 'entry.example.com';
+    view.change('name', 'Changed name');
+    view.state.form.clientName = 'Client';
+    view.state.form.status = 'active';
+    view.state.form.id = 'another-site';
+    view.state.form.entryDomain = 'ignored.example.com';
     await view.save(true);
-    assert.equal(requests[0].url, '/api/v1/fixture/modules/gateway/configure');
-    assert.deepEqual(JSON.parse(requests[0].options.body), {domain: 'entry.example.com', revision: 'a'.repeat(64)});
+    assert.equal(requests[0].url, '/api/v1/fixture/modules/gateway');
+    assert.deepEqual(JSON.parse(requests[0].options.body), {
+        name: 'Changed name', clientName: 'Client', status: 'active', revision: 'a'.repeat(64)
+    });
 });
 
-test('domain-only changes enable configure and cannot be accidentally saved as basic settings', () => {
-    const { view } = moduleView('gateway');
-    view.change('entryDomain', 'entry.example.com');
-    let buttons = nodes(view.render()).filter(n => n.type === 'button');
-    assert.equal(buttons.find(n => n.children.includes(' 配置')).props.disabled, false);
-    assert.equal(buttons.find(n => n.children.includes(' 保存')).props.disabled, true);
+test('gateway no-op save gives feedback; cancel restores settings and remains visible', async () => {
+    const { view, requests } = moduleView('gateway');
+    await view.save();
+    assert.equal(requests.length, 0);
+    assert.ok(view.state.notice);
     view.change('name', 'Changed name');
-    buttons = nodes(view.render()).filter(n => n.type === 'button');
-    assert.equal(buttons.find(n => n.children.includes(' 配置')).props.disabled, true);
+    let buttons = nodes(view.render()).filter(n => n.type === 'button');
+    assert.equal(buttons.some(n => n.children.includes(' 配置')), false);
     assert.equal(buttons.find(n => n.children.includes(' 保存')).props.disabled, false);
+    buttons.find(n => n.children.includes('取消')).props.onClick();
+    assert.deepEqual({...view.state.form}, view.state.data.panels[0]);
+    assert.equal(view.state.dirty, false);
+    buttons = nodes(view.render()).filter(n => n.type === 'button');
+    assert.equal(buttons.find(n => n.children.includes('取消')).props.disabled, false);
 });
 
 test('download URL display decodes Chinese without changing escaped URL separators', () => {

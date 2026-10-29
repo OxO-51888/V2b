@@ -1,9 +1,5 @@
 # V2b 面板 aaPanel 搭建教程
 
-这是自用 V2Board / xiao 分支整合版仓库。以后重新搭建时，直接拉取自己的 GitHub 仓库，不用再从官方仓库迁移。
-
-本教程按照 V2Board 的 aaPanel 手动部署流程整理，使用当前正式服对应的环境：
-
 - aaPanel：纯净版
 - Nginx：面板推荐版本
 - MySQL：5.7
@@ -261,9 +257,3 @@ App Store -> Supervisor Manager -> Add Daemon
 ### 队列没运行
 
 检查 Supervisor Manager 里 `V2Board` 是否为 Running。
-
-## 参考
-
-- V2Board 官方 aaPanel 教程：`https://v2board.com/deploy/aapanel`
-- aaPanel 官方下载页：`https://www.aapanel.com/new/download.html`
-- 自用仓库：`https://github.com/OxO-51888/V2b`

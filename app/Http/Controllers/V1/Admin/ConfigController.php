@@ -93,6 +93,7 @@ class ConfigController extends Controller
                 'commission_distribution_l3' => config('v2board.commission_distribution_l3')
             ],
             'site' => [
+                'admin_dashboard_privacy' => (int) config('v2board.admin_dashboard_privacy', 0),
                 'logo' => config('v2board.logo'),
                 'force_https' => (int)config('v2board.force_https', 0),
                 'stop_register' => (int)config('v2board.stop_register', 0),
@@ -151,10 +152,13 @@ class ConfigController extends Controller
             'app' => [
                 'windows_version' => config('v2board.windows_version'),
                 'windows_download_url' => config('v2board.windows_download_url'),
+                'windows_download_url_2' => config('v2board.windows_download_url_2'),
                 'macos_version' => config('v2board.macos_version'),
                 'macos_download_url' => config('v2board.macos_download_url'),
+                'macos_download_url_2' => config('v2board.macos_download_url_2'),
                 'android_version' => config('v2board.android_version'),
-                'android_download_url' => config('v2board.android_download_url')
+                'android_download_url' => config('v2board.android_download_url'),
+                'android_download_url_2' => config('v2board.android_download_url_2')
             ],
             'safe' => [
                 'email_verify' => (int)config('v2board.email_verify', 0),

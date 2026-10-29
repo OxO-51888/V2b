@@ -138,29 +138,28 @@
       if (!active) return;
       const fragment = document.createDocumentFragment();
       [['windows', 'Windows', 'monitor'], ['android', 'Android', 'smartphone'], ['macos', 'macOS', 'laptop']].forEach(([key, name, symbol]) => {
-        const href = safeURL(config[key + '_download_url']);
-        const card = node('section', 'client-platform client-platform-' + key + (href ? ' is-available' : ' is-unavailable'));
+        const links = [safeURL(config[key + '_download_url']), safeURL(config[key + '_download_url_2'])];
+        const available = links.some(Boolean);
+        const card = node('section', 'client-platform client-platform-' + key + (available ? ' is-available' : ' is-unavailable'));
         card.setAttribute('aria-label', name + ' 客户端');
         const head = node('div', 'client-platform-head');
         const image = node('span', 'client-platform-icon'); image.append(icon(symbol));
         const text = node('div', 'client-platform-copy'); text.append(node('strong', 'client-platform-name', name));
-        if (href) text.append(node('small', 'client-platform-version', config[key + '_version'] ? '版本 ' + String(config[key + '_version']) : '官方客户端'));
+        if (available) text.append(node('small', 'client-platform-version', config[key + '_version'] ? '版本 ' + String(config[key + '_version']) : '官方客户端'));
         head.append(image, text); card.append(head);
-        if (href) {
-          const action = node('a', 'client-platform-action');
-          action.href = href; action.target = '_blank'; action.rel = 'noopener noreferrer';
-          action.setAttribute('aria-label', '下载本站 ' + name + ' 客户端');
-          action.append(icon('download'), node('span', '', '下载 ' + name + ' 版'));
-          card.append(action);
-        } else if (key === 'android') {
-          const action = node('button', 'client-platform-action');
-          action.append(icon('download'), node('span', '', '安装包待上传'));
-          action.type = 'button'; action.disabled = true;
-          action.setAttribute('aria-label', 'Android 安装包待上传');
-          card.append(action);
-        } else {
-          card.append(node('p', 'client-platform-state', '暂未提供'));
-        }
+        const actions = node('div', 'client-platform-actions');
+        actions.setAttribute('role', 'group');
+        actions.setAttribute('aria-label', name + ' 下载地址');
+        links.forEach((href, index) => {
+          const label = '下载  ' + (index + 1);
+          const action = node(href ? 'a' : 'button', 'client-platform-action');
+          action.setAttribute('aria-label', name + ' ' + label);
+          if (href) { action.href = href; action.target = '_blank'; action.rel = 'noopener noreferrer'; }
+          else { action.type = 'button'; action.disabled = true; action.title = '暂未配置下载地址'; }
+          action.append(icon('download'), node('span', '', label));
+          actions.append(action);
+        });
+        card.append(actions);
         fragment.append(card);
       });
       $('client-list').replaceChildren(fragment);

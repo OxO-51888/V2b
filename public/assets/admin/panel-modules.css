@@ -20,11 +20,11 @@
 .pm-pagination { display: flex; justify-content: flex-end; gap: 8px; padding-top: 12px; }
 .pm-icon { width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; }
 @media (max-width: 700px) { .panel-module { padding: 16px; } .pm-feedback { height: 88px; } .pm-form { grid-template-columns: minmax(0, 1fr); } .pm-toggles { gap: 10px; flex-direction: column; } }
-.pm-app-downloads { display: grid; grid-template-columns: minmax(72px, 112px) minmax(0, 1fr); gap: 24px; align-items: center; width: 100%; max-width: 800px; }
+.pm-app-downloads { display: grid; grid-template-columns: minmax(72px, 96px) repeat(2, minmax(0, 1fr)); gap: 20px; align-items: center; width: 100%; }
 .pm-app-downloads input { min-width: 0; width: 100%; margin: 0; }
 .pm-app-settings > .row { padding: 10px 20px !important; align-items: center; }
 .pm-app-settings > .row > .col-lg-6:first-child > div:first-child { font-size: 16px; line-height: 20px; margin-bottom: 4px !important; }
 .pm-app-settings > .row > .col-lg-6:first-child > div + div { font-size: 13px !important; line-height: 18px; margin-bottom: 0 !important; }
 .pm-app-settings .pm-app-downloads input { font-size: 16px; line-height: 24px; height: 44px; }
-@media (min-width: 992px) { .pm-app-settings > .row > .col-lg-6:first-child { flex-basis: 36%; max-width: 36%; } .pm-app-settings > .row > .col-lg-6 + .col-lg-6 { flex-basis: 64%; max-width: 64%; } }
-@media (max-width: 700px) { .pm-app-downloads { grid-template-columns: 80px minmax(0, 1fr); gap: 12px; } }
+@media (min-width: 992px) { .pm-app-settings > .row > .col-lg-6:first-child { flex-basis: 25%; max-width: 25%; } .pm-app-settings > .row > .col-lg-6 + .col-lg-6 { flex-basis: 75%; max-width: 75%; } }
+@media (max-width: 700px) { .pm-app-downloads { grid-template-columns: 80px minmax(0, 1fr); gap: 12px; } .pm-app-downloads input:last-child { grid-column: 2; } }

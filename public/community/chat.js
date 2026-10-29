@@ -10,6 +10,9 @@
   const renderedRows = new Map(), requests = new Set(), unseen = new Set();
   const messageDate = new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
   let epoch = 0, suspended = false, pollTimer = 0, readTimer = 0, failures = 0, mutationRevision = 0;
+  const stickerPicker = window.ChatStickers?.mount({ input: $("message"), anchor: $("attach"),
+    ready: () => composerInputReady() && !state.busy && !state.failedSend,
+    send: sendSticker, context: () => epoch + ":" + startingAuth, onError: error });
   Object.assign(state, { paged: false, hasMore: false, viewed: 0, acknowledged: 0, reading: false });
   function icons(root = document) {
     root.querySelectorAll('i[data-lucide]').forEach(node => {
@@ -21,6 +24,7 @@
   }
   function error(message, scope) { state.errorScope = scope || "action"; $("error").textContent = message || ""; $("error").hidden = !message; }
   function controls() {
+    stickerPicker?.sync();
     const disabled = !composerInputReady() || state.busy;
     $("message").disabled = !composerInputReady(); $("attach").disabled = disabled || state.attachments.length >= 2;
     $("send").disabled = disabled || !!state.failedSend || (!$("message").value.trim() && !state.attachments.length);
@@ -273,7 +277,7 @@
         const date = element("time", "", messageDate.format(row.created_at)); date.dateTime = new Date(row.created_at).toISOString(); meta.append(date);
       }
       const actions = element("div", "message-actions");
-      actions.append(button("reply", "回复", () => { state.reply = row; state.pending = null; $("reply-text").textContent = "回复 " + displayName(row) + "：" + row.message; $("reply").hidden = false; $("message").focus(); }));
+      actions.append(button("reply", "回复", () => { state.reply = row; state.pending = null; $("reply-text").textContent = "回复 " + displayName(row) + "：" + (window.ChatStickers?.summary(row.message) || row.message); $("reply").hidden = false; $("message").focus(); }));
       if (state.me.moderator || row.user_id === state.me.id) actions.append(button("trash-2", "删除消息", async () => {
         if (!confirm("删除这条消息？")) return;
         try { await api("delete", { post_id: row.id }); mutationRevision++; state.rows.delete(row.id); display([], false); await poll(true); } catch (e) { if (!e.stale) error(e.message); }
@@ -283,8 +287,9 @@
         try { await api("mute", { target_id: row.user_id, muted: !row.muted }); mutationRevision++; await poll(true); } catch (e) { if (!e.stale) error(e.message); }
       }));
       meta.append(actions); body.append(meta);
-      if (row.root_id) body.append(element("div", "quote", root ? "回复 " + displayName(root) + "：" + (root.message || "图片") : "回复较早的消息"));
-      if (row.message) body.append(element("div", "message-text", row.message));
+      if (row.root_id) body.append(element("div", "quote", root ? "回复 " + displayName(root) + "：" + (window.ChatStickers?.summary(root.message) || root.message || "图片") : "回复较早的消息"));
+      if (window.ChatStickers?.render(body, row)) node.classList.add("sticker-message");
+      else if (row.message) body.append(element("div", "message-text", row.message));
       if (row.file_ids && row.file_ids.length) {
         const images = element("div", "images");
         row.file_ids.forEach(id => {
@@ -454,7 +459,7 @@
     const submission = state.failedSend; panel.hidden = !submission;
     if (!submission) return;
     $("failed-send-status").textContent = "上一条未确认发送：" + (submission.error || "请重试");
-    $("failed-send-preview").textContent = (submission.data.message || "图片消息") + (submission.data.file_ids.length ? "（" + submission.data.file_ids.length + " 张图片）" : "") + " · 下方草稿已保留";
+    $("failed-send-preview").textContent = (window.ChatStickers?.summary(submission.data.message) || submission.data.message || "图片消息") + (submission.data.file_ids.length ? "（" + submission.data.file_ids.length + " 张图片）" : "") + " · 下方草稿已保留";
     $("retry-send").disabled = !composerInputReady() || state.busy; $("discard-send").disabled = state.busy;
   }
   async function postSubmission(submission) {
@@ -474,6 +479,13 @@
       if (state.inFlight === submission) { state.inFlight = null; state.busy = false; state.operation = null; controls(); }
       if (!current()) { deactivateComposer(); releaseSubmission(submission); }
     }
+  }
+  function sendSticker(message) {
+    if (!composerReady() || state.failedSend || !window.ChatStickers?.resolve(message)) return;
+    const submission = { user: state.me.id, attachments: [],
+      data: { message, root_id: state.reply ? state.reply.id : "", file_ids: [], client_id: crypto.randomUUID() } };
+    state.reply = null; $("reply").hidden = true;
+    return postSubmission(submission);
   }
   async function sendMessage() {
     if (!composerReady() || state.failedSend || (!$("message").value.trim() && !state.attachments.length)) return;
