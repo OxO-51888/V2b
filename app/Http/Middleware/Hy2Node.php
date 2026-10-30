@@ -28,7 +28,8 @@ class Hy2Node
         $request->attributes->set('hy2_node', $node);
         $response = $next($request);
         $response->headers->set('X-V2node-Contract', 'hy2-1');
-        $response->headers->set('Cache-Control', 'private, no-cache');
+        $response->headers->set('Cache-Control', 'private, no-store, max-age=0');
+        $response->setVary(['Authorization', 'X-Node-ID', 'X-V2node-Contract'], false);
         return $response;
     }
 }

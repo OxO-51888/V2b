@@ -504,6 +504,13 @@ class Singbox
             'tag' => $server['name'],
             'type' => 'hysteria2'
         ];
+        if (count($parts) !== 1 || strpos($parts[0], '-') !== false) {
+            unset($array['server_port']);
+            $array['server_ports'] = array_map(static function ($part) {
+                $part = trim($part);
+                return str_contains($part, '-') ? str_replace('-', ':', $part) : $part . ':' . $part;
+            }, $parts);
+        }
         if (isset($server['obfs'])) {
             $array['obfs']['type'] = $server['obfs'];
             $array['obfs']['password'] = $server['obfs_password'];

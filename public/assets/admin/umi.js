@@ -7409,6 +7409,7 @@
                 }), f.a.createElement("div", {
                     className: "mb-0 block border-bottom ".concat(p ? "block-mode-loading" : "")
                 }, f.a.createElement(s["a"], {
+                    className: "pm-system-tabs",
                     onChange: e=>this.selectConfigTab(e),
                     activeKey: this.normalizeConfigTab(h),
                     defaultActiveKey: this.normalizeConfigTab(h),

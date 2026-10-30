@@ -488,6 +488,10 @@ class ClashMeta
             $firstPort = $firstPart;
         }
         $array['port'] = (int)$firstPort;
+        if (count($parts) !== 1 || strpos($parts[0], '-') !== false) {
+            $array['ports'] = $server['port'];
+            $array['mport'] = $server['port'];
+        }
         if (isset($server['obfs'])){
             $array['obfs'] = $server['obfs'];
             $array['obfs-password'] = $server['obfs_password'];

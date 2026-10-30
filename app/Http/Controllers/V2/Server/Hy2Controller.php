@@ -12,6 +12,7 @@ use App\Utils\CacheKey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class Hy2Controller extends Controller
 {
@@ -76,13 +77,22 @@ class Hy2Controller extends Controller
 
     public function state(Request $request, Hy2Accounting $accounting)
     {
-        return response()->json(['next' => $accounting->next($this->node($request)->id)]);
+        return response()->json($accounting->cursor($this->node($request)->id));
     }
 
     public function traffic(Request $request, Hy2Accounting $accounting)
     {
-        $ack = $accounting->apply($this->node($request)->toArray(), $this->jsonBody($request),
-            hash('sha256', $request->getContent()));
+        $body = $this->jsonBody($request);
+        $digest = hash('sha256', $request->getContent());
+        try {
+            $ack = $accounting->apply($this->node($request)->toArray(), $body, $digest);
+        } catch (HttpException $e) {
+            if ($e->getStatusCode() !== 409) throw $e;
+            return response()->json([
+                'error' => 'traffic_sequence_conflict',
+                'request_sequence' => $body['sequence'], 'request_digest' => $digest,
+            ] + $accounting->cursor($this->node($request)->id), 409);
+        }
         $this->heartbeat($request, 'LAST_PUSH_AT');
         return response()->json($ack);
     }

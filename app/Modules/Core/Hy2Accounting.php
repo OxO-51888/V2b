@@ -42,6 +42,13 @@ class Hy2Accounting
         return (int) DB::table('v2_hy2_report_cursor')->where('node_id', $node)->value('sequence') + 1;
     }
 
+    public function cursor(int $node): array
+    {
+        $row = DB::table('v2_hy2_report_cursor')->where('node_id', $node)->first(['sequence', 'digest']);
+        $sequence = (int) ($row->sequence ?? 0);
+        return ['sequence' => $sequence, 'digest' => $row->digest ?? '', 'next' => $sequence + 1];
+    }
+
     public function apply(array $node, array $input, string $digest): array
     {
         $batch = $this->validate($input);
@@ -49,9 +56,10 @@ class Hy2Accounting
         if (!is_finite($rate) || $rate < 0 || $rate > 10000) throw new HttpException(422, 'Invalid node rate');
         $ids = array_column($batch['rows'], 'uid');
         DB::transaction(function () use ($node, $batch, $digest, $rate, $ids) {
-            DB::table('v2_hy2_report_cursor')->insertOrIgnore([
+            // Acquire the cursor's write lock without concurrent duplicate-insert lock upgrades.
+            DB::table('v2_hy2_report_cursor')->upsert([
                 'node_id' => $node['id'], 'sequence' => 0, 'digest' => '', 'updated_at' => time(),
-            ]);
+            ], ['node_id'], ['node_id']);
             $cursor = DB::table('v2_hy2_report_cursor')->where('node_id', $node['id'])->lockForUpdate()->first();
             if (self::replay((int) $cursor->sequence, $cursor->digest, $batch['sequence'], $digest)) return;
             $users = DB::table('v2_user')->whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
